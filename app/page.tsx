@@ -1,65 +1,48 @@
-import Image from "next/image";
+import Link from "next/link";
 
-export default function Home() {
+export default function LandingPage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden">
+      {/* Background */}
+      <div
+        className="absolute inset-0 bg-cover bg-center"
+        style={{
+          backgroundImage:
+            "url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Ho_Chi_Minh_City_Hall.jpg/1280px-Ho_Chi_Minh_City_Hall.jpg')",
+        }}
+      />
+      <div className="absolute inset-0 bg-black/55" />
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-center px-6 text-center">
+        <p className="mb-4 text-sm uppercase tracking-[0.3em] text-white/60">
+          Museum AR Management
+        </p>
+        <h1 className="text-5xl font-bold tracking-tight text-white md:text-6xl lg:text-7xl">
+          WELCOME TO
+          <br />
+          <span className="text-amber-400">MUSEUM AR</span>
+        </h1>
+        <p className="mt-6 max-w-xl text-base text-white/70 leading-relaxed">
+          A smart platform for managing and experiencing museum collections
+          through Augmented Reality. Unlock history, one artifact at a time.
+        </p>
+
+        <div className="mt-10 flex items-center gap-4">
+          <Link
+            href="/login"
+            className="rounded-full border border-white/40 px-8 py-3 text-sm font-medium text-white backdrop-blur-sm transition-all hover:border-white hover:bg-white/10"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            Login
+          </Link>
+          <Link
+            href="/register"
+            className="rounded-full bg-amber-500 px-8 py-3 text-sm font-medium text-black transition-all hover:bg-amber-400"
           >
-            Documentation
-          </a>
+            Register
+          </Link>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
