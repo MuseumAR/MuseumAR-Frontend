@@ -1,9 +1,6 @@
-import { PageHeader } from "@/components/dashboard/page-header";
-
 export function CuratorOverview() {
   return (
     <>
-      <PageHeader title="Overview" icon="overview" />
       <div className="px-8 py-8">
         <div className="grid gap-4 md:grid-cols-3">
           {[

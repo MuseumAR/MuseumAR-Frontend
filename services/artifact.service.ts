@@ -49,22 +49,23 @@ const MOCK_ARTIFACTS: Artifact[] = [
 ];
 
 const MOCK_ARTIFACT_ROWS: ArtifactRow[] = [
-  { id: 1, name: "Ancient Egyptian Sarcophagus", view: 10000, audioPlay: 10000, qrScan: 10000, arUsage: 10000 },
-  { id: 2, name: "The Sovereign's Whisper", view: 9000, audioPlay: 9000, qrScan: 9000, arUsage: 9000 },
-  { id: 3, name: "The Celestial Compass", view: 8000, audioPlay: 8000, qrScan: 8000, arUsage: 8000 },
-  { id: 4, name: "The Alchemist's Secret", view: 7000, audioPlay: 7000, qrScan: 7000, arUsage: 7000 },
-  { id: 5, name: "The Oracle's Gaze", view: 6000, audioPlay: 6000, qrScan: 6000, arUsage: 6000 },
-  { id: 6, name: "The Timekeeper's Legacy", view: 5000, audioPlay: 5000, qrScan: 5000, arUsage: 5000 },
-  { id: 7, name: "The Guardian's Oath", view: 4000, audioPlay: 4000, qrScan: 4000, arUsage: 4000 },
-  { id: 8, name: "The Dreamer's Canvas", view: 3000, audioPlay: 3000, qrScan: 3000, arUsage: 3000 },
-  { id: 9, name: "The Philosopher's Stone", view: 2000, audioPlay: 2000, qrScan: 2000, arUsage: 2000 },
-  { id: 10, name: "The Voyager's Map", view: 1000, audioPlay: 1000, qrScan: 1000, arUsage: 1000 },
+  { id: 1, name: "Ancient Egyptian Sarcophagus", category: "Ancient Relic", era: "3000 BC", status: "Published", image: null, view: 10000, audioPlay: 10000, qrScan: 10000, arUsage: 10000 },
+  { id: 2, name: "The Sovereign's Whisper", category: "Royal Artifact", era: "16th Century", status: "Published", image: null, view: 9000, audioPlay: 9000, qrScan: 9000, arUsage: 9000 },
+  { id: 3, name: "The Celestial Compass", category: "Navigation Tool", era: "18th Century", status: "Draft", image: null, view: 8000, audioPlay: 8000, qrScan: 8000, arUsage: 8000 },
+  { id: 4, name: "The Alchemist's Secret", category: "Manuscript", era: "14th Century", status: "Published", image: null, view: 7000, audioPlay: 7000, qrScan: 7000, arUsage: 7000 },
+  { id: 5, name: "The Oracle's Gaze", category: "Religious Sculpture", era: "500 BC", status: "Archived", image: null, view: 6000, audioPlay: 6000, qrScan: 6000, arUsage: 6000 },
+  { id: 6, name: "The Timekeeper's Legacy", category: "Horology", era: "19th Century", status: "Published", image: null, view: 5000, audioPlay: 5000, qrScan: 5000, arUsage: 5000 },
+  { id: 7, name: "The Guardian's Oath", category: "Armor", era: "12th Century", status: "Draft", image: null, view: 4000, audioPlay: 4000, qrScan: 4000, arUsage: 4000 },
+  { id: 8, name: "The Dreamer's Canvas", category: "Fine Art", era: "Renaissance", status: "Published", image: null, view: 3000, audioPlay: 3000, qrScan: 3000, arUsage: 3000 },
+  { id: 9, name: "The Philosopher's Stone", category: "Alchemy", era: "17th Century", status: "Archived", image: null, view: 2000, audioPlay: 2000, qrScan: 2000, arUsage: 2000 },
+  { id: 10, name: "The Voyager's Map", category: "Cartography", era: "15th Century", status: "Published", image: null, view: 1000, audioPlay: 1000, qrScan: 1000, arUsage: 1000 },
 ];
 
 const MOCK_ARTIFACT_STATS: ArtifactStats = {
   arModelsAvailable: 12,
   totalArtifact: 38,
   visitorsScannedToday: 240,
+  qrScansToday: 1840,
 };
 
 export async function getArtifactById(id: string): Promise<Artifact | null> {

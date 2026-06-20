@@ -1,22 +1,23 @@
-import { PageHeader } from "@/components/dashboard/page-header";
+import { StatCard } from "@/components/dashboard/stat-card";
+import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 
 export function AnalystOverview() {
   return (
-    <>
-      <PageHeader title="Overview" icon="overview" />
-      <div className="px-8 py-8">
-        <div className="grid gap-4 md:grid-cols-2">
-          {[
-            { label: "Reports generated", value: 12 },
-            { label: "Data exports this month", value: 5 },
-          ].map((stat) => (
-            <div key={stat.label} className="rounded-2xl border border-white/25 px-6 py-5">
-              <p className="text-sm text-white/70">{stat.label}</p>
-              <p className="mt-2 text-3xl font-light tabular-nums">{stat.value}</p>
-            </div>
-          ))}
+    <div className="space-y-8 px-8 pb-10">
+      <section>
+        <div className="mb-5">
+          <p className="text-xs font-medium uppercase tracking-[0.22em]" style={{ color: T.mutedLight }}>
+            Analyst Overview
+          </p>
+          <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
+            Reports & Exports
+          </h2>
         </div>
-      </div>
-    </>
+        <div className="grid gap-5 md:grid-cols-2">
+          <StatCard label="Reports Generated" value={12} icon="fileText" growth={4} watermark="scroll" />
+          <StatCard label="Data Exports This Month" value={5} icon="barChart" growth={2} watermark="map" />
+        </div>
+      </section>
+    </div>
   );
 }
