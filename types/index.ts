@@ -62,6 +62,10 @@ export type Artifact = {
 export type ArtifactRow = {
   id: number;
   name: string;
+  category: string;
+  era: string;
+  status: "Published" | "Draft" | "Archived";
+  image: string | null;
   view: number;
   audioPlay: number;
   qrScan: number;
@@ -72,6 +76,7 @@ export type ArtifactStats = {
   arModelsAvailable: number;
   totalArtifact: number;
   visitorsScannedToday: number;
+  qrScansToday: number;
 };
 
 // ─── Exhibition ────────────────────────────────────────────────────────────

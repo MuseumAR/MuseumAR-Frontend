@@ -1,6 +1,8 @@
 "use client";
 
-import { PageHeader } from "@/components/dashboard/page-header";
+import { PageDescription } from "@/components/dashboard/page-header";
+import { dashboardTheme as T } from "@/lib/dashboard-theme";
+import { ARTIFACT_LABELS } from "@/lib/field-labels";
 import type { Artifact, ActiveInactive } from "@/types";
 import Link from "next/link";
 import { useState } from "react";
@@ -23,13 +25,16 @@ export function ArtifactPageContent({ artifacts, basePath, createHref, showDelet
 
   return (
     <>
-      <PageHeader title="Artifact" icon="artifact" />
-      <div className="px-8 py-8">
+      <div className="px-8 pb-10">
+        <PageDescription>
+          Museum catalog with status and metadata
+        </PageDescription>
         {/* Toolbar */}
         <div className="mb-6 flex items-center justify-between gap-4">
-          <div className="relative w-64">
+          <div className="relative w-64 max-w-full">
             <svg
-              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40"
+              className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2"
+              style={{ color: T.mutedLight }}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -43,17 +48,26 @@ export function ArtifactPageContent({ artifacts, basePath, createHref, showDelet
             </svg>
             <input
               type="text"
-              placeholder="search"
+              placeholder="Search artifacts..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full rounded-full border border-white/20 bg-white/5 py-2 pl-9 pr-4 text-sm text-white placeholder-white/40 outline-none transition-colors focus:border-white/40"
+              className="w-full rounded-2xl py-2.5 pl-9 pr-4 text-sm outline-none transition-colors"
+              style={{
+                background: T.surface,
+                border: `1px solid ${T.border}`,
+                color: T.text,
+              }}
             />
           </div>
 
           {createHref && (
             <Link
               href={createHref}
-              className="text-sm text-white/60 transition-colors hover:text-white"
+              className="rounded-2xl px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90"
+              style={{
+                background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
+                color: T.surface,
+              }}
             >
               Create new artifact
             </Link>
@@ -65,14 +79,25 @@ export function ArtifactPageContent({ artifacts, basePath, createHref, showDelet
           {filtered.map((item) => (
             <div
               key={item.id}
-              className="flex gap-6 rounded-2xl border border-white/25 p-5 transition-colors hover:border-white/35"
+              className="flex gap-6 rounded-3xl p-5 transition-colors"
+              style={{
+                background: T.surface,
+                border: `1px solid ${T.border}`,
+                boxShadow: "0 6px 20px rgba(43,29,14,0.05)",
+              }}
             >
               {/* Image */}
-              <div className="h-40 w-40 shrink-0 overflow-hidden rounded-xl border border-white/15 bg-white/5">
+              <div
+                className="h-40 w-40 shrink-0 overflow-hidden rounded-2xl"
+                style={{
+                  border: `1px solid ${T.border}`,
+                  background: "rgba(200,155,69,0.08)",
+                }}
+              >
                 {item.image ? (
                   <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-white/20">
+                  <div className="flex h-full w-full items-center justify-center" style={{ color: T.mutedLight }}>
                     <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
@@ -89,11 +114,16 @@ export function ArtifactPageContent({ artifacts, basePath, createHref, showDelet
               <div className="flex flex-1 flex-col justify-between">
                 <div>
                   <div className="flex items-start justify-between">
-                    <h2 className="text-lg font-medium text-amber-400">{item.name}</h2>
+                    <h2 className="text-lg font-semibold" style={{ color: T.primaryDark }}>{item.name}</h2>
                     <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        className="rounded-full border border-white/30 px-3 py-0.5 text-xs text-white/70 transition-colors hover:border-white/50"
+                        className="rounded-full px-3 py-0.5 text-xs transition-colors"
+                        style={{
+                          border: `1px solid ${T.border}`,
+                          color: T.muted,
+                          background: "rgba(200,155,69,0.08)",
+                        }}
                       >
                         {item.status === "Published" ? "Unpublish" : "Publish"}
                       </button>
@@ -101,15 +131,15 @@ export function ArtifactPageContent({ artifacts, basePath, createHref, showDelet
                     </div>
                   </div>
 
-                  <p className="mt-1 text-sm text-white/50">ID: {item.id}</p>
+                  <p className="mt-1 text-sm" style={{ color: T.muted }}>ID: {item.id}</p>
 
                   <dl className="mt-3 space-y-1 text-sm">
-                    <Row label="Category" value={item.category} />
-                    <Row label="Era" value={item.era} />
-                    <Row label="Location" value={item.location} />
-                    <ActiveRow label="QR Linked" value={item.qrLinked} />
-                    <ActiveRow label="AR Model" value={item.arModelStatus} />
-                    <ActiveRow label="Audio" value={item.audio} />
+                    <Row label={ARTIFACT_LABELS.category!} value={item.category} />
+                    <Row label={ARTIFACT_LABELS.era!} value={item.era} />
+                    <Row label={ARTIFACT_LABELS.location!} value={item.location} />
+                    <ActiveRow label={ARTIFACT_LABELS.qrLinked!} value={item.qrLinked} />
+                    <ActiveRow label={ARTIFACT_LABELS.arModelStatus!} value={item.arModelStatus} />
+                    <ActiveRow label={ARTIFACT_LABELS.audio!} value={item.audio} />
                   </dl>
                 </div>
 
@@ -117,14 +147,23 @@ export function ArtifactPageContent({ artifacts, basePath, createHref, showDelet
                   {showDelete && (
                     <button
                       type="button"
-                      className="rounded-full border border-red-500/50 px-4 py-1 text-xs text-red-400 transition-colors hover:bg-red-500/10"
+                      className="rounded-full px-4 py-1 text-xs transition-colors"
+                      style={{
+                        border: `1px solid rgba(180,83,9,0.35)`,
+                        color: T.danger,
+                        background: "rgba(180,83,9,0.07)",
+                      }}
                     >
                       Delete
                     </button>
                   )}
                   <Link
                     href={`${basePath}/artifact/${item.id}`}
-                    className="rounded-full border border-white/25 px-4 py-1 text-xs text-white/60 transition-colors hover:border-white/50 hover:text-white"
+                    className="rounded-full px-4 py-1 text-xs font-medium transition-colors"
+                    style={{
+                      border: `1px solid ${T.border}`,
+                      color: T.muted,
+                    }}
                   >
                     View Detail
                   </Link>
@@ -134,7 +173,9 @@ export function ArtifactPageContent({ artifacts, basePath, createHref, showDelet
           ))}
 
           {filtered.length === 0 && (
-            <p className="py-12 text-center text-sm text-white/40">No artifacts found.</p>
+            <p className="py-12 text-center text-sm" style={{ color: T.muted }}>
+              No artifacts found.
+            </p>
           )}
         </div>
       </div>
@@ -145,8 +186,8 @@ export function ArtifactPageContent({ artifacts, basePath, createHref, showDelet
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex gap-2">
-      <dt className="text-white/50">{label}:</dt>
-      <dd>{value}</dd>
+      <dt style={{ color: T.mutedLight }}>{label}:</dt>
+      <dd style={{ color: T.text }}>{value}</dd>
     </div>
   );
 }
@@ -154,7 +195,7 @@ function Row({ label, value }: { label: string; value: string }) {
 function ActiveRow({ label, value }: { label: string; value: ActiveInactive }) {
   return (
     <div className="flex gap-2">
-      <dt className="text-white/50">{label}:</dt>
+      <dt style={{ color: T.mutedLight }}>{label}:</dt>
       <dd className={value === "Active" ? "text-emerald-400" : "text-red-400"}>{value}</dd>
     </div>
   );
@@ -162,9 +203,9 @@ function ActiveRow({ label, value }: { label: string; value: ActiveInactive }) {
 
 function StatusBadge({ status }: { status: Artifact["status"] }) {
   const styles = {
-    Published: "border-emerald-500/50 text-emerald-400",
-    Draft: "border-white/25 text-white/50",
-    Pending: "border-amber-500/50 text-amber-400",
+    Published: "border-[rgba(79,125,74,0.35)] bg-[rgba(79,125,74,0.1)] text-[#4F7D4A]",
+    Draft: "border-[rgba(154,111,31,0.28)] bg-[rgba(200,155,69,0.13)] text-[#9A6F1F]",
+    Pending: "border-[rgba(180,83,9,0.30)] bg-[rgba(180,83,9,0.08)] text-[#B45309]",
   };
   return (
     <span className={`rounded-full border px-3 py-0.5 text-xs ${styles[status]}`}>

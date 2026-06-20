@@ -1,4 +1,5 @@
 import type { VisitorTrend } from "@/types";
+import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 
 const CHART_HEIGHT = 280;
 const CHART_WIDTH = 520;
@@ -21,8 +22,17 @@ export function VisitorsTrendChart({ data }: { data: VisitorTrend[] }) {
     .join(" ");
 
   return (
-    <div className="flex h-full min-h-[360px] flex-col rounded-2xl border border-white/25 p-6">
-      <h2 className="text-lg font-medium">Visitors Trend</h2>
+    <div
+      className="flex h-full min-h-[360px] flex-col rounded-3xl p-6"
+      style={{
+        background: T.surface,
+        border: `1px solid ${T.border}`,
+        boxShadow: "0 6px 20px rgba(43,29,14,0.05)",
+      }}
+    >
+      <h2 className="text-base font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
+        Visitors Trend
+      </h2>
       <div className="mt-4 flex flex-1 items-center justify-center overflow-x-auto">
         <svg
           viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
@@ -34,20 +44,45 @@ export function VisitorsTrendChart({ data }: { data: VisitorTrend[] }) {
             const y = PADDING.top + innerHeight - (tick / Y_MAX) * innerHeight;
             return (
               <g key={tick}>
-                <line x1={PADDING.left} y1={y} x2={CHART_WIDTH - PADDING.right} y2={y} stroke="rgba(255,255,255,0.12)" />
-                <text x={PADDING.left - 10} y={y + 4} textAnchor="end" fill="rgba(255,255,255,0.5)" fontSize="11">
+                <line
+                  x1={PADDING.left}
+                  y1={y}
+                  x2={CHART_WIDTH - PADDING.right}
+                  y2={y}
+                  stroke={T.border}
+                />
+                <text
+                  x={PADDING.left - 10}
+                  y={y + 4}
+                  textAnchor="end"
+                  fill={T.mutedLight}
+                  fontSize="11"
+                >
                   {tick}
                 </text>
               </g>
             );
           })}
 
-          <path d={linePath} fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          <path
+            d={linePath}
+            fill="none"
+            stroke={T.primaryDark}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
 
           {points.map((point) => (
             <g key={point.day}>
-              <line x1={point.x - 10} y1={point.y} x2={point.x + 10} y2={point.y} stroke="white" strokeWidth="2" strokeLinecap="round" />
-              <text x={point.x} y={CHART_HEIGHT - 12} textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="12">
+              <circle cx={point.x} cy={point.y} r="4" fill={T.primary} />
+              <text
+                x={point.x}
+                y={CHART_HEIGHT - 12}
+                textAnchor="middle"
+                fill={T.mutedLight}
+                fontSize="12"
+              >
                 {point.day}
               </text>
             </g>

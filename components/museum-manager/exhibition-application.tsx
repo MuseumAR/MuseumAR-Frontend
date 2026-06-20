@@ -1,104 +1,69 @@
-import { PageHeader } from "@/components/dashboard/page-header";
+import { PageDescription } from "@/components/dashboard/page-header";
+import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { EXHIBITION_APPLICATION_LABELS } from "@/lib/field-labels";
 import type { ExhibitionApplication } from "@/types";
 import Link from "next/link";
 
-export function ExhibitionApplicationTable({
-  applications,
-}: {
-  applications: ExhibitionApplication[];
-}) {
+export function ExhibitionApplicationTable({ applications }: { applications: ExhibitionApplication[] }) {
   return (
-    <>
-      <PageHeader title="Exhibition Application" icon="exhibition_application" />
-      <div className="space-y-4 px-8 py-8">
+    <div className="px-8 pb-10">
+      <PageDescription>
+        Submitted exhibitions awaiting review
+      </PageDescription>
+      <div className="space-y-4">
         {applications.map((app) => (
-          <div
-            key={app.id}
-            className="flex gap-6 rounded-2xl border border-white/25 p-5 transition-colors hover:border-white/35"
-          >
-            {/* Image */}
-            <div className="h-36 w-48 shrink-0 overflow-hidden rounded-xl border border-white/15 bg-white/5">
+          <div key={app.id} className="flex gap-6 rounded-3xl p-5" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+            <div className="h-36 w-48 shrink-0 overflow-hidden rounded-2xl" style={{ border: `1px solid ${T.border}`, background: "rgba(200,155,69,0.08)" }}>
               {app.image ? (
                 <img src={app.image} alt={app.title} className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-white/20">
-                  <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1}
-                      d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
-                  </svg>
-                </div>
+                <div className="flex h-full w-full items-center justify-center" style={{ color: T.mutedLight }}>No image</div>
               )}
             </div>
 
-            {/* Info */}
             <div className="flex flex-1 flex-col justify-between">
               <div>
-                <div className="flex items-start justify-between">
-                  <div />
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      className="rounded-full border border-white/30 px-3 py-0.5 text-xs text-white/70 transition-colors hover:border-white/50"
-                    >
-                      {app.status === "Approved" ? "Unpublish" : "Publish"}
-                    </button>
-                    <StatusBadge status={app.status} />
-                  </div>
+                <div className="flex items-start justify-between gap-4">
+                  <h3 className="text-lg font-semibold" style={{ fontFamily: cinzel, color: T.primaryDark }}>{app.title}</h3>
+                  <StatusBadge status={app.status} />
                 </div>
 
-                <dl className="mt-2 space-y-1 text-sm">
-                  <Row label="Name" value={app.title} />
-                  <Row label="Exhibition Type" value={app.exhibitionType} />
-                  <Row
-                    label="Date start"
-                    value={`${app.dateStart} - Date end: ${app.dateEnd}`}
-                  />
-                  <Row
-                    label="Opening hours"
-                    value={`${app.openingHours} - Closing hours: ${app.closingHours}`}
-                  />
-                  <Row label="Contact Email" value={app.contactEmail} />
+                <dl className="mt-2 space-y-1 text-sm" style={{ color: T.muted }}>
+                  <Row label={EXHIBITION_APPLICATION_LABELS.exhibitionType!} value={app.exhibitionType} />
+                  <Row label={EXHIBITION_APPLICATION_LABELS.dateStart!} value={`${app.dateStart} - ${EXHIBITION_APPLICATION_LABELS.dateEnd}: ${app.dateEnd}`} />
+                  <Row label={EXHIBITION_APPLICATION_LABELS.openingHours!} value={`${app.openingHours} - ${EXHIBITION_APPLICATION_LABELS.closingHours}: ${app.closingHours}`} />
+                  <Row label={EXHIBITION_APPLICATION_LABELS.contactEmail!} value={app.contactEmail} />
                 </dl>
               </div>
 
               <div className="mt-4 flex justify-end">
-                <Link
-                  href={`/museum-manager/exhibition-application/${app.id}`}
-                  className="rounded-lg border border-white/30 px-5 py-1.5 text-xs text-white/70 transition-colors hover:border-white/50 hover:text-white"
-                >
-                  VIEW DETAIL
+                <Link href={`/museum-manager/exhibition-application/${app.id}`} className="rounded-xl px-4 py-1.5 text-xs font-medium" style={{ border: `1px solid ${T.border}`, color: T.muted }}>
+                  View Detail
                 </Link>
               </div>
             </div>
           </div>
         ))}
       </div>
-    </>
+    </div>
   );
 }
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex gap-1 text-sm">
-      <dt className="text-white/50">{label}:</dt>
-      <dd>{value}</dd>
+      <dt style={{ color: T.mutedLight }}>{label}:</dt>
+      <dd style={{ color: T.text }}>{value}</dd>
     </div>
   );
 }
 
 function StatusBadge({ status }: { status: ExhibitionApplication["status"] }) {
   const styles = {
-    Approved: "border-emerald-500/50 text-emerald-400",
-    Rejected: "border-red-500/50 text-red-400",
-    Pending: "border-amber-500/50 text-amber-400",
+    Approved: { border: "rgba(79,125,74,0.30)", bg: "rgba(79,125,74,0.10)", color: T.success },
+    Rejected: { border: "rgba(180,83,9,0.30)", bg: "rgba(180,83,9,0.10)", color: T.danger },
+    Pending: { border: "rgba(200,155,69,0.30)", bg: "rgba(200,155,69,0.12)", color: T.primaryDark },
   };
-  return (
-    <span className={`rounded-full border px-3 py-0.5 text-xs ${styles[status]}`}>
-      {status}
-    </span>
-  );
+  const s = styles[status];
+  return <span className="rounded-full border px-3 py-0.5 text-xs" style={{ borderColor: s.border, background: s.bg, color: s.color }}>{status}</span>;
 }

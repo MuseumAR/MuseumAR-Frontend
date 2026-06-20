@@ -1,0 +1,33 @@
+const SEGMENT_TITLES: Record<string, string> = {
+  overview: "Dashboard",
+  "museum-profile": "Museum Profile",
+  analytics: "Analytics",
+  "staff-management": "Staff Management",
+  artifact: "Artifacts",
+  "exhibition-application": "Exhibition Applications",
+  "ticket-application": "Ticket Applications",
+  exhibition: "Collections",
+  users: "Users",
+  "user-management": "User Management",
+  "activity-log": "Activity Log",
+  "museum-application": "Museum Applications",
+  "museum-management": "Museum Management",
+  create: "Create",
+  edit: "Edit",
+};
+
+export function getPageTitle(pathname: string): string {
+  const segments = pathname.split("/").filter(Boolean);
+  const last = segments[segments.length - 1];
+  const prev = segments[segments.length - 2];
+
+  if (last && SEGMENT_TITLES[last]) {
+    if (last === "create" || last === "edit") {
+      return `${SEGMENT_TITLES[prev] ?? "Page"} · ${SEGMENT_TITLES[last]}`;
+    }
+    return SEGMENT_TITLES[last];
+  }
+
+  if (/^ART-/.test(last ?? "")) return "Artifact Detail";
+  return "Dashboard";
+}
