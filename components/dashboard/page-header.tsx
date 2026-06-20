@@ -1,17 +1,9 @@
-import type { NavIcon as NavIconName } from "@/lib/roles";
-import { NavIcon } from "./nav-icons";
+import { dashboardTheme as T } from "@/lib/dashboard-theme";
 
-export function PageHeader({
-  title,
-  icon,
-}: {
-  title: string;
-  icon: NavIconName;
-}) {
+export function PageDescription({ children }: { children: React.ReactNode }) {
   return (
-    <header className="flex items-center gap-3 border-b border-white/20 px-8 py-6">
-      <NavIcon icon={icon} />
-      <h1 className="text-2xl font-medium tracking-wide">{title}</h1>
-    </header>
+    <p className="mb-6 text-sm" style={{ color: T.muted }}>
+      {children}
+    </p>
   );
 }

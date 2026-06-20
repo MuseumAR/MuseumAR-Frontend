@@ -1,4 +1,3 @@
-import { PageHeader } from "@/components/dashboard/page-header";
 import { StatCard } from "@/components/dashboard/stat-card";
 import {
   getLanguageUsage,
@@ -6,6 +5,7 @@ import {
   getPopularExhibits,
   getVisitorsTrend,
 } from "@/services/museum-manager.service";
+import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { LanguageUsageChart } from "./charts/language-usage-chart";
 import { PopularExhibitChart } from "./charts/popular-exhibit-chart";
 import { VisitorsTrendChart } from "./charts/visitors-trend-chart";
@@ -19,33 +19,55 @@ export async function MuseumManagerOverview() {
   ]);
 
   return (
-    <>
-      <PageHeader title="Overview" icon="overview" />
-    <div className="space-y-6 px-8 py-8">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total Visitor" value={stats.totalVisitor} />
-        <StatCard label="QR Scans Today" value={stats.qrScansToday} />
-        <StatCard label="Offline Downloads" value={stats.offlineDownloads} />
-        <StatCard label="Average Listening Time" value={stats.averageListeningTime} />
-      </div>
+    <div className="space-y-8 px-8 pb-10">
+      <section>
+        <div className="mb-5">
+          <p className="text-xs font-medium uppercase tracking-[0.22em]" style={{ color: T.mutedLight }}>
+            Museum Overview
+          </p>
+          <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
+            Visitor & Engagement
+          </h2>
+        </div>
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Total Visitors" value={stats.totalVisitor} icon="users" growth={14} watermark="column" />
+          <StatCard label="QR Scans Today" value={stats.qrScansToday} icon="qrCode" growth={9} watermark="map" />
+          <StatCard label="Offline Downloads" value={stats.offlineDownloads} icon="download" growth={6} watermark="scroll" />
+          <StatCard label="Avg. Listening Time" value={stats.averageListeningTime} icon="headphones" growth={3} watermark="vase" />
+        </div>
+      </section>
 
       <div className="flex justify-end">
         <button
           type="button"
-          className="rounded-full border border-white/25 px-5 py-2 text-sm text-white transition-colors hover:border-white/50"
+          className="rounded-2xl px-5 py-2.5 text-sm font-medium transition-colors"
+          style={{
+            background: T.surface,
+            border: `1px solid ${T.border}`,
+            color: T.muted,
+          }}
         >
           Export PDF
         </button>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-        <div className="space-y-6">
-          <PopularExhibitChart data={popularExhibits} />
-          <LanguageUsageChart data={languageUsage} />
+      <section>
+        <div className="mb-5">
+          <p className="text-xs font-medium uppercase tracking-[0.22em]" style={{ color: T.mutedLight }}>
+            Analytics
+          </p>
+          <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
+            Exhibition Insights
+          </h2>
         </div>
-        <VisitorsTrendChart data={visitorsTrend} />
-      </div>
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+          <div className="space-y-6">
+            <PopularExhibitChart data={popularExhibits} />
+            <LanguageUsageChart data={languageUsage} />
+          </div>
+          <VisitorsTrendChart data={visitorsTrend} />
+        </div>
+      </section>
     </div>
-    </>
   );
 }
