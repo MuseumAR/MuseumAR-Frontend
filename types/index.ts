@@ -46,6 +46,7 @@ export type ActiveInactive = "Active" | "Inactive";
 
 export type Artifact = {
   id: string;
+  exhibitId?: number;
   name: string;
   arModel: string;
   status: "Published" | "Draft" | "Pending";

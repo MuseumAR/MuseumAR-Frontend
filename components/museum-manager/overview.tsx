@@ -4,7 +4,7 @@ import {
   getMuseumManagerStats,
   getPopularExhibits,
   getVisitorsTrend,
-} from "@/services/museum-manager.service";
+} from "@/services/museum-manager";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { LanguageUsageChart } from "./charts/language-usage-chart";
 import { PopularExhibitChart } from "./charts/popular-exhibit-chart";

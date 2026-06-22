@@ -1,6 +1,6 @@
 import { StatCard } from "@/components/dashboard/stat-card";
 import { OverviewCharts } from "@/components/dashboard/overview-charts";
-import { getArtifactRows, getArtifactStats } from "@/services/artifact.service";
+import { getArtifactRows, getArtifactStats } from "@/services/content-manager";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { ArtifactTable } from "./artifact-table";
 
