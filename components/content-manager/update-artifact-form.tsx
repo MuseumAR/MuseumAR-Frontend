@@ -1,31 +1,96 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { DEFAULT_MUSEUM_ID } from "@/lib/constants";
 import type { Artifact } from "@/types";
+import {
+  updateExhibit,
+  uploadArAsset,
+  uploadExhibitAudio,
+  uploadExhibitImage,
+} from "@/services/content-manager";
 
 export function UpdateArtifactForm({ artifact }: { artifact: Artifact }) {
+  const router = useRouter();
   const imageRef = useRef<HTMLInputElement>(null);
   const arRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLInputElement>(null);
 
+  const [name, setName] = useState(artifact.name);
+  const [category, setCategory] = useState(artifact.category);
+  const [era, setEra] = useState(artifact.era);
+  const [location, setLocation] = useState(artifact.location);
+  const [description, setDescription] = useState(artifact.description);
   const [imagePreview, setImagePreview] = useState<string | null>(artifact.image);
-  const [arFileName, setArFileName] = useState<string | null>(null);
-  const [audioFileName, setAudioFileName] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [arFile, setArFile] = useState<File | null>(null);
+  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const exhibitId =
+    artifact.exhibitId ?? Number(artifact.id.replace(/^EX-/i, ""));
 
   function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) setImagePreview(URL.createObjectURL(file));
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
   }
 
   function handleAr(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) setArFileName(file.name);
+    if (file) setArFile(file);
   }
 
   function handleAudio(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) setAudioFileName(file.name);
+    if (file) setAudioFile(file);
+  }
+
+  async function handleSubmit() {
+    if (!exhibitId || Number.isNaN(exhibitId)) {
+      setError("Invalid exhibit id");
+      return;
+    }
+
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      await updateExhibit(exhibitId, {
+        museumId: DEFAULT_MUSEUM_ID,
+        exhibitCode: category !== "—" ? category : undefined,
+        status: artifact.status === "Published" ? "Published" : "Draft",
+        translations: [
+          {
+            exhibitId,
+            languageCode: "vi",
+            title: name,
+            description,
+          },
+        ],
+      });
+
+      if (imageFile) {
+        await uploadExhibitImage(exhibitId, imageFile, name);
+      }
+      if (audioFile) {
+        await uploadExhibitAudio(exhibitId, "vi", audioFile);
+      }
+      if (arFile) {
+        await uploadArAsset(exhibitId, "model", arFile);
+      }
+
+      router.push(`/content-manager/artifact/${artifact.id}`);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update artifact");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -37,11 +102,10 @@ export function UpdateArtifactForm({ artifact }: { artifact: Artifact }) {
         <span>←</span> Back to Art
       </Link>
 
-      <h1 className="mb-8 text-3xl font-semibold">Update new artifact</h1>
+      <h1 className="mb-8 text-3xl font-semibold">Update artifact</h1>
 
       <div className="rounded-2xl border border-white/25 p-8">
         <div className="flex gap-8">
-          {/* Left — upload zones */}
           <div className="flex w-44 shrink-0 flex-col gap-3">
             <button
               type="button"
@@ -65,7 +129,7 @@ export function UpdateArtifactForm({ artifact }: { artifact: Artifact }) {
               className="flex h-20 w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-white/30 bg-white/5 transition-colors hover:border-white/50"
             >
               <UploadIcon />
-              <p className="text-xs text-white/50">AR model</p>
+              <p className="text-xs text-white/50">{arFile?.name ?? "AR model"}</p>
             </button>
             <input ref={arRef} type="file" accept=".glb,.gltf" className="hidden" onChange={handleAr} />
 
@@ -75,46 +139,43 @@ export function UpdateArtifactForm({ artifact }: { artifact: Artifact }) {
               className="flex h-20 w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-white/30 bg-white/5 transition-colors hover:border-white/50"
             >
               <UploadIcon />
-              <p className="text-xs text-white/50">Audio</p>
+              <p className="text-xs text-white/50">{audioFile?.name ?? "Audio"}</p>
             </button>
             <input ref={audioRef} type="file" accept="audio/*" className="hidden" onChange={handleAudio} />
           </div>
 
-          {/* Right — form fields pre-filled */}
           <div className="flex-1 space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Artifact Name" defaultValue={artifact.name} />
-              <Field label="Category" defaultValue={artifact.category} />
+              <Field label="Artifact Name" value={name} onChange={setName} />
+              <Field label="Category" value={category} onChange={setCategory} />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Era" defaultValue={artifact.era} />
-              <Field label="Exhibition name" defaultValue="" placeholder="Exhibition name" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Location" defaultValue={artifact.location} />
-              <Field label="Tags" defaultValue="" placeholder="Tags" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FileDisplay label="AR Model" fileName={arFileName} />
-              <FileDisplay label="Audio" fileName={audioFileName} />
+              <Field label="Era" value={era} onChange={setEra} />
+              <Field label="Location" value={location} onChange={setLocation} />
             </div>
             <div>
               <label className="mb-1.5 block text-sm text-white/60">Description</label>
               <textarea
-                defaultValue={artifact.description}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
                 rows={4}
                 className="w-full resize-none rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-white/40"
               />
             </div>
+            {error && (
+              <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">{error}</p>
+            )}
           </div>
         </div>
 
         <div className="mt-6 flex justify-end">
           <button
             type="button"
-            className="rounded-lg border border-emerald-500 px-6 py-2 text-sm text-emerald-400 transition-colors hover:bg-emerald-500/10"
+            disabled={isSubmitting}
+            onClick={handleSubmit}
+            className="rounded-lg border border-emerald-500 px-6 py-2 text-sm text-emerald-400 transition-colors hover:bg-emerald-500/10 disabled:opacity-50"
           >
-            Update
+            {isSubmitting ? "Updating..." : "Update"}
           </button>
         </div>
       </div>
@@ -124,37 +185,22 @@ export function UpdateArtifactForm({ artifact }: { artifact: Artifact }) {
 
 function Field({
   label,
-  defaultValue,
-  placeholder,
+  value,
+  onChange,
 }: {
   label: string;
-  defaultValue: string;
-  placeholder?: string;
+  value: string;
+  onChange: (value: string) => void;
 }) {
   return (
     <div className="space-y-1.5">
       <label className="block text-sm text-white/60">{label}</label>
       <input
         type="text"
-        defaultValue={defaultValue}
-        placeholder={placeholder ?? label}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-white/40"
       />
-    </div>
-  );
-}
-
-function FileDisplay({ label, fileName }: { label: string; fileName: string | null }) {
-  return (
-    <div className="space-y-1.5">
-      <label className="block text-sm text-white/60">{label}</label>
-      <div className="flex w-full items-center rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-sm">
-        {fileName ? (
-          <span className="truncate text-white">{fileName}</span>
-        ) : (
-          <span className="text-white/30">No file chosen</span>
-        )}
-      </div>
     </div>
   );
 }
