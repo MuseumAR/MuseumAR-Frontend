@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Plus } from "lucide-react";
@@ -125,7 +126,24 @@ export function ExhibitionPanel({
           <p className="text-sm" style={{ color: T.muted }}>No exhibitions yet.</p>
         ) : (
           exhibitions.map((item) => (
-            <article key={item.id} className="rounded-3xl p-6" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+            <Link
+              key={item.id}
+              href={`/content-manager/exhibition/${item.id}`}
+              className="block rounded-3xl p-6 transition-colors hover:opacity-95"
+              style={{ background: T.surface, border: `1px solid ${T.border}` }}
+            >
+              {item.thumbnailUrl ? (
+                <div
+                  className="mb-4 h-32 overflow-hidden rounded-2xl"
+                  style={{ border: `1px solid ${T.border}` }}
+                >
+                  <img
+                    src={item.thumbnailUrl}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+              ) : null}
               <p className="text-xs" style={{ color: T.mutedLight }}>Exhibition #{item.id}</p>
               <div className="mt-3 space-y-2 text-sm" style={{ color: T.muted }}>
                 <div className="flex justify-between">
@@ -136,12 +154,15 @@ export function ExhibitionPanel({
                   <span>End</span>
                   <span style={{ color: T.text }}>{item.endDate?.slice(0, 10) ?? "—"}</span>
                 </div>
-                <div className="flex justify-between items-center">
+                <div className="flex items-center justify-between">
                   <span>Status</span>
                   <StatusBadge status={item.status} />
                 </div>
               </div>
-            </article>
+              <p className="mt-4 text-xs font-medium" style={{ color: T.primaryDark }}>
+                View details →
+              </p>
+            </Link>
           ))
         )}
       </div>
