@@ -31,5 +31,8 @@ export function getPageTitle(pathname: string): string {
   }
 
   if (/^ART-/.test(last ?? "")) return "Artifact Detail";
+  if (/^\d+$/.test(last ?? "") && segments.includes("exhibition")) {
+    return "Exhibition Detail";
+  }
   return "Dashboard";
 }

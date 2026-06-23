@@ -71,7 +71,7 @@ export async function ContentManagerOverview() {
       </section>
 
       <section>
-        <ExhibitTable data={rows} showCreate />
+        <ExhibitTable data={rows} showCreate={false} />
       </section>
     </div>
   );
