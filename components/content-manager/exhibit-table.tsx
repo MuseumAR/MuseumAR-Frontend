@@ -79,13 +79,11 @@ export function ExhibitTable({
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h3 className="text-lg font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-            Exhibits
-          </h3>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative w-full max-w-xs">
+        <h3 className="text-lg font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
+          Exhibits
+        </h3>
+        <div className="flex items-center gap-3">
+          <div className="relative w-64 min-w-[200px]">
             <Search
               className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2"
               style={{ color: T.mutedLight }}
@@ -109,7 +107,7 @@ export function ExhibitTable({
           {showCreate && (
             <Link
               href="/content-manager/artifact/create"
-              className="rounded-2xl px-4 py-2.5 text-sm font-medium"
+              className="shrink-0 whitespace-nowrap rounded-2xl px-4 py-2.5 text-sm font-medium"
               style={{
                 background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
                 color: T.surface,

@@ -117,6 +117,10 @@ export function getExhibitions(museumId: number) {
   return apiGet<ExhibitionDto[]>(`/api/content/museums/${museumId}/exhibitions`);
 }
 
+export function getExhibitionById(id: number) {
+  return apiGet<ExhibitionDto>(`/api/content/exhibitions/${id}`);
+}
+
 export function createExhibition(payload: CreateExhibitionDto) {
   return apiPost<ExhibitionDto>("/api/content/exhibitions", payload);
 }
