@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { DEFAULT_MUSEUM_ID } from "@/lib/constants";
+import { getDisplayError } from "@/lib/validation";
 import type { Artifact } from "@/types";
 import {
   updateExhibit,
@@ -12,7 +12,13 @@ import {
   uploadExhibitImage,
 } from "@/services/content-manager";
 
-export function UpdateArtifactForm({ artifact }: { artifact: Artifact }) {
+export function UpdateArtifactForm({
+  artifact,
+  museumId,
+}: {
+  artifact: Artifact;
+  museumId: number;
+}) {
   const router = useRouter();
   const imageRef = useRef<HTMLInputElement>(null);
   const arRef = useRef<HTMLInputElement>(null);
@@ -52,7 +58,7 @@ export function UpdateArtifactForm({ artifact }: { artifact: Artifact }) {
 
   async function handleSubmit() {
     if (!exhibitId || Number.isNaN(exhibitId)) {
-      setError("Invalid exhibit id");
+      setError("Unable to find this artifact.");
       return;
     }
 
@@ -61,7 +67,7 @@ export function UpdateArtifactForm({ artifact }: { artifact: Artifact }) {
 
     try {
       await updateExhibit(exhibitId, {
-        museumId: DEFAULT_MUSEUM_ID,
+        museumId,
         exhibitCode: category !== "—" ? category : undefined,
         status: artifact.status === "Published" ? "Published" : "Draft",
         translations: [
@@ -87,7 +93,7 @@ export function UpdateArtifactForm({ artifact }: { artifact: Artifact }) {
       router.push(`/content-manager/artifact/${artifact.id}`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update artifact");
+      setError(getDisplayError(err, "Unable to update artifact. Please try again."));
     } finally {
       setIsSubmitting(false);
     }

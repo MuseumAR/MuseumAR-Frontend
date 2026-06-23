@@ -1,7 +1,5 @@
-import { MuseumApplicationTable } from "@/components/admin/museum-application";
-import { getMuseumApplications } from "@/services/admin";
+import { redirect } from "next/navigation";
 
-export default async function MuseumApplicationPage() {
-  const applications = await getMuseumApplications();
-  return <MuseumApplicationTable applications={applications} />;
+export default function MuseumApplicationPage() {
+  redirect("/admin/museum-management");
 }

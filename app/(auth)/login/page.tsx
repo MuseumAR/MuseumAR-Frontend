@@ -1,11 +1,18 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { getHomePathForRole, login } from "@/services/auth";
+import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
+import { useAuth } from "@/context/auth-context";
+import { getHomePathForRole, login, loginWithGoogle } from "@/services/auth";
+import {
+  getDisplayError,
+  getFirstValidationError,
+  validateLogin,
+} from "@/lib/validation";
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -127,22 +134,52 @@ function Field({
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function LoginPage() {
   const router = useRouter();
+  const { isAuthenticated, isLoading, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isBusy = isSubmitting || isGoogleLoading;
+
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user) {
+      router.replace(getHomePathForRole(user.roleName));
+    }
+  }, [isAuthenticated, isLoading, router, user]);
+
+  async function handleGoogleCredential(idToken: string) {
+    setError(null);
+    setIsGoogleLoading(true);
+    try {
+      const result = await loginWithGoogle({ idToken });
+      router.push(getHomePathForRole(result.roleName));
+    } catch (err) {
+      setError(getDisplayError(err, "Google sign-in failed. Please try again."));
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+
+    const validation = validateLogin({ email, password });
+    if (!validation.valid) {
+      setError(getFirstValidationError(validation));
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const result = await login({ email, password });
+      const result = await login({ email: email.trim(), password });
       router.push(getHomePathForRole(result.roleName));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(getDisplayError(err, "Login failed. Please try again."));
     } finally {
       setIsSubmitting(false);
     }
@@ -431,7 +468,7 @@ export default function LoginPage() {
                 onChange={setEmail}
                 placeholder="Email address"
                 icon={Mail}
-                disabled={isSubmitting}
+                disabled={isBusy}
               />
               <Field
                 type={showPassword ? "text" : "password"}
@@ -440,7 +477,7 @@ export default function LoginPage() {
                 onChange={setPassword}
                 placeholder="Password"
                 icon={Lock}
-                disabled={isSubmitting}
+                disabled={isBusy}
                 suffix={
                   <button
                     type="button"
@@ -463,16 +500,16 @@ export default function LoginPage() {
 
               {/* Forgot */}
               <div className="flex justify-end">
-                <Link href="#" className="text-xs transition-colors hover:opacity-70" style={{ color: C.primary }}>
+                <Link href="/forgot-password" className="text-xs transition-colors hover:opacity-70" style={{ color: C.primary }}>
                   Forgot Password?
                 </Link>
               </div>
 
               {/* Sign In */}
-              <motion.div whileHover={{ scale: isSubmitting ? 1 : 1.015 }} whileTap={{ scale: isSubmitting ? 1 : 0.975 }} className="mt-2">
+              <motion.div whileHover={{ scale: isBusy ? 1 : 1.015 }} whileTap={{ scale: isBusy ? 1 : 0.975 }} className="mt-2">
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isBusy}
                   className="flex w-full items-center justify-center gap-2.5 rounded-2xl py-3.5 text-sm font-semibold tracking-wide transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                   style={{
                     background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
@@ -482,13 +519,24 @@ export default function LoginPage() {
                     letterSpacing: "0.12em",
                   }}
                 >
-                  {isSubmitting ? "Signing In..." : "Sign In"}
+                  {isSubmitting ? "Signing In..." : isGoogleLoading ? "Signing in with Google..." : "Sign In"}
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </motion.div>
             </form>
 
-            {/* Divider */}
+            <div className="my-5">
+              <OrnamentalRule />
+              <p className="mt-3 text-center text-[11px] uppercase tracking-[0.2em]" style={{ color: C.mutedLight }}>
+                or continue with
+              </p>
+            </div>
+            <GoogleSignInButton
+              onCredential={handleGoogleCredential}
+              disabled={isBusy}
+              loading={isGoogleLoading}
+            />
+
             <div className="my-5">
               <OrnamentalRule />
             </div>

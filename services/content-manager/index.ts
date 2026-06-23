@@ -1,5 +1,10 @@
+export * from "./museum-context";
+export * from "./exhibit.service";
 export * from "./artifact.service";
 export * from "./exhibition.service";
+export * from "./content-version.service";
+export * from "./offline-package.service";
+export * from "./maps-routes.service";
 export {
   createContentVersion,
   createMuseumMap,

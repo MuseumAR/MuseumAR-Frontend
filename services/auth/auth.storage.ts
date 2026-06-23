@@ -3,6 +3,14 @@ import type { LoginResponseDto } from "./auth.types";
 const ACCESS_TOKEN_KEY = "museumar_access_token";
 const AUTH_USER_KEY = "museumar_auth_user";
 
+export const AUTH_CHANGED_EVENT = "museumar-auth-changed";
+
+function notifyAuthChanged(): void {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
+  }
+}
+
 export type StoredAuthUser = Pick<
   LoginResponseDto,
   "userId" | "fullName" | "email" | "roleName"
@@ -19,6 +27,7 @@ export function saveAuthSession(data: LoginResponseDto): void {
       roleName: data.roleName,
     } satisfies StoredAuthUser),
   );
+  notifyAuthChanged();
 }
 
 export function getAccessToken(): string | null {
@@ -39,4 +48,5 @@ export function getAuthUser(): StoredAuthUser | null {
 export function clearAuthSession(): void {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(AUTH_USER_KEY);
+  notifyAuthChanged();
 }

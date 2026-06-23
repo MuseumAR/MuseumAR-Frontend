@@ -1,6 +1,5 @@
 import type { ExhibitDto, CreateExhibitDto } from "@/types/api";
-import type { Artifact, ArtifactRow, ArtifactStats } from "@/types";
-import { DEFAULT_MUSEUM_ID } from "@/lib/constants";
+import type { Artifact } from "@/types";
 import { safeFetch } from "@/lib/fetch-safe";
 import {
   createExhibit,
@@ -11,6 +10,7 @@ import {
   unpublishExhibit,
   updateExhibit,
 } from "./content-api.service";
+import { resolveActiveMuseumId } from "./museum-context";
 
 function getPrimaryTranslation(exhibit: ExhibitDto) {
   return exhibit.translations[0];
@@ -42,77 +42,41 @@ function mapExhibitToArtifact(exhibit: ExhibitDto): Artifact {
   };
 }
 
-function mapExhibitToRow(exhibit: ExhibitDto, index: number): ArtifactRow {
-  const translation = getPrimaryTranslation(exhibit);
-  const base = 1000 * (10 - index);
-
-  return {
-    id: exhibit.id,
-    name: translation?.title ?? `Exhibit ${exhibit.id}`,
-    category: exhibit.categoryId ? `Category ${exhibit.categoryId}` : "—",
-    era: "—",
-    status:
-      exhibit.status === "Published"
-        ? "Published"
-        : exhibit.status === "Draft"
-          ? "Draft"
-          : "Archived",
-    image: exhibit.thumbnailUrl ?? null,
-    view: base,
-    audioPlay: base,
-    qrScan: base,
-    arUsage: base,
-  };
+async function requireMuseumId(museumId?: number): Promise<number | null> {
+  if (museumId != null) return museumId;
+  return resolveActiveMuseumId();
 }
 
-export async function getArtifactById(id: string): Promise<Artifact | null> {
+export async function getArtifactById(id: string, museumId?: number): Promise<Artifact | null> {
   const numericId = Number(id.replace(/^EX-/i, ""));
-  if (Number.isNaN(numericId)) {
-    const exhibits = await getExhibits(DEFAULT_MUSEUM_ID);
+  if (!Number.isNaN(numericId)) {
+    try {
+      const exhibit = await fetchExhibitById(numericId);
+      return mapExhibitToArtifact(exhibit);
+    } catch {
+      return null;
+    }
+  }
+
+  const mid = await requireMuseumId(museumId);
+  if (mid == null) return null;
+
+  return safeFetch(async () => {
+    const exhibits = await getExhibits(mid);
     const exhibit = exhibits.find(
       (item) => item.exhibitCode === id || String(item.id) === id,
     );
     return exhibit ? mapExhibitToArtifact(exhibit) : null;
-  }
-
-  try {
-    const exhibit = await fetchExhibitById(numericId);
-    return mapExhibitToArtifact(exhibit);
-  } catch {
-    return null;
-  }
+  }, null);
 }
 
-export async function getArtifacts(museumId = DEFAULT_MUSEUM_ID): Promise<Artifact[]> {
+export async function getArtifacts(museumId?: number): Promise<Artifact[]> {
   return safeFetch(async () => {
-    const exhibits = await getExhibits(museumId);
+    const id = await requireMuseumId(museumId);
+    if (id == null) return [];
+    const exhibits = await getExhibits(id);
     return exhibits.map(mapExhibitToArtifact);
   }, []);
-}
-
-export async function getArtifactRows(museumId = DEFAULT_MUSEUM_ID): Promise<ArtifactRow[]> {
-  return safeFetch(async () => {
-    const exhibits = await getExhibits(museumId);
-    return exhibits.map(mapExhibitToRow);
-  }, []);
-}
-
-export async function getArtifactStats(museumId = DEFAULT_MUSEUM_ID): Promise<ArtifactStats> {
-  return safeFetch(async () => {
-    const exhibits = await getExhibits(museumId);
-
-    return {
-      arModelsAvailable: exhibits.filter((item) => item.arOverlayUrl).length,
-      totalArtifact: exhibits.length,
-      visitorsScannedToday: 0,
-      qrScansToday: exhibits.filter((item) => item.qrCodeData).length,
-    };
-  }, {
-    arModelsAvailable: 0,
-    totalArtifact: 0,
-    visitorsScannedToday: 0,
-    qrScansToday: 0,
-  });
 }
 
 export {

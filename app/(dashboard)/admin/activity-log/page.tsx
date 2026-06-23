@@ -1,7 +1,5 @@
-import { ActivityLogTable } from "@/components/admin/activity-log";
-import { getActivityLogs } from "@/services/admin";
+import { redirect } from "next/navigation";
 
-export default async function ActivityLogPage() {
-  const logs = await getActivityLogs();
-  return <ActivityLogTable logs={logs} />;
+export default function ActivityLogPage() {
+  redirect("/admin/museum-management");
 }

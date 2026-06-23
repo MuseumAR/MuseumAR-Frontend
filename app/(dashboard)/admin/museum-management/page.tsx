@@ -1,7 +1,7 @@
-import { MuseumManagementTable } from "@/components/admin/museum-management";
-import { getMuseums } from "@/services/admin";
+import { MuseumManagementPanel } from "@/components/admin/museum-management";
+import { getMuseumList } from "@/services/admin";
 
 export default async function MuseumManagementPage() {
-  const museums = await getMuseums();
-  return <MuseumManagementTable museums={museums} />;
+  const museums = await getMuseumList();
+  return <MuseumManagementPanel museums={museums} />;
 }

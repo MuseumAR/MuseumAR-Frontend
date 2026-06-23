@@ -1,11 +1,13 @@
 "use client";
 
 import { createContext, useContext, useMemo, type ReactNode } from "react";
-import type { Role } from "@/lib/roles";
+import { useAuth } from "@/context/auth-context";
+import type { DashboardRole } from "@/lib/roles";
 
 type RoleContextValue = {
-  role: Role;
+  role: DashboardRole;
   userName: string;
+  email: string;
 };
 
 const RoleContext = createContext<RoleContextValue | null>(null);
@@ -14,15 +16,18 @@ export function RoleProvider({
   role,
   children,
 }: {
-  role: Role;
+  role: DashboardRole;
   children: ReactNode;
 }) {
+  const { user } = useAuth();
+
   const value = useMemo(
     () => ({
       role,
-      userName: "Quang",
+      userName: user?.fullName ?? "User",
+      email: user?.email ?? "",
     }),
-    [role],
+    [role, user],
   );
 
   return <RoleContext.Provider value={value}>{children}</RoleContext.Provider>;
