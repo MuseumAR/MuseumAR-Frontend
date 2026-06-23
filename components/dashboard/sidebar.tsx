@@ -2,24 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Settings } from "lucide-react";
+import { Home, LogOut } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
 import { useRole } from "@/context/role-context";
-import { getNavForRole, ROLE_BASE_PATH, ROLE_LABELS, type Role } from "@/lib/roles";
+import {
+  getNavForRole,
+  ROLE_LABELS,
+  type DashboardRole,
+} from "@/lib/roles";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { NavIcon } from "./nav-icons";
 
-const DEMO_ROLES: Role[] = [
-  "museum_manager",
-  "content_manager",
-  "admin",
-  "analyst",
-];
-
 export const SIDEBAR_WIDTH = 280;
 
-export function Sidebar() {
+export function Sidebar({ role }: { role: DashboardRole }) {
   const pathname = usePathname();
-  const { role, userName } = useRole();
+  const { userName } = useRole();
+  const { logout } = useAuth();
   const navItems = getNavForRole(role);
 
   return (
@@ -31,7 +30,6 @@ export function Sidebar() {
         borderRight: `1px solid ${T.border}`,
       }}
     >
-      {/* Logo */}
       <div className="px-6 py-7" style={{ borderBottom: `1px solid ${T.border}` }}>
         <Link href="/" className="flex items-center gap-3">
           <div
@@ -53,13 +51,12 @@ export function Sidebar() {
               MUSEUM<span style={{ color: T.primary }}>AR</span>
             </p>
             <p className="text-[10px] uppercase tracking-widest" style={{ color: T.mutedLight }}>
-              Management
+              {ROLE_LABELS[role]}
             </p>
           </div>
         </Link>
       </div>
 
-      {/* Navigation */}
       <nav className="flex-1 space-y-1 overflow-y-auto px-4 py-5">
         <p
           className="mb-3 px-3 text-[10px] font-medium uppercase tracking-[0.22em]"
@@ -100,10 +97,9 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* User profile card */}
       <div className="p-4" style={{ borderTop: `1px solid ${T.border}` }}>
         <div
-          className="mb-3 rounded-2xl p-4"
+          className="rounded-2xl p-4"
           style={{
             background: T.surface,
             border: `1px solid ${T.border}`,
@@ -129,43 +125,35 @@ export function Sidebar() {
                 {ROLE_LABELS[role]}
               </p>
             </div>
+          </div>
+
+          <div className="mt-3 flex gap-2">
+            <Link
+              href="/"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs transition-colors"
+              style={{
+                background: "rgba(200,155,69,0.08)",
+                color: T.muted,
+                border: `1px solid ${T.border}`,
+              }}
+            >
+              <Home className="h-3.5 w-3.5" />
+              Home
+            </Link>
             <button
               type="button"
-              className="rounded-lg p-1.5 transition-colors"
-              style={{ color: T.mutedLight }}
-              aria-label="Settings"
+              onClick={() => logout()}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs transition-colors"
+              style={{
+                background: "rgba(139,58,58,0.06)",
+                color: "#8B3A3A",
+                border: "1px solid rgba(139,58,58,0.12)",
+              }}
             >
-              <Settings className="h-4 w-4" />
+              <LogOut className="h-3.5 w-3.5" />
+              Log out
             </button>
           </div>
-        </div>
-
-        <p className="mb-2 px-1 text-[10px] uppercase tracking-widest" style={{ color: T.mutedLight }}>
-          Switch role (demo)
-        </p>
-        <div className="space-y-1">
-          {DEMO_ROLES.filter((r) => r !== role).map((r) => (
-            <Link
-              key={r}
-              href={
-                r === "admin"
-                  ? `${ROLE_BASE_PATH[r]}/user-management`
-                  : `${ROLE_BASE_PATH[r]}/overview`
-              }
-              className="block rounded-lg px-2 py-1.5 text-xs transition-colors"
-              style={{ color: T.muted }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "rgba(200,155,69,0.08)";
-                (e.currentTarget as HTMLElement).style.color = T.text;
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLElement).style.background = "transparent";
-                (e.currentTarget as HTMLElement).style.color = T.muted;
-              }}
-            >
-              → {ROLE_LABELS[r]}
-            </Link>
-          ))}
         </div>
       </div>
     </aside>

@@ -1,12 +1,12 @@
-import type { Role } from "@/lib/roles";
-import { DashboardShell } from "./dashboard-shell";
+import type { DashboardRole } from "@/lib/roles";
+import { ProtectedRoleLayout } from "./protected-role-layout";
 
 export function RoleLayout({
   role,
   children,
 }: {
-  role: Role;
+  role: DashboardRole;
   children: React.ReactNode;
 }) {
-  return <DashboardShell role={role}>{children}</DashboardShell>;
+  return <ProtectedRoleLayout role={role}>{children}</ProtectedRoleLayout>;
 }

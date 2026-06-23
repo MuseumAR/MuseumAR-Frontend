@@ -1,14 +1,5 @@
-import { ExhibitionApplicationDetail } from "@/components/museum-manager/exhibition-application-detail";
-import { getExhibitionApplicationById } from "@/services/museum-manager";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 
-export default async function ExhibitionApplicationDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const application = await getExhibitionApplicationById(id);
-  if (!application) notFound();
-  return <ExhibitionApplicationDetail application={application} />;
+export default function ExhibitionApplicationDetailPage() {
+  redirect("/museum-manager/overview");
 }
