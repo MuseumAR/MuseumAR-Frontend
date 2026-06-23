@@ -1,7 +1,7 @@
 import type { AnalyticsMetric } from "@/types";
-import { DEFAULT_MUSEUM_ID } from "@/lib/constants";
 import { safeFetch } from "@/lib/fetch-safe";
 import { getMuseumDashboard } from "@/services/museum-manager/dashboard-api.service";
+import { resolveActiveMuseumId } from "@/services/museum-manager/museum.service";
 
 const EMPTY_METRICS: AnalyticsMetric[] = [
   { label: "Total QR scans", value: "0", change: "—" },
@@ -11,10 +11,13 @@ const EMPTY_METRICS: AnalyticsMetric[] = [
 ];
 
 export async function getAnalyticsMetrics(
-  museumId = DEFAULT_MUSEUM_ID,
+  museumId?: number,
 ): Promise<AnalyticsMetric[]> {
   return safeFetch(async () => {
-    const dashboard = await getMuseumDashboard(museumId);
+    const id = museumId ?? (await resolveActiveMuseumId());
+    if (id == null) return EMPTY_METRICS;
+
+    const dashboard = await getMuseumDashboard(id);
     return [
       {
         label: "Total QR scans",

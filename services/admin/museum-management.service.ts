@@ -1,25 +1,11 @@
-import type { Museum } from "@/types";
-import type { CreateMuseumDto, MuseumDto } from "@/types/api";
 import { safeFetch } from "@/lib/fetch-safe";
-import { createMuseum, getMuseums as fetchMuseums } from "./admin-api.service";
-function mapMuseumDto(dto: MuseumDto): Museum {
-  return {
-    id: dto.id,
-    name: dto.name,
-    location: dto.city ?? dto.address ?? "—",
-    manager: "—",
-    status: dto.status === "Inactive" ? "Inactive" : "Active",
-  };
-}
+import { repairMuseumText } from "@/lib/repair-text";
+import type { MuseumDto } from "@/types/api";
+import { getMuseums as fetchMuseums } from "./admin-api.service";
 
-export async function getMuseums(): Promise<Museum[]> {
+export async function getMuseumList(): Promise<MuseumDto[]> {
   return safeFetch(async () => {
     const museums = await fetchMuseums();
-    return museums.map(mapMuseumDto);
+    return museums.map(repairMuseumText);
   }, []);
-}
-
-export async function createMuseumEntry(payload: CreateMuseumDto) {
-  const museum = await createMuseum(payload);
-  return mapMuseumDto(museum);
 }

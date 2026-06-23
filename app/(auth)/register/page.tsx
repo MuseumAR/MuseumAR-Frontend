@@ -6,6 +6,11 @@ import { motion } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, User, Check } from "lucide-react";
 import Link from "next/link";
 import { register } from "@/services/auth";
+import {
+  getDisplayError,
+  getFirstValidationError,
+  validateRegister,
+} from "@/lib/validation";
 
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
@@ -146,17 +151,27 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
+    const validation = validateRegister({
+      fullName,
+      email,
+      password,
+      confirmPassword,
+    });
+    if (!validation.valid) {
+      setError(getFirstValidationError(validation));
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await register({ fullName, email, password });
+      await register({
+        fullName: fullName.trim(),
+        email: email.trim(),
+        password,
+      });
       router.push("/login");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+      setError(getDisplayError(err, "Registration failed. Please try again."));
     } finally {
       setIsSubmitting(false);
     }

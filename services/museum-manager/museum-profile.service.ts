@@ -1,25 +1,12 @@
 import type { MuseumProfile } from "@/types";
-import { DEFAULT_MUSEUM_ID } from "@/lib/constants";
 import { safeFetch } from "@/lib/fetch-safe";
-import { getMuseums as fetchMuseums } from "@/services/admin/admin-api.service";
+import { getManagedMuseums } from "./museum.service";
 
-const EMPTY_PROFILE: MuseumProfile = {
-  name: "—",
-  address: "—",
-  email: "—",
-  phone: "—",
-  openingHours: "—",
-  closingHours: "—",
-  image: null,
-};
-
-export async function getMuseumProfile(
-  museumId = DEFAULT_MUSEUM_ID,
-): Promise<MuseumProfile> {
+export async function getMuseumProfile(): Promise<MuseumProfile | null> {
   return safeFetch(async () => {
-    const museums = await fetchMuseums();
-    const museum = museums.find((item) => item.id === museumId) ?? museums[0];
-    if (!museum) return EMPTY_PROFILE;
+    const museums = await getManagedMuseums();
+    const museum = museums[0];
+    if (!museum) return null;
 
     return {
       name: museum.name,
@@ -30,5 +17,5 @@ export async function getMuseumProfile(
       closingHours: "—",
       image: museum.thumbnailUrl ?? null,
     };
-  }, EMPTY_PROFILE);
+  }, null);
 }

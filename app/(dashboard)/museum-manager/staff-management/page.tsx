@@ -1,7 +1,5 @@
-import { StaffManagementTable } from "@/components/museum-manager/staff-management";
-import { getStaff } from "@/services/museum-manager";
+import { redirect } from "next/navigation";
 
-export default async function StaffManagementPage() {
-  const staff = await getStaff();
-  return <StaffManagementTable staff={staff} />;
+export default function StaffManagementPage() {
+  redirect("/museum-manager/overview");
 }

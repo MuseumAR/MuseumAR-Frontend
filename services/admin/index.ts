@@ -7,6 +7,5 @@ export {
   updateSystemConfig,
 } from "./admin-api.service";
 export * from "./museum-management.service";
-export * from "./user.service";
-export * from "./activity-log.service";
-export * from "./museum-application.service";
+export * from "./ticket-type.service";
+export * from "./system-config.service";

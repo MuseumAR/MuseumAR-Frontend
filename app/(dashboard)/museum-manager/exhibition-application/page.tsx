@@ -1,7 +1,5 @@
-import { ExhibitionApplicationTable } from "@/components/museum-manager/exhibition-application";
-import { getExhibitionApplications } from "@/services/museum-manager";
+import { redirect } from "next/navigation";
 
-export default async function ExhibitionApplicationPage() {
-  const applications = await getExhibitionApplications();
-  return <ExhibitionApplicationTable applications={applications} />;
+export default function ExhibitionApplicationPage() {
+  redirect("/museum-manager/overview");
 }

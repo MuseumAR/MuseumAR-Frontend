@@ -1,13 +1,14 @@
 import {
-  Activity,
   BarChart3,
   Building2,
-  ClipboardCheck,
+  Download,
+  GitBranch,
   Landmark,
-  LayoutDashboard,
   Layers,
+  LayoutDashboard,
+  Map,
+  Settings,
   Ticket,
-  Users,
 } from "lucide-react";
 import type { NavIcon } from "@/lib/roles";
 import { dashboardTheme as T } from "@/lib/dashboard-theme";
@@ -25,24 +26,23 @@ export function NavIcon({ icon, active }: { icon: NavIcon; active?: boolean }) {
       return <Landmark {...props} />;
     case "analytics":
       return <BarChart3 {...props} />;
-    case "staff":
-    case "users":
-    case "user_management":
-      return <Users {...props} />;
     case "artifact":
       return <Layers {...props} />;
     case "exhibition":
       return <Building2 {...props} />;
-    case "exhibition_application":
-      return <ClipboardCheck {...props} />;
+    case "content_versions":
+      return <GitBranch {...props} />;
+    case "offline_packages":
+      return <Download {...props} />;
+    case "maps_routes":
+      return <Map {...props} />;
     case "ticket_application":
+    case "ticket_types":
       return <Ticket {...props} />;
-    case "activity_log":
-      return <Activity {...props} />;
-    case "museum_application":
-      return <ClipboardCheck {...props} />;
     case "museum_management":
       return <Building2 {...props} />;
+    case "system_config":
+      return <Settings {...props} />;
     default:
       return <LayoutDashboard {...props} />;
   }
