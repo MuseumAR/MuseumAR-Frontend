@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display, Cinzel } from "next/font/google";
+import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";
 
 const inter = Inter({
@@ -31,8 +32,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`h-full antialiased ${inter.variable} ${playfair.variable} ${cinzel.variable}`}>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+    <html lang="vi" className={`h-full antialiased ${inter.variable} ${playfair.variable} ${cinzel.variable}`}>
+      <body className="min-h-full flex flex-col font-sans">
+        <AppProviders>{children}</AppProviders>
+      </body>
     </html>
   );
 }

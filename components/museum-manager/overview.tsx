@@ -1,9 +1,11 @@
 import { StatCard } from "@/components/dashboard/stat-card";
+import { NoMuseumEmptyState } from "@/components/museum-manager/no-museum-empty-state";
 import {
   getLanguageUsage,
   getMuseumManagerStats,
   getPopularExhibits,
   getVisitorsTrend,
+  resolveActiveMuseumId,
 } from "@/services/museum-manager";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { LanguageUsageChart } from "./charts/language-usage-chart";
@@ -11,11 +13,16 @@ import { PopularExhibitChart } from "./charts/popular-exhibit-chart";
 import { VisitorsTrendChart } from "./charts/visitors-trend-chart";
 
 export async function MuseumManagerOverview() {
+  const museumId = await resolveActiveMuseumId();
+  if (museumId == null) {
+    return <NoMuseumEmptyState />;
+  }
+
   const [stats, popularExhibits, languageUsage, visitorsTrend] = await Promise.all([
-    getMuseumManagerStats(),
-    getPopularExhibits(),
-    getLanguageUsage(),
-    getVisitorsTrend(),
+    getMuseumManagerStats(museumId),
+    getPopularExhibits(museumId),
+    getLanguageUsage(museumId),
+    getVisitorsTrend(museumId),
   ]);
 
   return (
@@ -30,10 +37,10 @@ export async function MuseumManagerOverview() {
           </h2>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Total Visitors" value={stats.totalVisitor} icon="users" growth={14} watermark="column" />
-          <StatCard label="QR Scans Today" value={stats.qrScansToday} icon="qrCode" growth={9} watermark="map" />
-          <StatCard label="Offline Downloads" value={stats.offlineDownloads} icon="download" growth={6} watermark="scroll" />
-          <StatCard label="Avg. Listening Time" value={stats.averageListeningTime} icon="headphones" growth={3} watermark="vase" />
+          <StatCard label="Total Visitors" value={stats.totalVisitor} icon="users" watermark="column" />
+          <StatCard label="QR Scans Today" value={stats.qrScansToday} icon="qrCode" watermark="map" />
+          <StatCard label="Offline Downloads" value={stats.offlineDownloads} icon="download" watermark="scroll" />
+          <StatCard label="Avg. Listening Time" value={stats.averageListeningTime} icon="headphones" watermark="vase" />
         </div>
       </section>
 

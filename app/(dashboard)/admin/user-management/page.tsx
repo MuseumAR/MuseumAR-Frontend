@@ -1,7 +1,5 @@
-import { UserManagementTable } from "@/components/admin/user-management-table";
-import { getUsers } from "@/services/admin";
+import { redirect } from "next/navigation";
 
-export default async function UserManagementPage() {
-  const users = await getUsers();
-  return <UserManagementTable initialUsers={users} />;
+export default function UserManagementPage() {
+  redirect("/admin/museum-management");
 }

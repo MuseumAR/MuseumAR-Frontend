@@ -7,5 +7,5 @@ export default function ContentManagerLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <RoleLayout role="content_manager">{children}</RoleLayout>;
+  return <RoleLayout role="ContentManager">{children}</RoleLayout>;
 }

@@ -7,5 +7,5 @@ export default function MuseumManagerLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <RoleLayout role="museum_manager">{children}</RoleLayout>;
+  return <RoleLayout role="MuseumManager">{children}</RoleLayout>;
 }

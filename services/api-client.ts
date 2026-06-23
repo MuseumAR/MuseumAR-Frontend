@@ -1,11 +1,12 @@
 import { getAccessToken } from "@/services/auth/auth.storage";
+import { AppError } from "@/lib/validation";
 import type { ApiResponse } from "@/types/api";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export function getApiUrl(path: string) {
   if (!API_URL) {
-    throw new Error("NEXT_PUBLIC_API_URL is not configured");
+    throw new AppError("NEXT_PUBLIC_API_URL is not configured");
   }
 
   return `${API_URL}${path}`;
@@ -21,7 +22,10 @@ type RequestOptions = {
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = "GET", body, accessToken, headers = {} } = options;
 
-  const requestHeaders: Record<string, string> = { ...headers };
+  const requestHeaders: Record<string, string> = {
+    Accept: "application/json; charset=utf-8",
+    ...headers,
+  };
 
   if (accessToken) {
     requestHeaders.Authorization = `Bearer ${accessToken}`;
@@ -49,11 +53,11 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   try {
     json = text ? (JSON.parse(text) as ApiResponse<T>) : null;
   } catch {
-    throw new Error(text || "Request failed");
+    throw new AppError(text || "Request failed");
   }
 
   if (!json || json.statusCode !== 200) {
-    throw new Error(json?.message || text || "Request failed");
+    throw new AppError(json?.message || text || "Request failed", json?.statusCode);
   }
 
   return json.data;
@@ -69,7 +73,7 @@ export function apiGet<T>(path: string) {
 
 export function apiGetAuth<T>(path: string, accessToken?: string | null) {
   const token = withAuth(accessToken);
-  if (!token) throw new Error("Not authenticated");
+  if (!token) throw new AppError("Not authenticated");
   return request<T>(path, { accessToken: token });
 }
 
@@ -83,7 +87,7 @@ export function apiPostAuth<T>(
   accessToken?: string | null,
 ) {
   const token = withAuth(accessToken);
-  if (!token) throw new Error("Not authenticated");
+  if (!token) throw new AppError("Not authenticated");
   return request<T>(path, { method: "POST", body, accessToken: token });
 }
 
@@ -93,13 +97,13 @@ export function apiPutAuth<T>(
   accessToken?: string | null,
 ) {
   const token = withAuth(accessToken);
-  if (!token) throw new Error("Not authenticated");
+  if (!token) throw new AppError("Not authenticated");
   return request<T>(path, { method: "PUT", body, accessToken: token });
 }
 
 export function apiDeleteAuth<T>(path: string, accessToken?: string | null) {
   const token = withAuth(accessToken);
-  if (!token) throw new Error("Not authenticated");
+  if (!token) throw new AppError("Not authenticated");
   return request<T>(path, { method: "DELETE", accessToken: token });
 }
 
@@ -109,7 +113,7 @@ export function apiPostFormAuth<T>(
   accessToken?: string | null,
 ) {
   const token = withAuth(accessToken);
-  if (!token) throw new Error("Not authenticated");
+  if (!token) throw new AppError("Not authenticated");
   return request<T>(path, {
     method: "POST",
     body: formData,
