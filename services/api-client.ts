@@ -47,17 +47,15 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
           : JSON.stringify(body),
   });
 
-  const text = await res.text();
-  let json: ApiResponse<T> | null = null;
-
+  let json: ApiResponse<T>;
   try {
-    json = text ? (JSON.parse(text) as ApiResponse<T>) : null;
+    json = (await res.json()) as ApiResponse<T>;
   } catch {
-    throw new AppError(text || "Request failed");
+    throw new AppError("Request failed", res.status);
   }
 
-  if (!json || json.statusCode !== 200) {
-    throw new AppError(json?.message || text || "Request failed", json?.statusCode);
+  if (json.statusCode !== 200) {
+    throw new AppError(json.message || "Request failed", json.statusCode);
   }
 
   return json.data;
