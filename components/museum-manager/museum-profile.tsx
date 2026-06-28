@@ -1,4 +1,3 @@
-import { PageDescription } from "@/components/dashboard/page-header";
 import { NoMuseumEmptyState } from "@/components/museum-manager/no-museum-empty-state";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { MUSEUM_PROFILE_LABELS } from "@/lib/field-labels";
@@ -9,7 +8,6 @@ export function MuseumProfileView({ profile }: { profile: MuseumProfile | null }
   if (!profile) {
     return (
       <div className="px-8 pb-10">
-        <PageDescription>Museum identity and contact information</PageDescription>
         <NoMuseumEmptyState />
       </div>
     );
@@ -17,7 +15,6 @@ export function MuseumProfileView({ profile }: { profile: MuseumProfile | null }
 
   return (
     <div className="px-8 pb-10">
-      <PageDescription>Museum identity and contact information</PageDescription>
       <div className="mb-4 flex justify-end">
         <Link
           href="/museum-manager/museum-profile/create"

@@ -44,20 +44,6 @@ export async function MuseumManagerOverview() {
         </div>
       </section>
 
-      <div className="flex justify-end">
-        <button
-          type="button"
-          className="rounded-2xl px-5 py-2.5 text-sm font-medium transition-colors"
-          style={{
-            background: T.surface,
-            border: `1px solid ${T.border}`,
-            color: T.muted,
-          }}
-        >
-          Export PDF
-        </button>
-      </div>
-
       <section>
         <div className="mb-5">
           <p className="text-xs font-medium uppercase tracking-[0.22em]" style={{ color: T.mutedLight }}>
