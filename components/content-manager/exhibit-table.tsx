@@ -23,9 +23,17 @@ const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
 export function ExhibitTable({
   data,
   showCreate = true,
+  basePath = "/content-manager",
+  canEdit = true,
+  canPublish = true,
+  canDelete = true,
 }: {
   data: ExhibitRow[];
   showCreate?: boolean;
+  basePath?: string;
+  canEdit?: boolean;
+  canPublish?: boolean;
+  canDelete?: boolean;
 }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -106,7 +114,7 @@ export function ExhibitTable({
           </div>
           {showCreate && (
             <Link
-              href="/content-manager/artifact/create"
+              href={`${basePath}/artifact/create`}
               className="shrink-0 whitespace-nowrap rounded-2xl px-4 py-2.5 text-sm font-medium"
               style={{
                 background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
@@ -219,41 +227,47 @@ export function ExhibitTable({
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-1">
                           <Link
-                            href={`/content-manager/artifact/${row.id}`}
+                            href={`${basePath}/artifact/${row.exhibitCode}`}
                             className="rounded-lg p-2 transition-colors"
                             style={{ color: T.muted }}
                             aria-label="View"
                           >
                             <Eye className="h-4 w-4" />
                           </Link>
-                          <Link
-                            href={`/content-manager/artifact/${row.id}/edit`}
-                            className="rounded-lg p-2 transition-colors"
-                            style={{ color: T.muted }}
-                            aria-label="Edit"
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Link>
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => handlePublish(row.id, row.status === "Published")}
-                            className="rounded-lg p-2 transition-colors disabled:opacity-40"
-                            style={{ color: T.primaryDark }}
-                            aria-label="Publish"
-                          >
-                            <Send className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() => handleDelete(row.id)}
-                            className="rounded-lg p-2 transition-colors disabled:opacity-40"
-                            style={{ color: T.danger }}
-                            aria-label="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          {canEdit && (
+                            <Link
+                              href={`${basePath}/artifact/${row.exhibitCode}/edit`}
+                              className="rounded-lg p-2 transition-colors"
+                              style={{ color: T.muted }}
+                              aria-label="Edit"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Link>
+                          )}
+                          {canPublish && (
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => handlePublish(row.id, row.status === "Published")}
+                              className="rounded-lg p-2 transition-colors disabled:opacity-40"
+                              style={{ color: T.primaryDark }}
+                              aria-label="Publish"
+                            >
+                              <Send className="h-4 w-4" />
+                            </button>
+                          )}
+                          {canDelete && (
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => handleDelete(row.id)}
+                              className="rounded-lg p-2 transition-colors disabled:opacity-40"
+                              style={{ color: T.danger }}
+                              aria-label="Delete"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
