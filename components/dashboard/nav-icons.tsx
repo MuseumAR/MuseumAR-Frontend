@@ -38,7 +38,10 @@ export function NavIcon({ icon, active }: { icon: NavIcon; active?: boolean }) {
       return <Map {...props} />;
     case "ticket_application":
     case "ticket_types":
+    case "ticket_management":
       return <Ticket {...props} />;
+    case "ticket_statistic":
+      return <BarChart3 {...props} />;
     case "museum_management":
       return <Building2 {...props} />;
     case "system_config":

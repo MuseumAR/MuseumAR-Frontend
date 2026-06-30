@@ -3,6 +3,7 @@ export type BackendRole =
   | "SystemAdmin"
   | "MuseumManager"
   | "ContentManager"
+  | "TicketManager"
   | "Visitor";
 
 export type DashboardRole = Exclude<BackendRole, "Visitor">;
@@ -11,6 +12,7 @@ export const DASHBOARD_ROLES: DashboardRole[] = [
   "SystemAdmin",
   "MuseumManager",
   "ContentManager",
+  "TicketManager",
 ];
 
 export type NavIcon =
@@ -25,7 +27,9 @@ export type NavIcon =
   | "ticket_application"
   | "museum_management"
   | "ticket_types"
-  | "system_config";
+  | "system_config"
+  | "ticket_management"
+  | "ticket_statistic";
 
 export type NavItem = {
   label: string;
@@ -37,6 +41,7 @@ export const ROLE_LABELS: Record<BackendRole, string> = {
   SystemAdmin: "System Admin",
   MuseumManager: "Museum Manager",
   ContentManager: "Content Manager",
+  TicketManager: "Ticket Manager",
   Visitor: "Visitor",
 };
 
@@ -44,12 +49,14 @@ export const ROLE_BASE_PATH: Record<DashboardRole, string> = {
   SystemAdmin: "/admin",
   MuseumManager: "/museum-manager",
   ContentManager: "/content-manager",
+  TicketManager: "/ticket-manager",
 };
 
 export const ROLE_HOME_PATH: Record<BackendRole, string> = {
   SystemAdmin: "/admin/museum-management",
   MuseumManager: "/museum-manager/overview",
   ContentManager: "/content-manager/overview",
+  TicketManager: "/ticket-manager/overview",
   Visitor: "/",
 };
 
@@ -87,6 +94,14 @@ const NAV_CONFIG: Record<NavIcon, { label: string; segment: string }> = {
     label: "System Configuration",
     segment: "system-config",
   },
+  ticket_management: {
+    label: "Ticket Management",
+    segment: "ticket-management",
+  },
+  ticket_statistic: {
+    label: "View Ticket Statistic",
+    segment: "ticket-statistic",
+  },
 };
 
 /** Navigation aligned with backend role permissions */
@@ -107,6 +122,7 @@ export const ROLE_NAV: Record<DashboardRole, NavIcon[]> = {
     "offline_packages",
     "maps_routes",
   ],
+  TicketManager: ["overview", "ticket_management", "ticket_statistic"],
 };
 
 export function getNavForRole(role: DashboardRole): NavItem[] {

@@ -14,6 +14,8 @@ const SEGMENT_TITLES: Record<string, string> = {
   "museum-management": "Museum Overview",
   "ticket-types": "Ticket Types",
   "system-config": "System Configuration",
+  "ticket-management": "Ticket Management",
+  "ticket-statistic": "Ticket Statistics",
   create: "Create",
   edit: "Edit",
 };
