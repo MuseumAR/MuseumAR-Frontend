@@ -5,8 +5,8 @@ import {
   getMuseumManagerStats,
   getPopularExhibits,
   getVisitorsTrend,
-  resolveActiveMuseumId,
 } from "@/services/museum-manager";
+import { resolveActiveMuseumId } from "@/services/museum-manager/museum-resolve.server";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { LanguageUsageChart } from "./charts/language-usage-chart";
 import { PopularExhibitChart } from "./charts/popular-exhibit-chart";
