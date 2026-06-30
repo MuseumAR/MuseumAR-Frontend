@@ -1,7 +1,7 @@
 import { NoMuseumEmptyState } from "@/components/museum-manager/no-museum-empty-state";
 import { ExhibitTable } from "@/components/content-manager/exhibit-table";
 import { getExhibitRows } from "@/services/content-manager/exhibit.service";
-import { resolveActiveMuseumId } from "@/services/museum-manager/museum.service";
+import { resolveActiveMuseumId } from "@/services/museum-manager/museum-resolve.server";
 
 export default async function ArtifactPage() {
   const museumId = await resolveActiveMuseumId();

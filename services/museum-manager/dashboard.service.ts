@@ -6,7 +6,7 @@ import type {
 } from "@/types";
 import { safeFetch } from "@/lib/fetch-safe";
 import { getMuseumDashboard } from "./dashboard-api.service";
-import { resolveActiveMuseumId } from "./museum.service";
+import { getStoredMuseumId } from "@/services/auth/resolve-museum-id";
 
 const CHART_COLORS = ["#3b82f6", "#22c55e", "#a855f7", "#ec4899", "#f59e0b"];
 
@@ -19,7 +19,7 @@ const EMPTY_STATS: MuseumManagerStats = {
 
 async function requireMuseumId(museumId?: number): Promise<number | null> {
   if (museumId != null) return museumId;
-  return resolveActiveMuseumId();
+  return getStoredMuseumId();
 }
 
 export async function getMuseumManagerStats(

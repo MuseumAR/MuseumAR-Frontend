@@ -10,11 +10,6 @@ export async function getManagedMuseums(): Promise<MuseumDto[]> {
   }, []);
 }
 
-export async function resolveActiveMuseumId(): Promise<number | null> {
-  const museums = await getManagedMuseums();
-  return museums[0]?.id ?? null;
-}
-
 /** Museum Manager registers a museum. */
 export async function registerMuseum(payload: CreateMuseumDto) {
   return createMuseum(payload);
