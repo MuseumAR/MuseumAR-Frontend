@@ -10,10 +10,8 @@ import type { OfflinePackageDto } from "@/types/api";
 
 export function OfflinePackagesPanel({
   packages,
-  museumId,
 }: {
   packages: OfflinePackageDto[];
-  museumId: number;
 }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
@@ -31,7 +29,7 @@ export function OfflinePackagesPanel({
     setError(null);
     setIsSubmitting(true);
     try {
-      await generatePackageEntry({ museumId, versionId: vid });
+      await generatePackageEntry({ versionId: vid });
       setShowForm(false);
       setVersionId("");
       router.refresh();
@@ -45,11 +43,12 @@ export function OfflinePackagesPanel({
   return (
     <div className="space-y-6 px-8 pb-10">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="text-2xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-            {packages.length} package{packages.length === 1 ? "" : "s"}
-          </p>
-        </div>
+        <p className="text-sm" style={{ fontFamily: cinzel, color: T.muted }}>
+          <span className="font-semibold" style={{ color: T.text }}>
+            {packages.length}
+          </span>
+          {` package${packages.length === 1 ? "" : "s"}`}
+        </p>
         <button
           type="button"
           onClick={() => setShowForm((v) => !v)}

@@ -219,7 +219,7 @@ export default function LandingPage() {
                   className="mt-1 text-xs font-semibold leading-tight"
                   style={{
                     color: C.text,
-                    fontFamily: "var(--font-playfair), Georgia, serif",
+                    fontFamily: "var(--font-be-vietnam), system-ui, sans-serif",
                   }}
                 >
                   {ex.name}
@@ -262,7 +262,7 @@ export default function LandingPage() {
           <motion.h1
             {...fadeUp(0.35)}
             className="text-6xl font-bold leading-[1.05] tracking-tight text-white md:text-7xl lg:text-[5.5rem]"
-            style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}
+            style={{ fontFamily: "var(--font-be-vietnam), system-ui, sans-serif" }}
           >
             Experience History
             <br />
@@ -387,7 +387,7 @@ export default function LandingPage() {
             <h2
               className="text-4xl font-bold leading-snug md:text-5xl"
               style={{
-                fontFamily: "var(--font-playfair), Georgia, serif",
+                fontFamily: "var(--font-be-vietnam), system-ui, sans-serif",
                 color: C.text,
               }}
             >
@@ -430,7 +430,7 @@ export default function LandingPage() {
                   <p
                     className="mb-5 text-3xl font-light"
                     style={{
-                      fontFamily: "var(--font-playfair), Georgia, serif",
+                      fontFamily: "var(--font-be-vietnam), system-ui, sans-serif",
                       color: C.borderLight,
                       letterSpacing: "0.05em",
                     }}
@@ -452,7 +452,7 @@ export default function LandingPage() {
                   <h3
                     className="mb-3 text-lg font-semibold"
                     style={{
-                      fontFamily: "var(--font-playfair), Georgia, serif",
+                      fontFamily: "var(--font-be-vietnam), system-ui, sans-serif",
                       color: C.text,
                     }}
                   >
@@ -505,7 +505,7 @@ export default function LandingPage() {
             <h2
               className="text-3xl font-bold"
               style={{
-                fontFamily: "var(--font-playfair), Georgia, serif",
+                fontFamily: "var(--font-be-vietnam), system-ui, sans-serif",
                 color: "#FFF8E7",
               }}
             >
@@ -526,7 +526,7 @@ export default function LandingPage() {
                 <p
                   className="text-4xl font-bold md:text-5xl"
                   style={{
-                    fontFamily: "var(--font-playfair), Georgia, serif",
+                    fontFamily: "var(--font-be-vietnam), system-ui, sans-serif",
                     color: C.primary,
                   }}
                 >
@@ -575,7 +575,7 @@ export default function LandingPage() {
           <h3
             className="text-3xl font-bold leading-snug"
             style={{
-              fontFamily: "var(--font-playfair), Georgia, serif",
+              fontFamily: "var(--font-be-vietnam), system-ui, sans-serif",
               color: C.text,
             }}
           >

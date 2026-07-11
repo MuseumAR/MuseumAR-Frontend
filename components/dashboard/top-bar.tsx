@@ -7,7 +7,7 @@ import { useAuth } from "@/context/auth-context";
 import { useRole } from "@/context/role-context";
 import { ROLE_LABELS } from "@/lib/roles";
 import { getPageTitle } from "@/lib/page-titles";
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, sans } from "@/lib/dashboard-theme";
 
 export function TopBar() {
   const pathname = usePathname();
@@ -32,7 +32,7 @@ export function TopBar() {
           {ROLE_LABELS[role]} Portal
         </p>
         <h1
-          className="mt-0.5 text-2xl font-semibold tracking-wide"
+          className="mt-0.5 text-2xl font-semibold"
           style={{ fontFamily: cinzel, color: T.text }}
         >
           {title}
@@ -101,13 +101,13 @@ export function TopBar() {
               style={{
                 background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
                 color: T.surface,
-                fontFamily: cinzel,
+                fontFamily: sans,
               }}
             >
               {userName.charAt(0)}
             </div>
             <div className="hidden text-left sm:block">
-              <p className="text-sm font-medium leading-none" style={{ color: T.text }}>
+              <p className="text-sm font-medium leading-none" style={{ color: T.text, fontFamily: sans }}>
                 {userName}
               </p>
               <p className="mt-0.5 text-[11px]" style={{ color: T.mutedLight }}>

@@ -1,5 +1,4 @@
-import { NoMuseumEmptyState } from "@/components/museum-manager/no-museum-empty-state";
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, sans } from "@/lib/dashboard-theme";
 import { MUSEUM_PROFILE_LABELS } from "@/lib/field-labels";
 import type { MuseumProfile } from "@/types";
 import Link from "next/link";
@@ -8,26 +7,20 @@ export function MuseumProfileView({ profile }: { profile: MuseumProfile | null }
   if (!profile) {
     return (
       <div className="px-8 pb-10">
-        <NoMuseumEmptyState />
+        <div
+          className="rounded-3xl px-8 py-16 text-center"
+          style={{ background: T.surface, border: `1px solid ${T.border}` }}
+        >
+          <p className="text-sm" style={{ color: T.muted }}>
+            Museum profile is not available yet.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="px-8 pb-10">
-      <div className="mb-4 flex justify-end">
-        <Link
-          href="/museum-manager/museum-profile/create"
-          className="rounded-xl px-4 py-2 text-sm font-medium"
-          style={{
-            background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
-            color: T.surface,
-          }}
-        >
-          Register another museum
-        </Link>
-      </div>
-
       <div
         className="rounded-3xl p-6"
         style={{ background: T.surface, border: `1px solid ${T.border}` }}
@@ -93,11 +86,11 @@ function Info({ label, value, link }: { label: string; value: string; link?: str
         {label}
       </p>
       {link ? (
-        <a href={link} className="mt-1 block text-sm" style={{ color: T.text }}>
+        <a href={link} className="mt-1 block text-sm" style={{ color: T.text, fontFamily: sans }}>
           {value}
         </a>
       ) : (
-        <p className="mt-1 text-sm" style={{ color: T.text }}>
+        <p className="mt-1 text-sm" style={{ color: T.text, fontFamily: sans }}>
           {value}
         </p>
       )}
@@ -113,7 +106,7 @@ function Box({ label, value }: { label: string; value: string }) {
       </p>
       <div
         className="rounded-xl px-4 py-2 text-center text-sm"
-        style={{ border: `1px solid ${T.border}`, color: T.text, fontFamily: cinzel }}
+        style={{ border: `1px solid ${T.border}`, color: T.text, fontFamily: sans }}
       >
         {value}
       </div>

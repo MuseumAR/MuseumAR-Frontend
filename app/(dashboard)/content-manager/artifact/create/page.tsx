@@ -1,11 +1,32 @@
 import { CreateExhibitForm } from "@/components/content-manager/create-exhibit-form";
 import { ContentNoMuseumState } from "@/components/content-manager/no-museum-empty-state";
 import { resolveActiveMuseumId } from "@/services/content-manager/museum-context";
+import { getMuseumProfileEntry } from "@/services/admin";
+import {
+  getAgeGroupOptions,
+  getCategoryOptions,
+  getTagOptions,
+} from "@/services/content-manager/taxonomy.service";
 
 export default async function CreateArtifactPage() {
-  const museumId = await resolveActiveMuseumId();
+  const museumId =
+    (await resolveActiveMuseumId()) ?? (await getMuseumProfileEntry())?.id ?? null;
   if (museumId == null) {
     return <ContentNoMuseumState />;
   }
-  return <CreateExhibitForm museumId={museumId} />;
+
+  const [categories, ageGroups, tags] = await Promise.all([
+    getCategoryOptions(),
+    getAgeGroupOptions(),
+    getTagOptions(),
+  ]);
+
+  return (
+    <CreateExhibitForm
+      museumId={museumId}
+      categories={categories}
+      ageGroups={ageGroups}
+      tags={tags}
+    />
+  );
 }

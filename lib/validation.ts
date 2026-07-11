@@ -240,6 +240,9 @@ const API_MESSAGE_MAP: Record<string, string> = {
   "Incorrect old password.": "Current password is incorrect.",
   "Invalid or expired reset token.": "This reset link is invalid or has expired.",
   "Request failed": "Unable to connect to the server. Please try again later.",
+  "Failed to fetch": "Unable to reach the API. Is the backend running?",
+  "NetworkError when attempting to fetch resource.":
+    "Unable to reach the API. Is the backend running?",
   "NEXT_PUBLIC_API_URL is not configured": "API is not configured.",
 };
 
@@ -249,7 +252,9 @@ const TECHNICAL_PATTERNS = [
   /stack trace/i,
   /Connection refused/i,
   /ECONNREFUSED/i,
+  /Failed to fetch/i,
   /fetch failed/i,
+  /NetworkError/i,
   /Unexpected token/i,
   /<!DOCTYPE/i,
   /Internal Server Error/i,

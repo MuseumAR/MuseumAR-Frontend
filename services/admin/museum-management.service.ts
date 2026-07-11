@@ -1,11 +1,17 @@
 import { safeFetch } from "@/lib/fetch-safe";
 import { repairMuseumText } from "@/lib/repair-text";
 import type { MuseumDto } from "@/types/api";
-import { getMuseums as fetchMuseums } from "./admin-api.service";
+import { getMuseumProfile as fetchMuseumProfile } from "./admin-api.service";
 
-export async function getMuseumList(): Promise<MuseumDto[]> {
+export async function getMuseumProfileEntry(): Promise<MuseumDto | null> {
   return safeFetch(async () => {
-    const museums = await fetchMuseums();
-    return museums.map(repairMuseumText);
-  }, []);
+    const museum = await fetchMuseumProfile();
+    return repairMuseumText(museum);
+  }, null);
+}
+
+/** @deprecated Prefer getMuseumProfileEntry — single-museum model */
+export async function getMuseumList(): Promise<MuseumDto[]> {
+  const museum = await getMuseumProfileEntry();
+  return museum ? [museum] : [];
 }

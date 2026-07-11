@@ -1,4 +1,4 @@
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, sans } from "@/lib/dashboard-theme";
 import type { MuseumDto } from "@/types/api";
 
 function StatusBadge({ status }: { status: string }) {
@@ -16,77 +16,100 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export function MuseumManagementPanel({ museums }: { museums: MuseumDto[] }) {
+function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="space-y-6 px-8 pb-10">
-      <div>
-        <p className="text-2xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-          {museums.length} museum{museums.length === 1 ? "" : "s"} registered
-        </p>
-      </div>
+    <div>
+      <p className="text-xs font-medium" style={{ color: T.mutedLight }}>
+        {label}
+      </p>
+      <p className="mt-1 text-sm" style={{ color: T.text, fontFamily: sans }}>
+        {value}
+      </p>
+    </div>
+  );
+}
 
+export function MuseumManagementPanel({ museum }: { museum: MuseumDto | null }) {
+  if (!museum) {
+    return (
+      <div className="px-8 pb-10">
+        <div
+          className="rounded-3xl px-8 py-16 text-center"
+          style={{ background: T.surface, border: `1px solid ${T.border}` }}
+        >
+          <p className="text-sm" style={{ color: T.muted }}>
+            Museum profile is not available yet.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-8 pb-10">
       <div
-        className="overflow-hidden rounded-3xl"
+        className="rounded-3xl p-6"
         style={{ background: T.surface, border: `1px solid ${T.border}` }}
       >
-        {museums.length === 0 ? (
-          <div className="px-8 py-16 text-center">
-            <p className="text-sm" style={{ color: T.muted }}>
-              No museums registered yet.
-            </p>
+        <div className="flex flex-col gap-6 lg:flex-row">
+          <div
+            className="h-40 w-40 shrink-0 overflow-hidden rounded-2xl"
+            style={{ border: `1px solid ${T.border}`, background: "rgba(200,155,69,0.08)" }}
+          >
+            {museum.thumbnailUrl ? (
+              <img
+                src={museum.thumbnailUrl}
+                alt={museum.name}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div
+                className="flex h-full w-full items-center justify-center text-sm"
+                style={{ color: T.mutedLight }}
+              >
+                No image
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left text-sm">
-              <thead>
-                <tr
-                  style={{
-                    borderBottom: `1px solid ${T.border}`,
-                    background: "rgba(245,230,200,0.35)",
-                  }}
+
+          <div className="flex-1 space-y-5">
+            <div className="flex flex-wrap items-center gap-3">
+              <h2
+                className="text-xl font-semibold tracking-tight"
+                style={{ fontFamily: sans, color: T.text }}
+              >
+                {museum.name}
+              </h2>
+              <StatusBadge status={museum.status} />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <InfoRow label="ID" value={String(museum.id)} />
+              <InfoRow label="City" value={museum.city ?? "—"} />
+              <InfoRow label="Address" value={museum.address ?? "—"} />
+              <InfoRow label="Province" value={museum.province ?? "—"} />
+              <InfoRow label="Country" value={museum.country ?? "—"} />
+              <InfoRow label="Phone" value={museum.contactPhone ?? "—"} />
+              <InfoRow label="Email" value={museum.contactEmail ?? "—"} />
+              <InfoRow label="Website" value={museum.website ?? "—"} />
+              <InfoRow label="Opening hours" value={museum.openingHours ?? "—"} />
+            </div>
+
+            {museum.description && (
+              <div>
+                <p className="text-xs font-medium" style={{ color: T.mutedLight }}>
+                  Description
+                </p>
+                <p
+                  className="mt-1 text-sm leading-relaxed"
+                  style={{ color: T.muted, fontFamily: sans }}
                 >
-                  {["ID", "Name", "City", "Address", "Description", "Status"].map((label) => (
-                    <th
-                      key={label}
-                      className="px-5 py-4 font-medium"
-                      style={{ color: T.mutedLight }}
-                    >
-                      {label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {museums.map((museum) => (
-                  <tr
-                    key={museum.id}
-                    style={{ borderBottom: `1px solid ${T.border}` }}
-                    className="hover:bg-[rgba(200,155,69,0.05)]"
-                  >
-                    <td className="px-5 py-4 tabular-nums" style={{ color: T.text }}>
-                      {museum.id}
-                    </td>
-                    <td className="px-5 py-4 font-medium" style={{ color: T.text }}>
-                      {museum.name}
-                    </td>
-                    <td className="px-5 py-4" style={{ color: T.muted }}>
-                      {museum.city ?? "—"}
-                    </td>
-                    <td className="max-w-[200px] truncate px-5 py-4" style={{ color: T.muted }}>
-                      {museum.address ?? "—"}
-                    </td>
-                    <td className="max-w-[240px] truncate px-5 py-4" style={{ color: T.muted }}>
-                      {museum.description ?? "—"}
-                    </td>
-                    <td className="px-5 py-4">
-                      <StatusBadge status={museum.status} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                  {museum.description}
+                </p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

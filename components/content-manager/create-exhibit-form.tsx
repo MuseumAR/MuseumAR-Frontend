@@ -2,23 +2,36 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import {
   getDisplayError,
   getFirstValidationError,
   validateCreateArtifact,
 } from "@/lib/validation";
-import {
-  createExhibit,
-} from "@/services/content-manager/exhibit.service";
+import { createExhibit } from "@/services/content-manager/exhibit.service";
 import {
   uploadArAsset,
   uploadExhibitAudio,
   uploadExhibitImage,
 } from "@/services/content-manager/content-api.service";
+import {
+  categoryDisplayName,
+  syncExhibitTags,
+} from "@/services/content-manager/taxonomy.service";
+import type { AgeGroupDto, CategoryDto, TagDto } from "@/types/api";
 
-export function CreateExhibitForm({ museumId }: { museumId: number }) {
+export function CreateExhibitForm({
+  museumId,
+  categories,
+  ageGroups,
+  tags,
+}: {
+  museumId: number;
+  categories: CategoryDto[];
+  ageGroups: AgeGroupDto[];
+  tags: TagDto[];
+}) {
   const router = useRouter();
   const imageRef = useRef<HTMLInputElement>(null);
   const arRef = useRef<HTMLInputElement>(null);
@@ -28,12 +41,32 @@ export function CreateExhibitForm({ museumId }: { museumId: number }) {
   const [exhibitCode, setExhibitCode] = useState("");
   const [description, setDescription] = useState("");
   const [languageCode, setLanguageCode] = useState("vi");
+  const [categoryId, setCategoryId] = useState("");
+  const [ageGroupId, setAgeGroupId] = useState("");
+  const [era, setEra] = useState("");
+  const [historicalEvent, setHistoricalEvent] = useState("");
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [arFile, setArFile] = useState<File | null>(null);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const categoryOptions = useMemo(
+    () =>
+      categories.map((c) => ({
+        id: c.id,
+        label: categoryDisplayName(c),
+      })),
+    [categories],
+  );
+
+  function toggleTag(id: number) {
+    setSelectedTagIds((prev) =>
+      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id],
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -49,8 +82,14 @@ export function CreateExhibitForm({ museumId }: { museumId: number }) {
     try {
       const exhibit = await createExhibit({
         museumId,
+        categoryId: categoryId ? Number(categoryId) : undefined,
         exhibitCode: exhibitCode.trim() || undefined,
         status: "Draft",
+        exhibitMetadata: {
+          ageGroupId: ageGroupId ? Number(ageGroupId) : undefined,
+          era: era.trim() || undefined,
+          historicalEvent: historicalEvent.trim() || undefined,
+        },
         translations: [
           {
             exhibitId: 0,
@@ -64,6 +103,9 @@ export function CreateExhibitForm({ museumId }: { museumId: number }) {
       if (imageFile) await uploadExhibitImage(exhibit.id, imageFile, title);
       if (audioFile) await uploadExhibitAudio(exhibit.id, languageCode, audioFile);
       if (arFile) await uploadArAsset(exhibit.id, "model", arFile);
+      if (selectedTagIds.length > 0) {
+        await syncExhibitTags(exhibit.id, selectedTagIds);
+      }
 
       router.push("/content-manager/artifact");
       router.refresh();
@@ -118,6 +160,25 @@ export function CreateExhibitForm({ museumId }: { museumId: number }) {
               <Field label="Title *" value={title} onChange={setTitle} placeholder="Exhibit title" />
               <Field label="Exhibit code" value={exhibitCode} onChange={setExhibitCode} placeholder="CAT-001" />
               <Field label="Language" value={languageCode} onChange={setLanguageCode} placeholder="vi" />
+              <SelectField
+                label="Category"
+                value={categoryId}
+                onChange={setCategoryId}
+                options={categoryOptions.map((c) => ({ value: String(c.id), label: c.label }))}
+              />
+              <SelectField
+                label="Age group"
+                value={ageGroupId}
+                onChange={setAgeGroupId}
+                options={ageGroups.map((g) => ({ value: String(g.id), label: g.groupName }))}
+              />
+              <Field label="Era" value={era} onChange={setEra} placeholder="e.g. Nguyễn dynasty" />
+              <Field
+                label="Historical event"
+                value={historicalEvent}
+                onChange={setHistoricalEvent}
+                placeholder="Optional"
+              />
             </div>
             <div>
               <label className="mb-1.5 block text-sm" style={{ color: T.muted }}>Description</label>
@@ -129,6 +190,31 @@ export function CreateExhibitForm({ museumId }: { museumId: number }) {
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
               />
             </div>
+            {tags.length > 0 && (
+              <div>
+                <p className="mb-2 text-sm" style={{ color: T.muted }}>Tags</p>
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => {
+                    const active = selectedTagIds.includes(tag.id);
+                    return (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => toggleTag(tag.id)}
+                        className="rounded-full px-3 py-1 text-xs font-medium"
+                        style={{
+                          background: active ? "rgba(200,155,69,0.25)" : T.bg,
+                          border: `1px solid ${T.border}`,
+                          color: active ? T.primaryDark : T.muted,
+                        }}
+                      >
+                        {tag.tagName}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             {error && (
               <p className="rounded-xl px-3 py-2 text-sm" style={{ background: "rgba(180,40,40,0.08)", color: "#8B2E2E" }}>
                 {error}
@@ -155,7 +241,17 @@ export function CreateExhibitForm({ museumId }: { museumId: number }) {
   );
 }
 
-function Field({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (v: string) => void; placeholder: string }) {
+function Field({
+  label,
+  value,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}) {
   return (
     <div className="space-y-1.5">
       <label className="block text-sm" style={{ color: T.muted }}>{label}</label>
@@ -166,6 +262,35 @@ function Field({ label, value, onChange, placeholder }: { label: string; value: 
         className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
         style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
       />
+    </div>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-sm" style={{ color: T.muted }}>{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+        style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+      >
+        <option value="">None</option>
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
     </div>
   );
 }

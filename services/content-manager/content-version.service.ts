@@ -1,29 +1,37 @@
-import { safeFetch } from "@/lib/fetch-safe";
 import type { ContentVersionDto } from "@/types/api";
-import {
-  createContentVersion,
-  getContentVersions,
-} from "./content-api.service";
-import { getStoredMuseumId } from "@/services/auth/resolve-museum-id";
+import { createContentVersion } from "./content-api.service";
 
-export async function getVersionList(
-  museumId?: number,
-): Promise<ContentVersionDto[]> {
-  return safeFetch(async () => {
-    const id = museumId ?? getStoredMuseumId();
-    if (id == null) return [];
-    return getContentVersions(id);
-  }, []);
+function asNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() && Number.isFinite(Number(value))) {
+    return Number(value);
+  }
+  if (value && typeof value === "object") {
+    const o = value as Record<string, unknown>;
+    const nested = o.id ?? o.Id ?? o.data ?? o.Data;
+    if (nested !== value) return asNumber(nested);
+  }
+  return null;
 }
 
+/** BE has POST only (no GET list). Returns created version id. */
 export async function createVersionEntry(
   versionNumber: string,
   description: string,
-  museumId?: number,
-) {
-  const id = museumId ?? getStoredMuseumId();
+): Promise<{ id: number; versionNumber: string; changeDescription: string }> {
+  const raw = await createContentVersion(versionNumber, description);
+  const id = asNumber(raw);
   if (id == null) {
-    throw new Error("No museum available for content versioning.");
+    throw new Error("Version created but id was not returned.");
   }
-  return createContentVersion(id, versionNumber, description);
+  return {
+    id,
+    versionNumber,
+    changeDescription: description,
+  };
 }
+
+export type CreatedVersionRow = Pick<
+  ContentVersionDto,
+  "id" | "versionNumber" | "changeDescription" | "status" | "createdAt"
+>;

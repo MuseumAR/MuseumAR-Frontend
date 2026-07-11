@@ -5,7 +5,7 @@ import { getMuseumProfile } from "@/services/museum-manager";
 export default async function EditMuseumPage() {
   const profile = await getMuseumProfile();
   if (!profile) {
-    redirect("/museum-manager/museum-profile/create");
+    redirect("/museum-manager/museum-profile");
   }
   return <UpdateMuseumForm profile={profile} />;
 }

@@ -12,4 +12,6 @@ export const AUTH_C = {
   inputBgFocus: "#FFF8E7",
 };
 
-export const AUTH_CINZEL = "var(--font-cinzel), 'Trajan Pro', Georgia, serif";
+/** Same family as dashboard — keeps auth + app visually synced */
+export const AUTH_CINZEL =
+  "var(--font-be-vietnam), system-ui, sans-serif";

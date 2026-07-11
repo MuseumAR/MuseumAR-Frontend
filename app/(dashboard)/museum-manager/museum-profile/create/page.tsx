@@ -1,5 +1,5 @@
-import { CreateMuseumForm } from "@/components/museum-manager/create-museum-form";
+import { redirect } from "next/navigation";
 
 export default function CreateMuseumPage() {
-  return <CreateMuseumForm />;
+  redirect("/museum-manager/museum-profile");
 }

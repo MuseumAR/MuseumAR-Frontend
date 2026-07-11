@@ -57,11 +57,12 @@ export function SystemConfigPanel({ configs }: { configs: SystemConfigDto[] }) {
 
   return (
     <div className="space-y-6 px-8 pb-10">
-      <div>
-        <p className="text-2xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-          {configs.length} configuration{configs.length === 1 ? "" : "s"}
-        </p>
-      </div>
+      <p className="text-sm" style={{ fontFamily: cinzel, color: T.muted }}>
+        <span className="font-semibold" style={{ color: T.text }}>
+          {configs.length}
+        </span>
+        {` configuration${configs.length === 1 ? "" : "s"}`}
+      </p>
 
       {error && (
         <p

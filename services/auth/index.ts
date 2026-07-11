@@ -4,6 +4,7 @@ export {
   login,
   loginWithGoogle,
   logout,
+  refreshAccessToken,
   register,
   resetPassword,
 } from "./auth.service";
@@ -11,6 +12,7 @@ export {
   clearAuthSession,
   getAccessToken,
   getAuthUser,
+  getRefreshToken,
   saveAuthSession,
 } from "./auth.storage";
 export {
@@ -25,7 +27,9 @@ export type {
   GoogleLoginRequest,
   LoginRequest,
   LoginResponseDto,
+  RefreshTokenRequest,
   RegisterRequest,
   ResetPasswordRequest,
 } from "./auth.types";
 export type { StoredAuthUser } from "./auth.storage";
+

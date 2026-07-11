@@ -13,25 +13,25 @@ import type { MuseumMapDto, TourRouteDto } from "@/types/api";
 
 type Tab = "maps" | "routes";
 
-const FLOOR_OPTIONS = [
-  { value: 1, label: "Floor 1" },
-  { value: 2, label: "Floor 2" },
-  { value: 3, label: "Floor 3" },
-  { value: 4, label: "Floor 4" },
-  { value: 5, label: "Floor 5" },
-  { value: -1, label: "Basement B1" },
-] as const;
-
 function getMapDisplayName(item: MuseumMapDto): string {
   if (item.mapName?.trim()) return item.mapName.trim();
-  if (item.mapType === "overview" || item.floorNumber === 0) return "Overview";
+  const type = item.mapType?.trim() ?? "";
+  // BE DTO puts MapName into MapType for seeded maps
+  if (type && type !== "floor" && type !== "overview") return type;
+  if (type === "overview" || item.floorNumber === 0) return "Overview";
   if (item.floorNumber === -1) return "Basement B1";
-  if (item.floorNumber > 0) return `Floor ${item.floorNumber}`;
-  return "Floor plan";
+  if (item.floorNumber != null && item.floorNumber > 0) return `Floor ${item.floorNumber}`;
+  return type === "overview" ? "Overview" : "Floor plan";
 }
 
-function MapTypeBadge({ mapType }: { mapType: string }) {
-  const overview = mapType === "overview";
+function mapKind(item: MuseumMapDto): "overview" | "floor" {
+  const type = item.mapType?.trim().toLowerCase() ?? "";
+  if (type === "overview" || item.floorNumber === 0) return "overview";
+  return "floor";
+}
+
+function MapTypeBadge({ kind }: { kind: "overview" | "floor" }) {
+  const overview = kind === "overview";
   return (
     <span
       className="rounded-full px-2.5 py-0.5 text-xs font-medium capitalize"
@@ -40,21 +40,27 @@ function MapTypeBadge({ mapType }: { mapType: string }) {
         color: overview ? T.success : T.primaryDark,
       }}
     >
-      {mapType}
+      {kind === "overview" ? "Overview" : "Floor plan"}
     </span>
   );
 }
 
-function MapPreview({ url }: { url: string }) {
-  const [failed, setFailed] = useState(false);
+function MapPreview({ url, title }: { url: string; title: string }) {
+  const [failed, setFailed] = useState(!url);
 
-  if (failed) {
+  if (!url || failed) {
     return (
       <div
-        className="flex h-36 items-center justify-center rounded-2xl"
+        className="flex h-36 flex-col items-center justify-center gap-2 rounded-2xl px-4 text-center"
         style={{ background: "rgba(200,155,69,0.08)", border: `1px solid ${T.border}` }}
       >
         <Map className="h-8 w-8" style={{ color: T.mutedLight }} />
+        <p className="text-xs" style={{ color: T.muted }}>
+          Preview unavailable
+        </p>
+        <p className="line-clamp-2 text-[11px]" style={{ color: T.mutedLight }}>
+          {title}
+        </p>
       </div>
     );
   }
@@ -62,11 +68,11 @@ function MapPreview({ url }: { url: string }) {
   return (
     <div
       className="h-36 overflow-hidden rounded-2xl"
-      style={{ border: `1px solid ${T.border}` }}
+      style={{ border: `1px solid ${T.border}`, background: T.bg }}
     >
       <img
         src={url}
-        alt=""
+        alt={title}
         className="h-full w-full object-cover"
         onError={() => setFailed(true)}
       />
@@ -91,8 +97,6 @@ export function MapsRoutesPanel({
   const [mapFile, setMapFile] = useState<File | null>(null);
   const [mapPreview, setMapPreview] = useState<string | null>(null);
   const [mapType, setMapType] = useState("floor");
-  const [floorNumber, setFloorNumber] = useState(1);
-  const [mapName, setMapName] = useState("");
   const [routeName, setRouteName] = useState("");
   const [routeMinutes, setRouteMinutes] = useState("");
   const [mapError, setMapError] = useState<string | null>(null);
@@ -108,17 +112,9 @@ export function MapsRoutesPanel({
     setSubmitting("map");
     setMapError(null);
     try {
-      await createMapWithImage(
-        museumId,
-        mapFile,
-        mapType,
-        mapType === "overview" ? 0 : floorNumber,
-        mapName.trim() || undefined,
-      );
+      await createMapWithImage(museumId, mapFile, mapType);
       setMapFile(null);
       setMapPreview(null);
-      setMapName("");
-      setFloorNumber(1);
       if (mapFileRef.current) mapFileRef.current.value = "";
       setShowMapForm(false);
       router.refresh();
@@ -222,8 +218,11 @@ export function MapsRoutesPanel({
       {tab === "maps" && (
         <div className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <p className="text-2xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-              {maps.length} map{maps.length === 1 ? "" : "s"}
+            <p className="text-sm" style={{ fontFamily: cinzel, color: T.muted }}>
+              <span className="font-semibold" style={{ color: T.text }}>
+                {maps.length}
+              </span>
+              {` map${maps.length === 1 ? "" : "s"}`}
             </p>
             <button
               type="button"
@@ -301,41 +300,6 @@ export function MapsRoutesPanel({
                     <option value="overview">Overview</option>
                   </select>
                 </div>
-                {mapType === "floor" && (
-                  <div className="space-y-1.5">
-                    <label className="block text-sm" style={{ color: T.muted }}>
-                      Floor *
-                    </label>
-                    <select
-                      value={floorNumber}
-                      onChange={(e) => setFloorNumber(Number(e.target.value))}
-                      className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
-                      style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
-                    >
-                      {FLOOR_OPTIONS.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label className="block text-sm" style={{ color: T.muted }}>
-                    Map name <span style={{ color: T.mutedLight }}>(optional)</span>
-                  </label>
-                  <input
-                    value={mapName}
-                    onChange={(e) => setMapName(e.target.value)}
-                    placeholder={
-                      mapType === "overview"
-                        ? "Overview"
-                        : FLOOR_OPTIONS.find((o) => o.value === floorNumber)?.label ?? "Floor 1"
-                    }
-                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
-                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
-                  />
-                </div>
               </div>
               {mapError && (
                 <p className="mt-4 text-sm" style={{ color: "#8B2E2E" }}>
@@ -367,67 +331,44 @@ export function MapsRoutesPanel({
             </div>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {maps.map((item) => (
+              {maps.map((item) => {
+                const name = getMapDisplayName(item);
+                const kind = mapKind(item);
+                return (
                 <article
                   key={item.id}
                   className="rounded-3xl p-5"
                   style={{ background: T.surface, border: `1px solid ${T.border}` }}
                 >
-                  <MapPreview url={item.mapImageUrl} />
+                  <MapPreview url={item.mapImageUrl} title={name} />
                   <div className="mt-4 flex items-start justify-between gap-2">
                     <div>
                       <p className="font-medium" style={{ color: T.text }}>
-                        {getMapDisplayName(item)}
+                        {name}
                       </p>
                       <p className="text-xs" style={{ color: T.mutedLight }}>
                         Map #{item.id}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        <MapTypeBadge mapType={item.mapType} />
-                        {item.mapType === "floor" && item.floorNumber > 0 && (
-                          <span
-                            className="rounded-full px-2.5 py-0.5 text-xs font-medium"
-                            style={{
-                              background: "rgba(109,90,69,0.1)",
-                              color: T.muted,
-                            }}
-                          >
-                            Floor {item.floorNumber}
-                          </span>
-                        )}
-                        {item.floorNumber === -1 && (
-                          <span
-                            className="rounded-full px-2.5 py-0.5 text-xs font-medium"
-                            style={{
-                              background: "rgba(109,90,69,0.1)",
-                              color: T.muted,
-                            }}
-                          >
-                            Basement B1
-                          </span>
-                        )}
+                        <MapTypeBadge kind={kind} />
                       </div>
                     </div>
-                    <a
-                      href={item.mapImageUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs font-medium"
-                      style={{ color: T.primaryDark }}
-                    >
-                      Open
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
+                    {item.mapImageUrl ? (
+                      <a
+                        href={item.mapImageUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs font-medium"
+                        style={{ color: T.primaryDark }}
+                      >
+                        Open
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    ) : null}
                   </div>
-                  <p
-                    className="mt-3 truncate text-xs"
-                    style={{ color: T.muted }}
-                    title={item.mapImageUrl}
-                  >
-                    {item.mapImageUrl}
-                  </p>
                 </article>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -436,8 +377,11 @@ export function MapsRoutesPanel({
       {tab === "routes" && (
         <div className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <p className="text-2xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-              {routes.length} route{routes.length === 1 ? "" : "s"}
+            <p className="text-sm" style={{ fontFamily: cinzel, color: T.muted }}>
+              <span className="font-semibold" style={{ color: T.text }}>
+                {routes.length}
+              </span>
+              {` route${routes.length === 1 ? "" : "s"}`}
             </p>
             <button
               type="button"

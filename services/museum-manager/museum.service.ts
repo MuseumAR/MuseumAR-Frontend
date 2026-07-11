@@ -1,16 +1,24 @@
 import { safeFetch } from "@/lib/fetch-safe";
 import { repairMuseumText } from "@/lib/repair-text";
-import type { CreateMuseumDto, MuseumDto } from "@/types/api";
-import { createMuseum, getMuseums } from "@/services/admin/admin-api.service";
+import type { MuseumDto, UpdateMuseumProfileDto } from "@/types/api";
+import {
+  getMuseumProfile as fetchMuseumProfile,
+  updateMuseumProfile,
+} from "@/services/admin/admin-api.service";
 
-export async function getManagedMuseums(): Promise<MuseumDto[]> {
+export async function getManagedMuseum(): Promise<MuseumDto | null> {
   return safeFetch(async () => {
-    const museums = await getMuseums();
-    return museums.map(repairMuseumText);
-  }, []);
+    const museum = await fetchMuseumProfile();
+    return repairMuseumText(museum);
+  }, null);
 }
 
-/** Museum Manager registers a museum. */
-export async function registerMuseum(payload: CreateMuseumDto) {
-  return createMuseum(payload);
+/** @deprecated Prefer getManagedMuseum — single-museum model */
+export async function getManagedMuseums(): Promise<MuseumDto[]> {
+  const museum = await getManagedMuseum();
+  return museum ? [museum] : [];
+}
+
+export async function saveMuseumProfile(payload: UpdateMuseumProfileDto) {
+  return updateMuseumProfile(payload);
 }

@@ -268,7 +268,7 @@ export function Navbar() {
       <Link
         href="/"
         className="flex items-center gap-3"
-        style={{ fontFamily: "var(--font-playfair), Georgia, serif" }}
+        style={{ fontFamily: "var(--font-be-vietnam), system-ui, sans-serif" }}
       >
         <div
           className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold"

@@ -1,23 +1,12 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display, Cinzel } from "next/font/google";
+import { Be_Vietnam_Pro } from "next/font/google";
 import { AppProviders } from "@/components/providers/app-providers";
 import "./globals.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  variable: "--font-playfair",
-  display: "swap",
-});
-
-const cinzel = Cinzel({
-  subsets: ["latin"],
-  variable: "--font-cinzel",
+const beVietnam = Be_Vietnam_Pro({
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-be-vietnam",
   display: "swap",
 });
 
@@ -32,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="vi" className={`h-full antialiased ${inter.variable} ${playfair.variable} ${cinzel.variable}`}>
+    <html lang="vi" className={`h-full antialiased ${beVietnam.variable}`}>
       <body className="min-h-full flex flex-col font-sans">
         <AppProviders>{children}</AppProviders>
       </body>

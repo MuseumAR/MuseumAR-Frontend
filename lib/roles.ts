@@ -24,7 +24,10 @@ export type NavIcon =
   | "maps_routes"
   | "ticket_application"
   | "museum_management"
+  | "users"
   | "ticket_types"
+  | "audit_logs"
+  | "taxonomy"
   | "system_config";
 
 export type NavItem = {
@@ -79,10 +82,16 @@ const NAV_CONFIG: Record<NavIcon, { label: string; segment: string }> = {
     segment: "ticket-application",
   },
   museum_management: {
-    label: "Museum Overview",
+    label: "Museum Profile",
     segment: "museum-management",
   },
+  users: {
+    label: "Users",
+    segment: "users",
+  },
   ticket_types: { label: "Ticket Types", segment: "ticket-types" },
+  audit_logs: { label: "Audit Logs", segment: "audit-logs" },
+  taxonomy: { label: "Taxonomy", segment: "taxonomy" },
   system_config: {
     label: "System Configuration",
     segment: "system-config",
@@ -91,7 +100,14 @@ const NAV_CONFIG: Record<NavIcon, { label: string; segment: string }> = {
 
 /** Navigation aligned with backend role permissions */
 export const ROLE_NAV: Record<DashboardRole, NavIcon[]> = {
-  SystemAdmin: ["museum_management", "ticket_types", "system_config"],
+  SystemAdmin: [
+    "museum_management",
+    "users",
+    "ticket_types",
+    "taxonomy",
+    "audit_logs",
+    "system_config",
+  ],
   MuseumManager: [
     "overview",
     "analytics",

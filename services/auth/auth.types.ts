@@ -9,6 +9,11 @@ export type LoginResponseDto = {
   email: string;
   roleName: string;
   accessToken: string;
+  refreshToken?: string | null;
+};
+
+export type RefreshTokenRequest = {
+  refreshToken: string;
 };
 
 export type RegisterRequest = {

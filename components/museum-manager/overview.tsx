@@ -1,28 +1,21 @@
 import { StatCard } from "@/components/dashboard/stat-card";
-import { NoMuseumEmptyState } from "@/components/museum-manager/no-museum-empty-state";
 import {
   getLanguageUsage,
   getMuseumManagerStats,
   getPopularExhibits,
   getVisitorsTrend,
 } from "@/services/museum-manager";
-import { resolveActiveMuseumId } from "@/services/museum-manager/museum-resolve.server";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { LanguageUsageChart } from "./charts/language-usage-chart";
 import { PopularExhibitChart } from "./charts/popular-exhibit-chart";
 import { VisitorsTrendChart } from "./charts/visitors-trend-chart";
 
 export async function MuseumManagerOverview() {
-  const museumId = await resolveActiveMuseumId();
-  if (museumId == null) {
-    return <NoMuseumEmptyState />;
-  }
-
   const [stats, popularExhibits, languageUsage, visitorsTrend] = await Promise.all([
-    getMuseumManagerStats(museumId),
-    getPopularExhibits(museumId),
-    getLanguageUsage(museumId),
-    getVisitorsTrend(museumId),
+    getMuseumManagerStats(),
+    getPopularExhibits(),
+    getLanguageUsage(),
+    getVisitorsTrend(),
   ]);
 
   return (

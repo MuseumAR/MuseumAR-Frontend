@@ -1,11 +1,17 @@
 import { TicketTypeManagementPanel } from "@/components/admin/ticket-type-management";
-import { getMuseumList, getTicketTypeList } from "@/services/admin";
+import { getMuseumProfileEntry, getTicketTypeList } from "@/services/admin";
 
 export default async function TicketTypesPage() {
-  const [ticketTypes, museums] = await Promise.all([
+  const [ticketTypes, museum] = await Promise.all([
     getTicketTypeList(),
-    getMuseumList(),
+    getMuseumProfileEntry(),
   ]);
 
-  return <TicketTypeManagementPanel ticketTypes={ticketTypes} museums={museums} />;
+  return (
+    <TicketTypeManagementPanel
+      ticketTypes={ticketTypes}
+      museumId={museum?.id ?? null}
+      museumName={museum?.name}
+    />
+  );
 }
