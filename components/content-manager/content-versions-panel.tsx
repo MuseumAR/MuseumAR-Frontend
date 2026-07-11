@@ -11,7 +11,7 @@ import {
 } from "@/services/content-manager/content-version.service";
 
 export function ContentVersionsPanel() {
-  const [showForm, setShowForm] = useState(true);
+  const [showForm, setShowForm] = useState(false);
   const [versionNumber, setVersionNumber] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);

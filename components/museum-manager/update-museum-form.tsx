@@ -42,6 +42,14 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
       return;
     }
 
+    // Local object URLs are not valid thumbnail URLs for the API.
+    if (imagePreview?.startsWith("blob:")) {
+      setError(
+        "Selected image cannot be saved yet — the API only accepts a public thumbnail URL.",
+      );
+      return;
+    }
+
     setError(null);
     setIsSubmitting(true);
     try {
@@ -56,7 +64,7 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
         contactEmail: email.trim() || undefined,
         contactPhone: phone.trim() || undefined,
         openingHours: hours,
-        thumbnailUrl: profile.image ?? undefined,
+        thumbnailUrl: imagePreview ?? undefined,
       });
       router.push("/museum-manager/museum-profile");
       router.refresh();
