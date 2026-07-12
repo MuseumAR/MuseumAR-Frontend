@@ -6,7 +6,6 @@ import type {
 } from "@/types";
 import { safeFetch } from "@/lib/fetch-safe";
 import { getMuseumDashboard } from "./dashboard-api.service";
-import { getStoredMuseumId } from "@/services/auth/resolve-museum-id";
 
 const CHART_COLORS = ["#3b82f6", "#22c55e", "#a855f7", "#ec4899", "#f59e0b"];
 
@@ -17,19 +16,9 @@ const EMPTY_STATS: MuseumManagerStats = {
   averageListeningTime: 0,
 };
 
-async function requireMuseumId(museumId?: number): Promise<number | null> {
-  if (museumId != null) return museumId;
-  return getStoredMuseumId();
-}
-
-export async function getMuseumManagerStats(
-  museumId?: number,
-): Promise<MuseumManagerStats> {
+export async function getMuseumManagerStats(): Promise<MuseumManagerStats> {
   return safeFetch(async () => {
-    const id = await requireMuseumId(museumId);
-    if (id == null) return EMPTY_STATS;
-
-    const dashboard = await getMuseumDashboard(id);
+    const dashboard = await getMuseumDashboard();
     return {
       totalVisitor: dashboard.popularExhibits.reduce(
         (sum, item) => sum + item.totalInteractions,
@@ -42,14 +31,9 @@ export async function getMuseumManagerStats(
   }, EMPTY_STATS);
 }
 
-export async function getPopularExhibits(
-  museumId?: number,
-): Promise<PopularExhibit[]> {
+export async function getPopularExhibits(): Promise<PopularExhibit[]> {
   return safeFetch(async () => {
-    const id = await requireMuseumId(museumId);
-    if (id == null) return [];
-
-    const dashboard = await getMuseumDashboard(id);
+    const dashboard = await getMuseumDashboard();
     return dashboard.popularExhibits.map((item, index) => ({
       name: item.exhibitName,
       value: item.totalInteractions,
@@ -58,14 +42,9 @@ export async function getPopularExhibits(
   }, []);
 }
 
-export async function getLanguageUsage(
-  museumId?: number,
-): Promise<LanguageUsage[]> {
+export async function getLanguageUsage(): Promise<LanguageUsage[]> {
   return safeFetch(async () => {
-    const id = await requireMuseumId(museumId);
-    if (id == null) return [];
-
-    const dashboard = await getMuseumDashboard(id);
+    const dashboard = await getMuseumDashboard();
     return dashboard.languageUsageStats.map((item, index) => ({
       name: item.languageCode,
       percent: Math.round(item.percentage),
@@ -74,14 +53,9 @@ export async function getLanguageUsage(
   }, []);
 }
 
-export async function getVisitorsTrend(
-  museumId?: number,
-): Promise<VisitorTrend[]> {
+export async function getVisitorsTrend(): Promise<VisitorTrend[]> {
   return safeFetch(async () => {
-    const id = await requireMuseumId(museumId);
-    if (id == null) return [];
-
-    const dashboard = await getMuseumDashboard(id);
+    const dashboard = await getMuseumDashboard();
     return dashboard.exhibitScanStats.map((item) => ({
       day: item.exhibitName,
       value: item.scanCount,

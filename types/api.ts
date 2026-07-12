@@ -10,25 +10,49 @@ export type ApiResponse<T = unknown> = {
 
 // ─── Museum ─────────────────────────────────────────────────────────────────
 
+/**
+ * GET /api/admin/museum-profile returns a slim BE DTO:
+ * id, name, description, address, city, status, thumbnailUrl.
+ * Extra profile fields are optional — only filled if BE expands the payload.
+ * PUT UpdateMuseumProfileDto can send the full profile set.
+ */
 export type MuseumDto = {
   id: number;
   name: string;
   description?: string | null;
   address?: string | null;
   city?: string | null;
+  /** Not on current BE MuseumDto GET — kept for UI / future */
+  province?: string | null;
+  country?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   status: string;
   thumbnailUrl?: string | null;
+  openingHours?: string | null;
+  contactPhone?: string | null;
+  contactEmail?: string | null;
+  website?: string | null;
 };
 
-export type CreateMuseumDto = {
+export type UpdateMuseumProfileDto = {
   name: string;
   description?: string | null;
   address?: string | null;
   city?: string | null;
   province?: string | null;
+  country?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  thumbnailUrl?: string | null;
+  openingHours?: string | null;
   contactPhone?: string | null;
   contactEmail?: string | null;
+  website?: string | null;
 };
+
+/** @deprecated Prefer UpdateMuseumProfileDto — kept as alias for form compatibility */
+export type CreateMuseumDto = UpdateMuseumProfileDto;
 
 // ─── Museum dashboard / analytics ───────────────────────────────────────────
 
@@ -94,14 +118,23 @@ export type ExhibitDto = {
   museumId: number;
   categoryId?: number | null;
   exhibitCode?: string | null;
+  /** Normalized from qrCodeData / qRCodeData / QRCodeData */
   qrCodeData?: string | null;
   qrCodeImageUrl?: string | null;
   thumbnailUrl?: string | null;
+  /** Normalized from arOverlayUrl / aROverlayUrl / AROverlayUrl */
   arOverlayUrl?: string | null;
   arMarkerUrl?: string | null;
   status: string;
   publishedAt?: string | null;
+  exhibitMetadata?: ExhibitMetadataDto | null;
   translations: ExhibitTranslationDto[];
+};
+
+export type ExhibitMetadataDto = {
+  ageGroupId?: number | null;
+  era?: string | null;
+  historicalEvent?: string | null;
 };
 
 export type CreateExhibitDto = {
@@ -112,6 +145,7 @@ export type CreateExhibitDto = {
   arOverlayUrl?: string | null;
   arMarkerUrl?: string | null;
   status?: string;
+  exhibitMetadata?: ExhibitMetadataDto | null;
   translations: ExhibitTranslationDto[];
 };
 
@@ -120,6 +154,7 @@ export type CreateExhibitDto = {
 export type ExhibitionDto = {
   id: number;
   museumId: number;
+  themeId?: number | null;
   thumbnailUrl?: string | null;
   startDate?: string | null;
   endDate?: string | null;
@@ -128,6 +163,7 @@ export type ExhibitionDto = {
 
 export type CreateExhibitionDto = {
   museumId: number;
+  themeId?: number | null;
   startDate?: string | null;
   endDate?: string | null;
   status?: string;
@@ -158,8 +194,8 @@ export type ContentVersionDto = {
 // ─── Offline package ──────────────────────────────────────────────────────────
 
 export type CreateOfflinePackageDto = {
-  museumId: number;
   versionId: number;
+  museumId?: number;
 };
 
 export type OfflinePackageDto = {
@@ -179,17 +215,19 @@ export type MuseumMapDto = {
   id: number;
   museumId: number;
   mapImageUrl: string;
+  /**
+   * BE maps entity MapName → MapType on the DTO.
+   * Seeded maps often put the display name here (e.g. "Bản đồ Tầng trệt").
+   */
   mapType: string;
-  floorNumber: number;
+  /** Not on current BE MuseumMapDto — optional if payload expands */
+  floorNumber?: number;
   mapName?: string | null;
 };
 
 export type CreateMuseumMapDto = {
   museumId: number;
-  mapImageUrl: string;
   mapType: string;
-  floorNumber?: number;
-  mapName?: string | null;
 };
 
 // ─── Tour route ───────────────────────────────────────────────────────────────
@@ -197,7 +235,9 @@ export type CreateMuseumMapDto = {
 export type TourRouteDto = {
   id: number;
   museumId: number;
+  /** May be empty from BE mapping — FE falls back to `Route #{id}` */
   name: string;
+  /** Also accepts EstimatedMinutes from entity-shaped payloads */
   estimatedDurationMinutes?: number | null;
 };
 
@@ -216,6 +256,8 @@ export type TicketTypeDto = {
   description?: string | null;
   museumId: number;
   exhibitionId?: number | null;
+  /** Create-only on BE today — not returned on list DTO */
+  isActive?: boolean;
 };
 
 export type CreateTicketTypeDto = {
@@ -279,4 +321,138 @@ export type SystemConfigDto = {
 export type UpdateSystemConfigDto = {
   configValue: string;
   description?: string | null;
+};
+
+// ─── Admin users ──────────────────────────────────────────────────────────────
+
+export type UserResponseDto = {
+  id: number;
+  email: string;
+  fullName: string;
+  phoneNumber?: string | null;
+  avatarUrl?: string | null;
+  roleId: number;
+  roleName: string;
+  museumId?: number | null;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type CreateUserDto = {
+  email: string;
+  password: string;
+  fullName: string;
+  phoneNumber?: string | null;
+  roleId: number;
+  museumId?: number | null;
+};
+
+export type UpdateUserDto = {
+  fullName: string;
+  phoneNumber?: string | null;
+  roleId: number;
+  status: string;
+  museumId?: number | null;
+  password?: string | null;
+};
+
+export type AuditLogDto = {
+  id: number;
+  userId?: number | null;
+  action?: string | null;
+  entityType?: string | null;
+  entityId?: number | null;
+  oldValues?: string | null;
+  newValues?: string | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  createdAt: string;
+};
+
+export type PagedAuditLogsDto = {
+  totalItems: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  items: AuditLogDto[];
+};
+
+// ─── Content taxonomy ─────────────────────────────────────────────────────────
+
+export type CategoryTranslationDto = {
+  id?: number | null;
+  categoryId: number;
+  languageCode: string;
+  categoryName: string;
+  description?: string | null;
+};
+
+export type CategoryDto = {
+  id: number;
+  museumId?: number | null;
+  parentId?: number | null;
+  sortOrder: number;
+  iconUrl?: string | null;
+  status: string;
+  categoryTranslations: CategoryTranslationDto[];
+};
+
+export type ThemeDto = {
+  id: number;
+  museumId?: number | null;
+  themeName: string;
+  description?: string | null;
+};
+
+export type AgeGroupDto = {
+  id: number;
+  groupName: string;
+  minAge?: number | null;
+  maxAge?: number | null;
+};
+
+export type TagGroupDto = {
+  id: number;
+  groupName: string;
+  sortOrder: number;
+};
+
+export type TagDto = {
+  id: number;
+  tagGroupId: number;
+  tagName: string;
+  sortOrder: number;
+};
+
+export type CreateCategoryDto = {
+  museumId?: number | null;
+  parentId?: number | null;
+  sortOrder: number;
+  iconUrl?: string | null;
+  status: string;
+  categoryTranslations: Array<{
+    id?: number | null;
+    categoryId?: number;
+    languageCode: string;
+    categoryName: string;
+    description?: string | null;
+  }>;
+};
+
+export type CreateThemeDto = {
+  museumId?: number | null;
+  themeName: string;
+  description?: string | null;
+};
+
+export type CreateTagGroupDto = {
+  groupName: string;
+  sortOrder: number;
+};
+
+export type CreateTagDto = {
+  tagGroupId: number;
+  tagName: string;
+  sortOrder: number;
 };

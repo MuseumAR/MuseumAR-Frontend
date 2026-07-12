@@ -10,7 +10,7 @@ import {
   ROLE_LABELS,
   type DashboardRole,
 } from "@/lib/roles";
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, sans } from "@/lib/dashboard-theme";
 import { NavIcon } from "./nav-icons";
 
 export const SIDEBAR_WIDTH = 280;
@@ -45,7 +45,7 @@ export function Sidebar({ role }: { role: DashboardRole }) {
           </div>
           <div>
             <p
-              className="text-sm font-semibold tracking-[0.15em]"
+              className="text-sm font-semibold"
               style={{ fontFamily: cinzel, color: T.text }}
             >
               MUSEUM<span style={{ color: T.primary }}>AR</span>
@@ -112,13 +112,13 @@ export function Sidebar({ role }: { role: DashboardRole }) {
               style={{
                 background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
                 color: T.surface,
-                fontFamily: cinzel,
+                fontFamily: sans,
               }}
             >
               {userName.charAt(0)}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium" style={{ color: T.text }}>
+              <p className="truncate text-sm font-medium" style={{ color: T.text, fontFamily: sans }}>
                 {userName}
               </p>
               <p className="truncate text-xs" style={{ color: T.mutedLight }}>

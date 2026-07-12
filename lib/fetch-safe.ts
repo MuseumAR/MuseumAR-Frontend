@@ -7,9 +7,10 @@ export async function safeFetch<T>(
   try {
     return await fn();
   } catch (error) {
-    const isExpectedNotFound =
-      error instanceof AppError && error.statusCode === 404;
-    if (!isExpectedNotFound) {
+    const isExpected =
+      error instanceof AppError &&
+      (error.statusCode === 404 || error.statusCode === 401);
+    if (!isExpected) {
       console.error("[API]", error);
     }
     return fallback;

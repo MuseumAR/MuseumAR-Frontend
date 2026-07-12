@@ -9,7 +9,6 @@ import {
   unpublishExhibit,
   updateExhibit,
 } from "./content-api.service";
-import { getStoredMuseumId } from "@/services/auth/resolve-museum-id";
 
 export type ExhibitRow = {
   id: number;
@@ -40,27 +39,16 @@ export function mapExhibitToRow(exhibit: ExhibitDto): ExhibitRow {
   };
 }
 
-async function requireMuseumId(museumId?: number): Promise<number | null> {
-  if (museumId != null) return museumId;
-  return getStoredMuseumId();
-}
-
-export async function getExhibitRows(museumId?: number): Promise<ExhibitRow[]> {
+export async function getExhibitRows(): Promise<ExhibitRow[]> {
   return safeFetch(async () => {
-    const id = await requireMuseumId(museumId);
-    if (id == null) return [];
-    const exhibits = await getExhibits(id);
+    const exhibits = await getExhibits();
     return exhibits.map(mapExhibitToRow);
   }, []);
 }
 
-export async function getExhibitStats(museumId?: number) {
+export async function getExhibitStats() {
   return safeFetch(async () => {
-    const id = await requireMuseumId(museumId);
-    if (id == null) {
-      return { total: 0, published: 0, draft: 0, withAr: 0, withQr: 0 };
-    }
-    const exhibits = await getExhibits(id);
+    const exhibits = await getExhibits();
     return {
       total: exhibits.length,
       published: exhibits.filter((e) => e.status === "Published").length,
@@ -71,13 +59,11 @@ export async function getExhibitStats(museumId?: number) {
   }, { total: 0, published: 0, draft: 0, withAr: 0, withQr: 0 });
 }
 
-export async function getExhibitDetail(id: number, museumId?: number) {
+export async function getExhibitDetail(id: number) {
   try {
     return await fetchExhibitById(id);
   } catch {
-    const mid = await requireMuseumId(museumId);
-    if (mid == null) return null;
-    const exhibits = await getExhibits(mid);
+    const exhibits = await getExhibits();
     return exhibits.find((e) => e.id === id) ?? null;
   }
 }

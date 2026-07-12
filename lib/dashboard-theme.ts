@@ -12,4 +12,12 @@ export const dashboardTheme = {
   danger: "#B45309",
 } as const;
 
-export const cinzel = "var(--font-cinzel), Georgia, serif";
+/** Single UI font — Be Vietnam Pro (Vietnamese + Latin) */
+export const sans =
+  "var(--font-be-vietnam), system-ui, sans-serif";
+
+/**
+ * @deprecated Alias of `sans` — kept so existing imports stay in sync.
+ * Do not reintroduce Cinzel here (no Vietnamese glyphs).
+ */
+export const cinzel = sans;

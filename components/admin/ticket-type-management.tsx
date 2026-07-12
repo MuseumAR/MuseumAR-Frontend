@@ -10,7 +10,7 @@ import {
   getFirstValidationError,
   validateCreateTicketType,
 } from "@/lib/validation";
-import type { MuseumDto, TicketTypeDto } from "@/types/api";
+import type { TicketTypeDto } from "@/types/api";
 
 function formatPrice(price: number) {
   return new Intl.NumberFormat("vi-VN", {
@@ -22,14 +22,15 @@ function formatPrice(price: number) {
 
 export function TicketTypeManagementPanel({
   ticketTypes,
-  museums,
+  museumId,
+  museumName,
 }: {
   ticketTypes: TicketTypeDto[];
-  museums: MuseumDto[];
+  museumId: number | null;
+  museumName?: string | null;
 }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
-  const [museumId, setMuseumId] = useState(museums[0]?.id ?? 0);
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
@@ -38,10 +39,14 @@ export function TicketTypeManagementPanel({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const museumNameById = new Map(museums.map((m) => [m.id, m.name]));
+  const canCreate = museumId != null && museumId > 0;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (museumId == null) {
+      setError("Museum profile is not available.");
+      return;
+    }
 
     const validation = validateCreateTicketType({ museumId, name, price });
     if (!validation.valid) {
@@ -78,15 +83,19 @@ export function TicketTypeManagementPanel({
   return (
     <div className="space-y-6 px-8 pb-10">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="text-2xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-            {ticketTypes.length} ticket type{ticketTypes.length === 1 ? "" : "s"}
-          </p>
-        </div>
+        <p className="text-sm" style={{ fontFamily: cinzel, color: T.muted }}>
+          <span className="font-semibold" style={{ color: T.text }}>
+            {ticketTypes.length}
+          </span>
+          {` ticket type${ticketTypes.length === 1 ? "" : "s"}`}
+          {museumName ? (
+            <span style={{ color: T.mutedLight }}>{` · ${museumName}`}</span>
+          ) : null}
+        </p>
         <button
           type="button"
           onClick={() => setShowForm((v) => !v)}
-          disabled={museums.length === 0}
+          disabled={!canCreate}
           className="inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
           style={{
             background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
@@ -98,16 +107,16 @@ export function TicketTypeManagementPanel({
         </button>
       </div>
 
-      {museums.length === 0 && (
+      {!canCreate && (
         <p
           className="rounded-2xl px-4 py-3 text-sm"
           style={{ background: "rgba(200,155,69,0.10)", color: T.muted }}
         >
-          Create at least one museum before adding ticket types.
+          Museum profile is required before adding ticket types.
         </p>
       )}
 
-      {showForm && museums.length > 0 && (
+      {showForm && canCreate && (
         <form
           onSubmit={handleSubmit}
           className="rounded-3xl p-6"
@@ -117,23 +126,6 @@ export function TicketTypeManagementPanel({
             New ticket type
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <label className="block text-sm" style={{ color: T.muted }}>
-                Museum *
-              </label>
-              <select
-                value={museumId}
-                onChange={(e) => setMuseumId(Number(e.target.value))}
-                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
-                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
-              >
-                {museums.map((museum) => (
-                  <option key={museum.id} value={museum.id}>
-                    {museum.name}
-                  </option>
-                ))}
-              </select>
-            </div>
             <div className="space-y-1.5">
               <label className="block text-sm" style={{ color: T.muted }}>
                 Name *
@@ -242,17 +234,15 @@ export function TicketTypeManagementPanel({
                     background: "rgba(245,230,200,0.35)",
                   }}
                 >
-                  {["ID", "Name", "Museum", "Price", "Exhibition ID", "Description"].map(
-                    (label) => (
-                      <th
-                        key={label}
-                        className="px-5 py-4 font-medium"
-                        style={{ color: T.mutedLight }}
-                      >
-                        {label}
-                      </th>
-                    ),
-                  )}
+                  {["ID", "Name", "Price", "Exhibition ID", "Description"].map((label) => (
+                    <th
+                      key={label}
+                      className="px-5 py-4 font-medium"
+                      style={{ color: T.mutedLight }}
+                    >
+                      {label}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -267,9 +257,6 @@ export function TicketTypeManagementPanel({
                     </td>
                     <td className="px-5 py-4 font-medium" style={{ color: T.text }}>
                       {ticket.name}
-                    </td>
-                    <td className="px-5 py-4" style={{ color: T.muted }}>
-                      {museumNameById.get(ticket.museumId) ?? `#${ticket.museumId}`}
                     </td>
                     <td className="px-5 py-4 tabular-nums" style={{ color: T.text }}>
                       {formatPrice(ticket.price)}

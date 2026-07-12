@@ -5,19 +5,13 @@ import {
   getExhibitionById as fetchExhibitionById,
   getExhibitions as fetchExhibitions,
 } from "./content-api.service";
-import { getStoredMuseumId } from "@/services/auth/resolve-museum-id";
 
-export async function getExhibitionList(museumId?: number): Promise<ExhibitionDto[]> {
-  return safeFetch(async () => {
-    const id = museumId ?? (await getStoredMuseumId());
-    if (id == null) return [];
-    return fetchExhibitions(id);
-  }, []);
+export async function getExhibitionList(): Promise<ExhibitionDto[]> {
+  return safeFetch(() => fetchExhibitions(), []);
 }
 
 export async function getExhibitionById(
   exhibitionId: number | string,
-  museumId?: number,
 ): Promise<ExhibitionDto | null> {
   const id = Number(exhibitionId);
   if (Number.isNaN(id)) return null;
@@ -26,9 +20,7 @@ export async function getExhibitionById(
     try {
       return await fetchExhibitionById(id);
     } catch {
-      const mid = museumId ?? (await getStoredMuseumId());
-      if (mid == null) return null;
-      const list = await fetchExhibitions(mid);
+      const list = await fetchExhibitions();
       return list.find((item) => item.id === id) ?? null;
     }
   }, null);
