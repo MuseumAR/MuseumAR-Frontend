@@ -1,9 +1,6 @@
-export * from "./ticket.service";
 export {
-  createTicket,
-  deleteTicket,
-  getTicketById,
-  getTickets,
-  getTicketStatistics,
-  updateTicket,
-} from "./ticket-api.service";
+  getTicketStats,
+  getTicketStatisticRows,
+  getTicketTypeRows,
+} from "./ticket.service";
+export { createTicketTypeEntry } from "@/services/admin";

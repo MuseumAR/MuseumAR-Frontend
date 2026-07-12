@@ -97,28 +97,6 @@ export const ARTIFACT_TABLE_DATA: ArtifactRow[] = [
 ];
 
 // ─── Ticket Data ───────────────────────────────────────────────────────────
-export type StandardTicketRow = {
-  id: number;
-  ticketName: string;
-  visitorType: string;
-  price: number;
-  validFrom: string;
-  validUntil: string;
-  status: "Active" | "Inactive";
-};
-
-export type ExhibitionTicketRow = {
-  id: number;
-  ticketName: string;
-  exhibitionId: number;
-  price: number;
-  maxTicket: number;
-  maxQuantity: number;
-  validFrom: string;
-  validUntil: string;
-  status: "Active" | "Inactive";
-};
-
 export type TicketStatisticRow = {
   childrenTicket: number;
   studentTicket: number;
@@ -140,90 +118,6 @@ export const TICKET_STATS: TicketStats = {
   inactiveTickets: 2,
   totalRevenue: 1250000,
 };
-
-export const STANDARD_TICKET_DATA: StandardTicketRow[] = [
-  {
-    id: 1,
-    ticketName: "StdA13",
-    visitorType: "Age 0-5, Age > 60, Disable",
-    price: 0,
-    validFrom: "2026-05-15",
-    validUntil: "2026-05-16",
-    status: "Active",
-  },
-  {
-    id: 2,
-    ticketName: "StdA12",
-    visitorType: "Age 6-18",
-    price: 50000,
-    validFrom: "2026-05-15",
-    validUntil: "2026-05-16",
-    status: "Active",
-  },
-  {
-    id: 3,
-    ticketName: "StdA11",
-    visitorType: "Age >18",
-    price: 70000,
-    validFrom: "2026-05-15",
-    validUntil: "2026-05-16",
-    status: "Active",
-  },
-  {
-    id: 4,
-    ticketName: "StdA10",
-    visitorType: "Age >18",
-    price: 70000,
-    validFrom: "2026-05-13",
-    validUntil: "2026-05-14",
-    status: "Inactive",
-  },
-  {
-    id: 5,
-    ticketName: "StdA09",
-    visitorType: "Age 6-18",
-    price: 50000,
-    validFrom: "2026-05-13",
-    validUntil: "2026-05-14",
-    status: "Inactive",
-  },
-];
-
-export const EXHIBITION_TICKET_DATA: ExhibitionTicketRow[] = [
-  {
-    id: 11,
-    ticketName: "ExhA3",
-    exhibitionId: 1,
-    price: 50000,
-    maxTicket: 1,
-    maxQuantity: 100,
-    validFrom: "2026-05-15",
-    validUntil: "2026-05-16",
-    status: "Active",
-  },
-  {
-    id: 21,
-    ticketName: "ExhA2",
-    exhibitionId: 2,
-    price: 60000,
-    maxTicket: 1,
-    maxQuantity: 150,
-    validFrom: "2026-05-15",
-    validUntil: "2026-05-16",
-    status: "Active",
-  },
-  {
-    id: 31,
-    ticketName: "ExhA1",
-    exhibitionId: 3,
-    price: 70000,
-    maxTicket: 2,
-    maxQuantity: 200,
-    validFrom: "2026-05-13",
-    validUntil: "2026-05-14",
-    status: "Inactive",
-  },
-];
 
 export const TICKET_STATISTIC_DATA: TicketStatisticRow[] = [
   {

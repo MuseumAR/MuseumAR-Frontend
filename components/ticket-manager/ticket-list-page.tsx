@@ -1,11 +1,8 @@
 import { TicketList } from "./ticket-list";
-import { getStandardTickets, getExhibitionTickets } from "@/services/ticket-manager";
+import { getTicketTypeRows } from "@/services/ticket-manager";
 
 export async function TicketListPage() {
-  const [standardTickets, exhibitionTickets] = await Promise.all([
-    getStandardTickets(),
-    getExhibitionTickets(),
-  ]);
+  const ticketTypes = await getTicketTypeRows();
 
-  return <TicketList standardTickets={standardTickets} exhibitionTickets={exhibitionTickets} />;
+  return <TicketList ticketTypes={ticketTypes} />;
 }

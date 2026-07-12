@@ -2,44 +2,59 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Pencil, Search, Trash2, Plus } from "lucide-react";
-import type { StandardTicketRow, ExhibitionTicketRow } from "@/lib/mock-data";
+import { Search, Plus } from "lucide-react";
+import type { TicketTypeDto } from "@/types/api";
 import { formatNumber } from "@/lib/format";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 
 const PAGE_SIZE = 8;
 
-const STATUS_STYLES: Record<"Active" | "Inactive", { bg: string; color: string }> = {
+type StatusLabel = "Active" | "Inactive";
+
+const STATUS_STYLES: Record<StatusLabel, { bg: string; color: string }> = {
   Active: { bg: "rgba(79,125,74,0.12)", color: T.success },
   Inactive: { bg: "rgba(109,90,69,0.12)", color: T.muted },
 };
 
-interface TicketTableProps {
-  standardTickets: StandardTicketRow[];
-  exhibitionTickets: ExhibitionTicketRow[];
+function statusOf(ticket: TicketTypeDto): StatusLabel {
+  return ticket.isActive === false ? "Inactive" : "Active";
 }
 
-export function TicketList({ standardTickets, exhibitionTickets }: TicketTableProps) {
+export function TicketList({ ticketTypes }: { ticketTypes: TicketTypeDto[] }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<"standard" | "exhibition">("standard");
 
-  const data = activeTab === "standard" ? standardTickets : exhibitionTickets;
+  const { standard, exhibition } = useMemo(() => {
+    const standard: TicketTypeDto[] = [];
+    const exhibition: TicketTypeDto[] = [];
+    for (const ticket of ticketTypes) {
+      if (ticket.exhibitionId == null) standard.push(ticket);
+      else exhibition.push(ticket);
+    }
+    return { standard, exhibition };
+  }, [ticketTypes]);
+
+  const data = activeTab === "standard" ? standard : exhibition;
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return data;
-    return data.filter((row) => row.ticketName.toLowerCase().includes(q));
+    return data.filter((row) => row.name.toLowerCase().includes(q));
   }, [data, search]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
   const rows = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
+  const columns =
+    activeTab === "standard"
+      ? ["ID", "Name", "Price", "Description", "Status"]
+      : ["ID", "Name", "Exhibition ID", "Price", "Description", "Status"];
+
   return (
     <div className="space-y-8 px-8 pb-10">
-      {/* Standard Tickets Section */}
       <section>
         <div className="mb-5 flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -50,16 +65,13 @@ export function TicketList({ standardTickets, exhibitionTickets }: TicketTablePr
               Ticket Management
             </h3>
             <p className="mt-1 text-sm" style={{ color: T.muted }}>
-              Manage all tickets for your museum
+              Manage all ticket types for your museum
             </p>
           </div>
           <button
             onClick={() => router.push("/ticket-manager/ticket-management/create")}
             className="flex items-center gap-2 rounded-lg px-4 py-2 font-medium transition-all"
-            style={{
-              background: T.primary,
-              color: T.surface,
-            }}
+            style={{ background: T.primary, color: T.surface }}
             onMouseEnter={(e) => {
               (e.currentTarget as HTMLElement).style.opacity = "0.9";
             }}
@@ -126,220 +138,103 @@ export function TicketList({ standardTickets, exhibitionTickets }: TicketTablePr
           }}
         >
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1000px] text-left text-sm">
+            <table className="w-full min-w-[720px] text-left text-sm">
               <thead>
-                <tr style={{ borderBottom: `1px solid ${T.border}`, background: "rgba(245,230,200,0.35)" }}>
-                  {activeTab === "standard" ? (
-                    <>
-                      <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider" style={{ color: T.mutedLight }}>
-                        ID
-                      </th>
-                      <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider" style={{ color: T.mutedLight }}>
-                        Ticket Name
-                      </th>
-                      <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider" style={{ color: T.mutedLight }}>
-                        Visitor Type
-                      </th>
-                      <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider" style={{ color: T.mutedLight }}>
-                        Price
-                      </th>
-                      <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider" style={{ color: T.mutedLight }}>
-                        Valid From
-                      </th>
-                      <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider" style={{ color: T.mutedLight }}>
-                        Valid Until
-                      </th>
-                      <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider" style={{ color: T.mutedLight }}>
-                        Status
-                      </th>
-                      <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider" style={{ color: T.mutedLight }}>
-                        Actions
-                      </th>
-                    </>
-                  ) : (
-                    <>
-                      <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider" style={{ color: T.mutedLight }}>
-                        ID
-                      </th>
-                      <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider" style={{ color: T.mutedLight }}>
-                        Ticket Name
-                      </th>
-                      <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider" style={{ color: T.mutedLight }}>
-                        Exhibition ID
-                      </th>
-                      <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider" style={{ color: T.mutedLight }}>
-                        Price
-                      </th>
-                      <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider" style={{ color: T.mutedLight }}>
-                        Max Ticket
-                      </th>
-                      <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider" style={{ color: T.mutedLight }}>
-                        Max Quantity
-                      </th>
-                      <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider" style={{ color: T.mutedLight }}>
-                        Valid From
-                      </th>
-                      <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider" style={{ color: T.mutedLight }}>
-                        Valid Until
-                      </th>
-                      <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider" style={{ color: T.mutedLight }}>
-                        Status
-                      </th>
-                      <th className="px-5 py-4 text-xs font-medium uppercase tracking-wider" style={{ color: T.mutedLight }}>
-                        Actions
-                      </th>
-                    </>
-                  )}
+                <tr
+                  style={{
+                    borderBottom: `1px solid ${T.border}`,
+                    background: "rgba(245,230,200,0.35)",
+                  }}
+                >
+                  {columns.map((label) => (
+                    <th
+                      key={label}
+                      className="px-5 py-4 text-xs font-medium uppercase tracking-wider"
+                      style={{ color: T.mutedLight }}
+                    >
+                      {label}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {rows.map((row) => {
-                  const statusStyle = STATUS_STYLES[row.status];
-                  return (
-                    <tr
-                      key={row.id}
-                      className="transition-colors hover:bg-[rgba(200,155,69,0.05)]"
-                      style={{ borderBottom: `1px solid ${T.border}` }}
+                {rows.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={columns.length}
+                      className="px-5 py-16 text-center text-sm"
+                      style={{ color: T.muted }}
                     >
-                      {activeTab === "standard" ? (
-                        <>
+                      No ticket types yet.
+                    </td>
+                  </tr>
+                ) : (
+                  rows.map((row) => {
+                    const status = statusOf(row);
+                    const statusStyle = STATUS_STYLES[status];
+                    return (
+                      <tr
+                        key={row.id}
+                        className="transition-colors hover:bg-[rgba(200,155,69,0.05)]"
+                        style={{ borderBottom: `1px solid ${T.border}` }}
+                      >
+                        <td className="px-5 py-4 tabular-nums" style={{ color: T.muted }}>
+                          {row.id}
+                        </td>
+                        <td className="px-5 py-4 font-medium" style={{ color: T.text }}>
+                          {row.name}
+                        </td>
+                        {activeTab === "exhibition" && (
                           <td className="px-5 py-4 tabular-nums" style={{ color: T.muted }}>
-                            {(row as StandardTicketRow).id}
+                            {row.exhibitionId}
                           </td>
-                          <td className="px-5 py-4 font-medium" style={{ color: T.text }}>
-                            {(row as StandardTicketRow).ticketName}
-                          </td>
-                          <td className="px-5 py-4" style={{ color: T.muted }}>
-                            {(row as StandardTicketRow).visitorType}
-                          </td>
-                          <td className="px-5 py-4 tabular-nums" style={{ color: T.text }}>
-                            {formatNumber((row as StandardTicketRow).price)}
-                          </td>
-                          <td className="px-5 py-4" style={{ color: T.muted }}>
-                            {(row as StandardTicketRow).validFrom}
-                          </td>
-                          <td className="px-5 py-4" style={{ color: T.muted }}>
-                            {(row as StandardTicketRow).validUntil}
-                          </td>
-                          <td className="px-5 py-4">
-                            <span
-                              className="rounded-full px-2.5 py-0.5 text-xs font-medium"
-                              style={{
-                                background: statusStyle.bg,
-                                color: statusStyle.color,
-                              }}
-                            >
-                              {row.status}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4">
-                            <div className="flex items-center gap-1">
-                              {[Eye, Pencil, Trash2].map((Icon, i) => (
-                                <button
-                                  key={i}
-                                  type="button"
-                                  className="rounded-lg p-2 transition-colors"
-                                  style={{ color: i === 2 ? T.danger : T.muted }}
-                                  aria-label={i === 0 ? "View" : i === 1 ? "Edit" : "Delete"}
-                                  onMouseEnter={(e) => {
-                                    (e.currentTarget as HTMLElement).style.background = "rgba(200,155,69,0.12)";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    (e.currentTarget as HTMLElement).style.background = "transparent";
-                                  }}
-                                >
-                                  <Icon className="h-4 w-4" />
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                        </>
-                      ) : (
-                        <>
-                          <td className="px-5 py-4 tabular-nums" style={{ color: T.muted }}>
-                            {(row as ExhibitionTicketRow).id}
-                          </td>
-                          <td className="px-5 py-4 font-medium" style={{ color: T.text }}>
-                            {(row as ExhibitionTicketRow).ticketName}
-                          </td>
-                          <td className="px-5 py-4 tabular-nums" style={{ color: T.muted }}>
-                            {(row as ExhibitionTicketRow).exhibitionId}
-                          </td>
-                          <td className="px-5 py-4 tabular-nums" style={{ color: T.text }}>
-                            {formatNumber((row as ExhibitionTicketRow).price)}
-                          </td>
-                          <td className="px-5 py-4 tabular-nums" style={{ color: T.muted }}>
-                            {(row as ExhibitionTicketRow).maxTicket}
-                          </td>
-                          <td className="px-5 py-4 tabular-nums" style={{ color: T.muted }}>
-                            {(row as ExhibitionTicketRow).maxQuantity}
-                          </td>
-                          <td className="px-5 py-4" style={{ color: T.muted }}>
-                            {(row as ExhibitionTicketRow).validFrom}
-                          </td>
-                          <td className="px-5 py-4" style={{ color: T.muted }}>
-                            {(row as ExhibitionTicketRow).validUntil}
-                          </td>
-                          <td className="px-5 py-4">
-                            <span
-                              className="rounded-full px-2.5 py-0.5 text-xs font-medium"
-                              style={{
-                                background: statusStyle.bg,
-                                color: statusStyle.color,
-                              }}
-                            >
-                              {row.status}
-                            </span>
-                          </td>
-                          <td className="px-5 py-4">
-                            <div className="flex items-center gap-1">
-                              {[Eye, Pencil, Trash2].map((Icon, i) => (
-                                <button
-                                  key={i}
-                                  type="button"
-                                  className="rounded-lg p-2 transition-colors"
-                                  style={{ color: i === 2 ? T.danger : T.muted }}
-                                  aria-label={i === 0 ? "View" : i === 1 ? "Edit" : "Delete"}
-                                  onMouseEnter={(e) => {
-                                    (e.currentTarget as HTMLElement).style.background = "rgba(200,155,69,0.12)";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    (e.currentTarget as HTMLElement).style.background = "transparent";
-                                  }}
-                                >
-                                  <Icon className="h-4 w-4" />
-                                </button>
-                              ))}
-                            </div>
-                          </td>
-                        </>
-                      )}
-                    </tr>
-                  );
-                })}
+                        )}
+                        <td className="px-5 py-4 tabular-nums" style={{ color: T.text }}>
+                          {formatNumber(row.price)}
+                        </td>
+                        <td
+                          className="max-w-[240px] truncate px-5 py-4"
+                          style={{ color: T.muted }}
+                        >
+                          {row.description ?? "—"}
+                        </td>
+                        <td className="px-5 py-4">
+                          <span
+                            className="rounded-full px-2.5 py-0.5 text-xs font-medium"
+                            style={{ background: statusStyle.bg, color: statusStyle.color }}
+                          >
+                            {status}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
         {/* Pagination */}
-        <div className="flex items-center justify-center gap-2">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setPage(p)}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-sm transition-colors"
-              style={{
-                background: p === currentPage ? T.primary : T.surface,
-                color: p === currentPage ? T.surface : T.muted,
-                border: `1px solid ${p === currentPage ? T.primary : T.border}`,
-              }}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
+        {totalPages > 1 && (
+          <div className="mt-6 flex items-center justify-center gap-2">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setPage(p)}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-sm transition-colors"
+                style={{
+                  background: p === currentPage ? T.primary : T.surface,
+                  color: p === currentPage ? T.surface : T.muted,
+                  border: `1px solid ${p === currentPage ? T.primary : T.border}`,
+                }}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
