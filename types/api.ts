@@ -144,6 +144,17 @@ export type ExhibitArassetDto = {
   createdAt: string;
 };
 
+// ─── Content version ──────────────────────────────────────────────────────────
+
+export type ContentVersionDto = {
+  id: number;
+  museumId: number;
+  versionNumber: string;
+  changeDescription?: string | null;
+  status: string;
+  createdAt: string;
+};
+
 // ─── Offline package ──────────────────────────────────────────────────────────
 
 export type CreateOfflinePackageDto = {
@@ -169,12 +180,16 @@ export type MuseumMapDto = {
   museumId: number;
   mapImageUrl: string;
   mapType: string;
+  floorNumber: number;
+  mapName?: string | null;
 };
 
 export type CreateMuseumMapDto = {
   museumId: number;
   mapImageUrl: string;
   mapType: string;
+  floorNumber?: number;
+  mapName?: string | null;
 };
 
 // ─── Tour route ───────────────────────────────────────────────────────────────

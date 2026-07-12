@@ -1,4 +1,3 @@
-import { PageDescription } from "@/components/dashboard/page-header";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import type { AnalyticsMetric } from "@/types";
 import { AnalyticsCharts } from "./analytics-charts";
@@ -11,11 +10,6 @@ interface Props {
 export function AnalyticsPageContent({ metrics }: Props) {
   return (
     <div className="space-y-8 px-8 pb-10">
-      <PageDescription>
-        Engagement metrics and visitor behavior insights
-      </PageDescription>
-
-      {/* Metric cards */}
       <section>
         <div className="mb-5">
           <p

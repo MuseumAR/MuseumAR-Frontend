@@ -13,6 +13,9 @@ export {
   getAuthUser,
   saveAuthSession,
 } from "./auth.storage";
+export {
+  getStoredMuseumId,
+} from "./resolve-museum-id";
 export { getHomePathForRole, getRoleDisplayLabel, isDashboardRole } from "./auth.utils";
 export { AUTH_CHANGED_EVENT } from "./auth.storage";
 export type { ApiResponse } from "@/types/api";

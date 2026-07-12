@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { getDisplayError } from "@/lib/validation";
+import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import {
+  getDisplayError,
+  getFirstValidationError,
+  validateCreateArtifact,
+} from "@/lib/validation";
 import type { Artifact } from "@/types";
 import {
   updateExhibit,
@@ -24,11 +29,12 @@ export function UpdateArtifactForm({
   const arRef = useRef<HTMLInputElement>(null);
   const audioRef = useRef<HTMLInputElement>(null);
 
-  const [name, setName] = useState(artifact.name);
-  const [category, setCategory] = useState(artifact.category);
-  const [era, setEra] = useState(artifact.era);
-  const [location, setLocation] = useState(artifact.location);
+  const [title, setTitle] = useState(artifact.name);
+  const [exhibitCode, setExhibitCode] = useState(
+    artifact.id.startsWith("EX-") ? "" : artifact.id,
+  );
   const [description, setDescription] = useState(artifact.description);
+  const [languageCode, setLanguageCode] = useState("vi");
   const [imagePreview, setImagePreview] = useState<string | null>(artifact.image);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [arFile, setArFile] = useState<File | null>(null);
@@ -39,26 +45,17 @@ export function UpdateArtifactForm({
   const exhibitId =
     artifact.exhibitId ?? Number(artifact.id.replace(/^EX-/i, ""));
 
-  function handleImage(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
-  }
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
 
-  function handleAr(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) setArFile(file);
-  }
+    const validation = validateCreateArtifact({ name: title });
+    if (!validation.valid) {
+      setError(getFirstValidationError(validation));
+      return;
+    }
 
-  function handleAudio(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (file) setAudioFile(file);
-  }
-
-  async function handleSubmit() {
     if (!exhibitId || Number.isNaN(exhibitId)) {
-      setError("Unable to find this artifact.");
+      setError("Unable to find this exhibit.");
       return;
     }
 
@@ -68,123 +65,167 @@ export function UpdateArtifactForm({
     try {
       await updateExhibit(exhibitId, {
         museumId,
-        exhibitCode: category !== "—" ? category : undefined,
+        exhibitCode: exhibitCode.trim() || undefined,
         status: artifact.status === "Published" ? "Published" : "Draft",
         translations: [
           {
             exhibitId,
-            languageCode: "vi",
-            title: name,
-            description,
+            languageCode,
+            title: title.trim(),
+            description: description.trim() || undefined,
           },
         ],
       });
 
-      if (imageFile) {
-        await uploadExhibitImage(exhibitId, imageFile, name);
-      }
-      if (audioFile) {
-        await uploadExhibitAudio(exhibitId, "vi", audioFile);
-      }
-      if (arFile) {
-        await uploadArAsset(exhibitId, "model", arFile);
-      }
+      if (imageFile) await uploadExhibitImage(exhibitId, imageFile, title.trim());
+      if (audioFile) await uploadExhibitAudio(exhibitId, languageCode, audioFile);
+      if (arFile) await uploadArAsset(exhibitId, "model", arFile);
 
       router.push(`/content-manager/artifact/${artifact.id}`);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Unable to update artifact. Please try again."));
+      setError(getDisplayError(err, "Unable to update exhibit."));
     } finally {
       setIsSubmitting(false);
     }
   }
 
   return (
-    <div className="px-8 py-8">
+    <div className="px-8 pb-10">
       <Link
         href={`/content-manager/artifact/${artifact.id}`}
-        className="mb-6 inline-flex items-center gap-2 text-sm text-white/60 transition-colors hover:text-white"
+        className="mb-6 inline-flex items-center gap-2 text-sm"
+        style={{ color: T.muted }}
       >
-        <span>←</span> Back to Art
+        <span>←</span> Back to exhibit
       </Link>
 
-      <h1 className="mb-8 text-3xl font-semibold">Update artifact</h1>
+      <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-3xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
+          Update Exhibit
+        </h1>
+        <StatusBadge status={artifact.status} />
+      </div>
 
-      <div className="rounded-2xl border border-white/25 p-8">
-        <div className="flex gap-8">
-          <div className="flex w-44 shrink-0 flex-col gap-3">
-            <button
-              type="button"
+      <form
+        onSubmit={handleSubmit}
+        className="rounded-3xl p-8"
+        style={{ background: T.surface, border: `1px solid ${T.border}` }}
+      >
+        <div className="flex flex-col gap-8 lg:flex-row">
+          <div className="flex w-full shrink-0 flex-col gap-3 lg:w-48">
+            <UploadBox
+              label={imageFile?.name ?? "Image"}
+              preview={imagePreview}
               onClick={() => imageRef.current?.click()}
-              className="flex h-36 w-full flex-col items-center justify-center gap-1.5 overflow-hidden rounded-xl border border-dashed border-white/30 bg-white/5 text-center transition-colors hover:border-white/50"
-            >
-              {imagePreview ? (
-                <img src={imagePreview} alt="preview" className="h-full w-full object-cover" />
-              ) : (
-                <>
-                  <UploadIcon />
-                  <p className="text-xs text-white/50">Choose artifact image</p>
-                </>
-              )}
-            </button>
-            <input ref={imageRef} type="file" accept="image/*" className="hidden" onChange={handleImage} />
-
-            <button
-              type="button"
+            />
+            <input
+              ref={imageRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setImageFile(file);
+                setImagePreview(URL.createObjectURL(file));
+              }}
+            />
+            <UploadBox
+              label={arFile?.name ?? "AR model"}
               onClick={() => arRef.current?.click()}
-              className="flex h-20 w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-white/30 bg-white/5 transition-colors hover:border-white/50"
-            >
-              <UploadIcon />
-              <p className="text-xs text-white/50">{arFile?.name ?? "AR model"}</p>
-            </button>
-            <input ref={arRef} type="file" accept=".glb,.gltf" className="hidden" onChange={handleAr} />
-
-            <button
-              type="button"
+            />
+            <input
+              ref={arRef}
+              type="file"
+              accept=".glb,.gltf"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) setArFile(file);
+              }}
+            />
+            <UploadBox
+              label={audioFile?.name ?? "Audio guide"}
               onClick={() => audioRef.current?.click()}
-              className="flex h-20 w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-white/30 bg-white/5 transition-colors hover:border-white/50"
-            >
-              <UploadIcon />
-              <p className="text-xs text-white/50">{audioFile?.name ?? "Audio"}</p>
-            </button>
-            <input ref={audioRef} type="file" accept="audio/*" className="hidden" onChange={handleAudio} />
+            />
+            <input
+              ref={audioRef}
+              type="file"
+              accept="audio/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) setAudioFile(file);
+              }}
+            />
           </div>
 
           <div className="flex-1 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Artifact Name" value={name} onChange={setName} />
-              <Field label="Category" value={category} onChange={setCategory} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Era" value={era} onChange={setEra} />
-              <Field label="Location" value={location} onChange={setLocation} />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field
+                label="Title *"
+                value={title}
+                onChange={setTitle}
+                placeholder="Exhibit title"
+              />
+              <Field
+                label="Exhibit code"
+                value={exhibitCode}
+                onChange={setExhibitCode}
+                placeholder="CAT-001"
+              />
+              <Field
+                label="Language"
+                value={languageCode}
+                onChange={setLanguageCode}
+                placeholder="vi"
+              />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm text-white/60">Description</label>
+              <label className="mb-1.5 block text-sm" style={{ color: T.muted }}>
+                Description
+              </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
-                className="w-full resize-none rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-white/40"
+                className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
+                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
               />
             </div>
             {error && (
-              <p className="rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">{error}</p>
+              <p
+                className="rounded-xl px-3 py-2 text-sm"
+                style={{ background: "rgba(180,40,40,0.08)", color: "#8B2E2E" }}
+              >
+                {error}
+              </p>
             )}
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end">
-          <button
-            type="button"
-            disabled={isSubmitting}
-            onClick={handleSubmit}
-            className="rounded-lg border border-emerald-500 px-6 py-2 text-sm text-emerald-400 transition-colors hover:bg-emerald-500/10 disabled:opacity-50"
+        <div className="mt-8 flex justify-end gap-3">
+          <Link
+            href={`/content-manager/artifact/${artifact.id}`}
+            className="rounded-xl px-5 py-2 text-sm"
+            style={{ border: `1px solid ${T.border}`, color: T.muted }}
           >
-            {isSubmitting ? "Updating..." : "Update"}
+            Cancel
+          </Link>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="rounded-xl px-6 py-2 text-sm font-medium disabled:opacity-50"
+            style={{
+              background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
+              color: T.surface,
+            }}
+          >
+            {isSubmitting ? "Saving…" : "Save changes"}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
@@ -193,33 +234,67 @@ function Field({
   label,
   value,
   onChange,
+  placeholder,
 }: {
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange: (v: string) => void;
+  placeholder: string;
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm text-white/60">{label}</label>
+      <label className="block text-sm" style={{ color: T.muted }}>
+        {label}
+      </label>
       <input
-        type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-white/20 bg-white/5 px-4 py-2.5 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-white/40"
+        placeholder={placeholder}
+        className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+        style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
       />
     </div>
   );
 }
 
-function UploadIcon() {
+function UploadBox({
+  label,
+  preview,
+  onClick,
+}: {
+  label: string;
+  preview?: string | null;
+  onClick: () => void;
+}) {
   return (
-    <svg className="h-5 w-5 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={1.5}
-        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-      />
-    </svg>
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex min-h-[5rem] w-full flex-col items-center justify-center gap-1 overflow-hidden rounded-xl border border-dashed px-2 py-3 text-center text-xs"
+      style={{ borderColor: T.border, background: "rgba(200,155,69,0.08)", color: T.muted }}
+    >
+      {preview ? (
+        <img src={preview} alt="" className="h-full max-h-24 w-full object-cover" />
+      ) : (
+        label
+      )}
+    </button>
+  );
+}
+
+function StatusBadge({ status }: { status: Artifact["status"] }) {
+  const styles = {
+    Published: { bg: "rgba(79,125,74,0.12)", color: T.success },
+    Draft: { bg: "rgba(200,155,69,0.15)", color: T.primaryDark },
+    Pending: { bg: "rgba(109,90,69,0.12)", color: T.muted },
+  };
+  const s = styles[status];
+  return (
+    <span
+      className="rounded-full px-3 py-1 text-xs font-medium"
+      style={{ background: s.bg, color: s.color }}
+    >
+      {status}
+    </span>
   );
 }

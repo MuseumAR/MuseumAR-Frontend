@@ -1,6 +1,7 @@
 import {
   apiDeleteAuth,
   apiGet,
+  apiGetAuth,
   apiPost,
   apiPostAuth,
   apiPostFormAuth,
@@ -12,6 +13,7 @@ import type {
   CreateMuseumMapDto,
   CreateOfflinePackageDto,
   CreateTourRouteDto,
+  ContentVersionDto,
   ExhibitArassetDto,
   ExhibitDto,
   ExhibitTranslationDto,
@@ -65,6 +67,12 @@ export function uploadExhibitAudio(id: number, languageCode: string, file: File)
 
 export function getExhibitTranslations(id: number) {
   return apiGet<ExhibitTranslationDto[]>(`/api/content/exhibits/${id}/translations`);
+}
+
+export function getContentVersions(museumId: number) {
+  return apiGetAuth<ContentVersionDto[]>(
+    `/api/content/museums/${museumId}/versions`,
+  );
 }
 
 export function createContentVersion(
@@ -131,6 +139,24 @@ export function getMuseumMaps(museumId: number) {
 
 export function createMuseumMap(payload: CreateMuseumMapDto) {
   return apiPost<MuseumMapDto>("/api/content/maps", payload);
+}
+
+export function uploadMuseumMap(
+  museumId: number,
+  file: File,
+  mapType: string,
+  floorNumber: number,
+  mapName?: string,
+) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("mapType", mapType);
+  formData.append("floorNumber", String(floorNumber));
+  if (mapName?.trim()) formData.append("mapName", mapName.trim());
+  return apiPostFormAuth<MuseumMapDto>(
+    `/api/content/museums/${museumId}/maps/upload`,
+    formData,
+  );
 }
 
 export function getTourRoutes(museumId: number) {

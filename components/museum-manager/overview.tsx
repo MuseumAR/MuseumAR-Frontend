@@ -5,8 +5,8 @@ import {
   getMuseumManagerStats,
   getPopularExhibits,
   getVisitorsTrend,
-  resolveActiveMuseumId,
 } from "@/services/museum-manager";
+import { resolveActiveMuseumId } from "@/services/museum-manager/museum-resolve.server";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { LanguageUsageChart } from "./charts/language-usage-chart";
 import { PopularExhibitChart } from "./charts/popular-exhibit-chart";
@@ -43,20 +43,6 @@ export async function MuseumManagerOverview() {
           <StatCard label="Avg. Listening Time" value={stats.averageListeningTime} icon="headphones" watermark="vase" />
         </div>
       </section>
-
-      <div className="flex justify-end">
-        <button
-          type="button"
-          className="rounded-2xl px-5 py-2.5 text-sm font-medium transition-colors"
-          style={{
-            background: T.surface,
-            border: `1px solid ${T.border}`,
-            color: T.muted,
-          }}
-        >
-          Export PDF
-        </button>
-      </div>
 
       <section>
         <div className="mb-5">

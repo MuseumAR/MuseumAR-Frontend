@@ -10,7 +10,7 @@ import {
   unpublishExhibit,
   updateExhibit,
 } from "./content-api.service";
-import { resolveActiveMuseumId } from "./museum-context";
+import { getStoredMuseumId } from "@/services/auth/resolve-museum-id";
 
 function getPrimaryTranslation(exhibit: ExhibitDto) {
   return exhibit.translations[0];
@@ -44,7 +44,7 @@ function mapExhibitToArtifact(exhibit: ExhibitDto): Artifact {
 
 async function requireMuseumId(museumId?: number): Promise<number | null> {
   if (museumId != null) return museumId;
-  return resolveActiveMuseumId();
+  return getStoredMuseumId();
 }
 
 export async function getArtifactById(id: string, museumId?: number): Promise<Artifact | null> {

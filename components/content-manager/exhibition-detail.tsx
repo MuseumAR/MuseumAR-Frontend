@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { PageDescription } from "@/components/dashboard/page-header";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import type { ExhibitionDto } from "@/types/api";
 
@@ -31,7 +30,6 @@ function formatDate(value?: string | null) {
 export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) {
   return (
     <div className="px-8 pb-10">
-      <PageDescription>Exhibition schedule and status</PageDescription>
       <Link
         href="/content-manager/exhibition"
         className="mb-6 inline-flex items-center gap-2 text-sm"

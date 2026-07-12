@@ -1,4 +1,3 @@
-export * from "./museum-context";
 export * from "./exhibit.service";
 export * from "./artifact.service";
 export * from "./exhibition.service";
@@ -12,6 +11,7 @@ export {
   deleteArAsset,
   generateOfflinePackage,
   getArAssets,
+  getContentVersions,
   getExhibitById,
   getExhibitTranslations,
   getExhibits,
@@ -19,6 +19,7 @@ export {
   getOfflinePackages,
   getTourRoutes,
   uploadArAsset,
+  uploadMuseumMap,
   uploadExhibitAudio,
   uploadExhibitImage,
 } from "./content-api.service";

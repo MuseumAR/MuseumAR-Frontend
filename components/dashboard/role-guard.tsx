@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import { getEffectiveRoleName, setDevRoleOverride } from "@/lib/dev-role-override";
-import { getHomePathForRole, isDashboardRole, type DashboardRole } from "@/lib/roles";
+import { getHomePathForRole, type DashboardRole } from "@/lib/roles";
 
 function DashboardLoading() {
   return (
@@ -32,31 +31,8 @@ export function RoleGuard({
 }) {
   const router = useRouter();
   const { user, isAuthenticated, isLoading } = useAuth();
-  const [, setDevRoleTick] = useState(0);
 
-  const effectiveRole = user ? getEffectiveRoleName(user.roleName) : null;
-  const hasAccess = isAuthenticated && effectiveRole === allowedRole;
-
-  useEffect(() => {
-    if (process.env.NODE_ENV === "production") return;
-
-    const params = new URLSearchParams(window.location.search);
-    const devRole = params.get("devRole")?.trim();
-    if (!devRole || !isDashboardRole(devRole)) return;
-
-    setDevRoleOverride(devRole);
-    params.delete("devRole");
-    const query = params.toString();
-    const nextUrl = `${window.location.pathname}${query ? `?${query}` : ""}`;
-    window.history.replaceState({}, "", nextUrl);
-  }, []);
-
-  useEffect(() => {
-    const onDevRoleChanged = () => setDevRoleTick((n) => n + 1);
-    window.addEventListener("museumar-dev-role-changed", onDevRoleChanged);
-    return () =>
-      window.removeEventListener("museumar-dev-role-changed", onDevRoleChanged);
-  }, []);
+  const hasAccess = isAuthenticated && user?.roleName === allowedRole;
 
   useEffect(() => {
     if (isLoading) return;
@@ -66,10 +42,10 @@ export function RoleGuard({
       return;
     }
 
-    if (user && effectiveRole !== allowedRole) {
-      router.replace(getHomePathForRole(effectiveRole));
+    if (user && user.roleName !== allowedRole) {
+      router.replace(getHomePathForRole(user.roleName));
     }
-  }, [isLoading, isAuthenticated, user, effectiveRole, allowedRole, router]);
+  }, [isLoading, isAuthenticated, user, allowedRole, router]);
 
   if (isLoading || !hasAccess) {
     return <DashboardLoading />;

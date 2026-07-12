@@ -1,4 +1,3 @@
-import { PageDescription } from "@/components/dashboard/page-header";
 import { dashboardTheme as T } from "@/lib/dashboard-theme";
 import { TICKET_LABELS } from "@/lib/field-labels";
 import type { Ticket } from "@/types";
@@ -6,7 +5,6 @@ import type { Ticket } from "@/types";
 export function TicketApplicationTable({ tickets }: { tickets: Ticket[] }) {
   return (
     <div className="px-8 pb-10">
-      <PageDescription>Ticket catalog and status</PageDescription>
       <div className="overflow-hidden rounded-3xl" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
         <table className="w-full text-left text-sm">
           <thead>

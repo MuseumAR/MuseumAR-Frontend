@@ -9,7 +9,7 @@ import {
   unpublishExhibit,
   updateExhibit,
 } from "./content-api.service";
-import { resolveActiveMuseumId } from "./museum-context";
+import { getStoredMuseumId } from "@/services/auth/resolve-museum-id";
 
 export type ExhibitRow = {
   id: number;
@@ -42,7 +42,7 @@ export function mapExhibitToRow(exhibit: ExhibitDto): ExhibitRow {
 
 async function requireMuseumId(museumId?: number): Promise<number | null> {
   if (museumId != null) return museumId;
-  return resolveActiveMuseumId();
+  return getStoredMuseumId();
 }
 
 export async function getExhibitRows(museumId?: number): Promise<ExhibitRow[]> {
