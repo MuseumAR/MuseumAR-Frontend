@@ -7,7 +7,7 @@ import { Plus } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
 import { createExhibitionEntry } from "@/services/content-manager/exhibition.service";
-import type { ExhibitionDto } from "@/types/api";
+import type { ExhibitionDto, ThemeDto } from "@/types/api";
 
 function StatusBadge({ status }: { status: string }) {
   const active = status === "Active";
@@ -32,15 +32,18 @@ function StatusBadge({ status }: { status: string }) {
 export function ExhibitionPanel({
   exhibitions,
   museumId,
+  themes,
 }: {
   exhibitions: ExhibitionDto[];
   museumId: number;
+  themes: ThemeDto[];
 }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [status, setStatus] = useState("Upcoming");
+  const [themeId, setThemeId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,6 +54,7 @@ export function ExhibitionPanel({
     try {
       await createExhibitionEntry({
         museumId,
+        themeId: themeId ? Number(themeId) : undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
         status,
@@ -58,6 +62,7 @@ export function ExhibitionPanel({
       setShowForm(false);
       setStartDate("");
       setEndDate("");
+      setThemeId("");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to create exhibition."));
@@ -69,11 +74,12 @@ export function ExhibitionPanel({
   return (
     <div className="space-y-6 px-8 pb-10">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <p className="text-2xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-            {exhibitions.length} exhibition{exhibitions.length === 1 ? "" : "s"}
-          </p>
-        </div>
+        <p className="text-sm" style={{ fontFamily: cinzel, color: T.muted }}>
+          <span className="font-semibold" style={{ color: T.text }}>
+            {exhibitions.length}
+          </span>
+          {` exhibition${exhibitions.length === 1 ? "" : "s"}`}
+        </p>
         <button
           type="button"
           onClick={() => setShowForm((v) => !v)}
@@ -94,7 +100,7 @@ export function ExhibitionPanel({
           className="rounded-3xl p-6"
           style={{ background: T.surface, border: `1px solid ${T.border}` }}
         >
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-1.5">
               <label className="block text-sm" style={{ color: T.muted }}>Start date</label>
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }} />
@@ -102,6 +108,15 @@ export function ExhibitionPanel({
             <div className="space-y-1.5">
               <label className="block text-sm" style={{ color: T.muted }}>End date</label>
               <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="block text-sm" style={{ color: T.muted }}>Theme</label>
+              <select value={themeId} onChange={(e) => setThemeId(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}>
+                <option value="">None</option>
+                {themes.map((theme) => (
+                  <option key={theme.id} value={theme.id}>{theme.themeName}</option>
+                ))}
+              </select>
             </div>
             <div className="space-y-1.5">
               <label className="block text-sm" style={{ color: T.muted }}>Status</label>

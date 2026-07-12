@@ -18,8 +18,8 @@ export function trackAction(payload: CreateAnalyticsLogDto) {
   return apiPost<unknown>("/api/visitor/track-action", payload);
 }
 
-export function checkForUpdates(museumId: number) {
-  return apiGet<OfflinePackageDto>(`/api/visitor/museums/${museumId}/sync-check`);
+export function checkForUpdates() {
+  return apiGet<OfflinePackageDto>("/api/visitor/sync-check");
 }
 
 export function getVisitorProfile() {

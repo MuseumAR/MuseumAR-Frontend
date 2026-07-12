@@ -7,8 +7,11 @@ import {
   Layers,
   LayoutDashboard,
   Map,
+  ScrollText,
   Settings,
+  Tags,
   Ticket,
+  Users,
 } from "lucide-react";
 import type { NavIcon } from "@/lib/roles";
 import { dashboardTheme as T } from "@/lib/dashboard-theme";
@@ -44,6 +47,12 @@ export function NavIcon({ icon, active }: { icon: NavIcon; active?: boolean }) {
       return <BarChart3 {...props} />;
     case "museum_management":
       return <Building2 {...props} />;
+    case "users":
+      return <Users {...props} />;
+    case "audit_logs":
+      return <ScrollText {...props} />;
+    case "taxonomy":
+      return <Tags {...props} />;
     case "system_config":
       return <Settings {...props} />;
     default:

@@ -3,15 +3,20 @@
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import type { MuseumProfile } from "@/types";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { getDisplayError } from "@/lib/validation";
+import { updateMuseumProfileEntry } from "@/services/museum-manager/museum-profile.service";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, "0")}:00`);
 
 export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
+  const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(profile.name);
-  const [address, setAddress] = useState(profile.address);
+  const [address, setAddress] = useState(
+    profile.address === "—" ? "" : profile.address,
+  );
   const [email, setEmail] = useState(profile.email === "—" ? "" : profile.email);
   const [phone, setPhone] = useState(profile.phone === "—" ? "" : profile.phone);
   const [openingHours, setOpeningHours] = useState(
@@ -37,12 +42,32 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
       return;
     }
 
+    // Local object URLs are not valid thumbnail URLs for the API.
+    if (imagePreview?.startsWith("blob:")) {
+      setError(
+        "Selected image cannot be saved yet — the API only accepts a public thumbnail URL.",
+      );
+      return;
+    }
+
     setError(null);
     setIsSubmitting(true);
     try {
-      setError(
-        "Museum update is not available yet — the backend does not expose PUT /api/admin/museums/{id}.",
-      );
+      const hours =
+        openingHours && closingHours
+          ? `${openingHours} - ${closingHours}`
+          : openingHours || closingHours || undefined;
+
+      await updateMuseumProfileEntry({
+        name: name.trim(),
+        address: address.trim() || undefined,
+        contactEmail: email.trim() || undefined,
+        contactPhone: phone.trim() || undefined,
+        openingHours: hours,
+        thumbnailUrl: imagePreview ?? undefined,
+      });
+      router.push("/museum-manager/museum-profile");
+      router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to update museum."));
     } finally {

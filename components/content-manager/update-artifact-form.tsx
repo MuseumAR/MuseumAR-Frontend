@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import {
   getDisplayError,
@@ -10,19 +10,41 @@ import {
   validateCreateArtifact,
 } from "@/lib/validation";
 import type { Artifact } from "@/types";
+import type { AgeGroupDto, CategoryDto, TagDto } from "@/types/api";
 import {
   updateExhibit,
   uploadArAsset,
   uploadExhibitAudio,
   uploadExhibitImage,
 } from "@/services/content-manager";
+import {
+  categoryDisplayName,
+  syncExhibitTags,
+} from "@/services/content-manager/taxonomy.service";
+import { ArAssetsSection } from "@/components/content-manager/ar-assets-section";
 
 export function UpdateArtifactForm({
   artifact,
   museumId,
+  categories,
+  ageGroups,
+  tags,
+  initialCategoryId,
+  initialAgeGroupId,
+  initialEra,
+  initialHistoricalEvent,
+  initialTagIds,
 }: {
   artifact: Artifact;
   museumId: number;
+  categories: CategoryDto[];
+  ageGroups: AgeGroupDto[];
+  tags: TagDto[];
+  initialCategoryId?: number | null;
+  initialAgeGroupId?: number | null;
+  initialEra?: string;
+  initialHistoricalEvent?: string;
+  initialTagIds?: number[];
 }) {
   const router = useRouter();
   const imageRef = useRef<HTMLInputElement>(null);
@@ -35,6 +57,15 @@ export function UpdateArtifactForm({
   );
   const [description, setDescription] = useState(artifact.description);
   const [languageCode, setLanguageCode] = useState("vi");
+  const [categoryId, setCategoryId] = useState(
+    initialCategoryId != null ? String(initialCategoryId) : "",
+  );
+  const [ageGroupId, setAgeGroupId] = useState(
+    initialAgeGroupId != null ? String(initialAgeGroupId) : "",
+  );
+  const [era, setEra] = useState(initialEra ?? "");
+  const [historicalEvent, setHistoricalEvent] = useState(initialHistoricalEvent ?? "");
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>(initialTagIds ?? []);
   const [imagePreview, setImagePreview] = useState<string | null>(artifact.image);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [arFile, setArFile] = useState<File | null>(null);
@@ -44,6 +75,17 @@ export function UpdateArtifactForm({
 
   const exhibitId =
     artifact.exhibitId ?? Number(artifact.id.replace(/^EX-/i, ""));
+
+  const categoryOptions = useMemo(
+    () => categories.map((c) => ({ id: c.id, label: categoryDisplayName(c) })),
+    [categories],
+  );
+
+  function toggleTag(id: number) {
+    setSelectedTagIds((prev) =>
+      prev.includes(id) ? prev.filter((t) => t !== id) : [...prev, id],
+    );
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -65,8 +107,14 @@ export function UpdateArtifactForm({
     try {
       await updateExhibit(exhibitId, {
         museumId,
+        categoryId: categoryId ? Number(categoryId) : undefined,
         exhibitCode: exhibitCode.trim() || undefined,
         status: artifact.status === "Published" ? "Published" : "Draft",
+        exhibitMetadata: {
+          ageGroupId: ageGroupId ? Number(ageGroupId) : undefined,
+          era: era.trim() || undefined,
+          historicalEvent: historicalEvent.trim() || undefined,
+        },
         translations: [
           {
             exhibitId,
@@ -80,6 +128,7 @@ export function UpdateArtifactForm({
       if (imageFile) await uploadExhibitImage(exhibitId, imageFile, title.trim());
       if (audioFile) await uploadExhibitAudio(exhibitId, languageCode, audioFile);
       if (arFile) await uploadArAsset(exhibitId, "model", arFile);
+      await syncExhibitTags(exhibitId, selectedTagIds);
 
       router.push(`/content-manager/artifact/${artifact.id}`);
       router.refresh();
@@ -131,10 +180,7 @@ export function UpdateArtifactForm({
                 setImagePreview(URL.createObjectURL(file));
               }}
             />
-            <UploadBox
-              label={arFile?.name ?? "AR model"}
-              onClick={() => arRef.current?.click()}
-            />
+            <UploadBox label={arFile?.name ?? "AR model"} onClick={() => arRef.current?.click()} />
             <input
               ref={arRef}
               type="file"
@@ -163,23 +209,27 @@ export function UpdateArtifactForm({
 
           <div className="flex-1 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field
-                label="Title *"
-                value={title}
-                onChange={setTitle}
-                placeholder="Exhibit title"
+              <Field label="Title *" value={title} onChange={setTitle} placeholder="Exhibit title" />
+              <Field label="Exhibit code" value={exhibitCode} onChange={setExhibitCode} placeholder="CAT-001" />
+              <Field label="Language" value={languageCode} onChange={setLanguageCode} placeholder="vi" />
+              <SelectField
+                label="Category"
+                value={categoryId}
+                onChange={setCategoryId}
+                options={categoryOptions.map((c) => ({ value: String(c.id), label: c.label }))}
               />
-              <Field
-                label="Exhibit code"
-                value={exhibitCode}
-                onChange={setExhibitCode}
-                placeholder="CAT-001"
+              <SelectField
+                label="Age group"
+                value={ageGroupId}
+                onChange={setAgeGroupId}
+                options={ageGroups.map((g) => ({ value: String(g.id), label: g.groupName }))}
               />
+              <Field label="Era" value={era} onChange={setEra} placeholder="e.g. Nguyễn dynasty" />
               <Field
-                label="Language"
-                value={languageCode}
-                onChange={setLanguageCode}
-                placeholder="vi"
+                label="Historical event"
+                value={historicalEvent}
+                onChange={setHistoricalEvent}
+                placeholder="Optional"
               />
             </div>
             <div>
@@ -194,6 +244,31 @@ export function UpdateArtifactForm({
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
               />
             </div>
+            {tags.length > 0 && (
+              <div>
+                <p className="mb-2 text-sm" style={{ color: T.muted }}>Tags</p>
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => {
+                    const active = selectedTagIds.includes(tag.id);
+                    return (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => toggleTag(tag.id)}
+                        className="rounded-full px-3 py-1 text-xs font-medium"
+                        style={{
+                          background: active ? "rgba(200,155,69,0.25)" : T.bg,
+                          border: `1px solid ${T.border}`,
+                          color: active ? T.primaryDark : T.muted,
+                        }}
+                      >
+                        {tag.tagName}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             {error && (
               <p
                 className="rounded-xl px-3 py-2 text-sm"
@@ -204,6 +279,12 @@ export function UpdateArtifactForm({
             )}
           </div>
         </div>
+
+        {exhibitId && !Number.isNaN(exhibitId) ? (
+          <div className="mt-8 border-t pt-6" style={{ borderColor: T.border }}>
+            <ArAssetsSection exhibitId={exhibitId} />
+          </div>
+        ) : null}
 
         <div className="mt-8 flex justify-end gap-3">
           <Link
@@ -243,9 +324,7 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm" style={{ color: T.muted }}>
-        {label}
-      </label>
+      <label className="block text-sm" style={{ color: T.muted }}>{label}</label>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -253,6 +332,35 @@ function Field({
         className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
         style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
       />
+    </div>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-sm" style={{ color: T.muted }}>{label}</label>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+        style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+      >
+        <option value="">None</option>
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
     </div>
   );
 }

@@ -4,14 +4,13 @@ export * from "./exhibition.service";
 export * from "./content-version.service";
 export * from "./offline-package.service";
 export * from "./maps-routes.service";
+export * from "./taxonomy.service";
 export {
   createContentVersion,
-  createMuseumMap,
   createTourRoute,
   deleteArAsset,
   generateOfflinePackage,
   getArAssets,
-  getContentVersions,
   getExhibitById,
   getExhibitTranslations,
   getExhibits,

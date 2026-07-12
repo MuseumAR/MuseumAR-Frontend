@@ -29,8 +29,8 @@ const C = {
   inputBgFocus: "#FFF8E7",
 };
 
-const CINZEL = "var(--font-cinzel), 'Trajan Pro', Georgia, serif";
-const PLAYFAIR = "var(--font-playfair), Georgia, serif";
+const CINZEL = "var(--font-be-vietnam), system-ui, sans-serif";
+const PLAYFAIR = "var(--font-be-vietnam), system-ui, sans-serif";
 
 // ── Decorative helpers ────────────────────────────────────────────────────────
 

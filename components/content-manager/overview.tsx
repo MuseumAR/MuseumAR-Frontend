@@ -1,12 +1,10 @@
 import Link from "next/link";
 import { StatCard } from "@/components/dashboard/stat-card";
-import { ContentNoMuseumState } from "@/components/content-manager/no-museum-empty-state";
 import { ExhibitTable } from "@/components/content-manager/exhibit-table";
 import {
   getExhibitRows,
   getExhibitStats,
 } from "@/services/content-manager/exhibit.service";
-import { resolveActiveMuseumId } from "@/services/content-manager/museum-context";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 
 const QUICK_LINKS = [
@@ -18,14 +16,9 @@ const QUICK_LINKS = [
 ];
 
 export async function ContentManagerOverview() {
-  const museumId = await resolveActiveMuseumId();
-  if (museumId == null) {
-    return <ContentNoMuseumState />;
-  }
-
   const [stats, rows] = await Promise.all([
-    getExhibitStats(museumId),
-    getExhibitRows(museumId),
+    getExhibitStats(),
+    getExhibitRows(),
   ]);
 
   return (
@@ -36,7 +29,7 @@ export async function ContentManagerOverview() {
             Content Manager
           </p>
           <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-            Museum #{museumId} — Content Dashboard
+            Content Dashboard
           </h2>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">

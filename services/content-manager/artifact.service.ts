@@ -10,7 +10,6 @@ import {
   unpublishExhibit,
   updateExhibit,
 } from "./content-api.service";
-import { getStoredMuseumId } from "@/services/auth/resolve-museum-id";
 
 function getPrimaryTranslation(exhibit: ExhibitDto) {
   return exhibit.translations[0];
@@ -42,12 +41,7 @@ function mapExhibitToArtifact(exhibit: ExhibitDto): Artifact {
   };
 }
 
-async function requireMuseumId(museumId?: number): Promise<number | null> {
-  if (museumId != null) return museumId;
-  return getStoredMuseumId();
-}
-
-export async function getArtifactById(id: string, museumId?: number): Promise<Artifact | null> {
+export async function getArtifactById(id: string): Promise<Artifact | null> {
   const numericId = Number(id.replace(/^EX-/i, ""));
   if (!Number.isNaN(numericId)) {
     try {
@@ -58,11 +52,8 @@ export async function getArtifactById(id: string, museumId?: number): Promise<Ar
     }
   }
 
-  const mid = await requireMuseumId(museumId);
-  if (mid == null) return null;
-
   return safeFetch(async () => {
-    const exhibits = await getExhibits(mid);
+    const exhibits = await getExhibits();
     const exhibit = exhibits.find(
       (item) => item.exhibitCode === id || String(item.id) === id,
     );
@@ -70,11 +61,9 @@ export async function getArtifactById(id: string, museumId?: number): Promise<Ar
   }, null);
 }
 
-export async function getArtifacts(museumId?: number): Promise<Artifact[]> {
+export async function getArtifacts(): Promise<Artifact[]> {
   return safeFetch(async () => {
-    const id = await requireMuseumId(museumId);
-    if (id == null) return [];
-    const exhibits = await getExhibits(id);
+    const exhibits = await getExhibits();
     return exhibits.map(mapExhibitToArtifact);
   }, []);
 }
