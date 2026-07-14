@@ -1,6 +1,9 @@
-import { apiGet } from "@/services/api-client";
+import { apiGetAuth } from "@/services/api-client";
 import type { MuseumDashboardDto } from "@/types/api";
 
-export function getMuseumDashboard() {
-  return apiGet<MuseumDashboardDto>("/api/MuseumManager/dashboard");
+export function getMuseumDashboard(accessToken?: string | null) {
+  return apiGetAuth<MuseumDashboardDto>(
+    "/api/MuseumManager/dashboard",
+    accessToken,
+  );
 }

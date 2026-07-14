@@ -22,6 +22,12 @@ body {
   font-family: var(--font-be-vietnam), system-ui, sans-serif;
 }
 
+/* Hide Edge/IE built-in password reveal — pages use a custom eye toggle */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
 /* Shared button hover — applies to all interactive buttons */
 button:not(:disabled),
 input[type="submit"]:not(:disabled),

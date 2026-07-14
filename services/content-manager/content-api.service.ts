@@ -1,8 +1,6 @@
 import {
   apiDeleteAuth,
   apiGet,
-  apiGetAuth,
-  apiPost,
   apiPostAuth,
   apiPostFormAuth,
   apiPutAuth,
@@ -42,7 +40,7 @@ export function getExhibitById(id: number) {
 }
 
 export function createExhibit(payload: CreateExhibitDto) {
-  return apiPost<ExhibitDto>("/api/content/exhibits", payload);
+  return apiPostAuth<ExhibitDto>("/api/content/exhibits", payload);
 }
 
 export function updateExhibit(id: number, payload: CreateExhibitDto) {
@@ -125,7 +123,7 @@ export function getExhibitionById(id: number) {
 }
 
 export function createExhibition(payload: CreateExhibitionDto) {
-  return apiPost<ExhibitionDto>("/api/content/exhibitions", payload);
+  return apiPostAuth<ExhibitionDto>("/api/content/exhibitions", payload);
 }
 
 export function getMuseumMaps() {
@@ -147,7 +145,7 @@ export function getTourRoutes() {
 }
 
 export function createTourRoute(payload: CreateTourRouteDto) {
-  return apiPost<TourRouteDto>("/api/content/routes", payload);
+  return apiPostAuth<TourRouteDto>("/api/content/routes", payload);
 }
 
 // ─── Taxonomy ─────────────────────────────────────────────────────────────────
