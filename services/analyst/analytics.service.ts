@@ -1,5 +1,6 @@
 import type { AnalyticsMetric } from "@/types";
 import { safeFetch } from "@/lib/fetch-safe";
+import { getServerAccessToken } from "@/services/auth/resolve-access-token.server";
 import { getMuseumDashboard } from "@/services/museum-manager/dashboard-api.service";
 
 const EMPTY_METRICS: AnalyticsMetric[] = [
@@ -11,7 +12,8 @@ const EMPTY_METRICS: AnalyticsMetric[] = [
 
 export async function getAnalyticsMetrics(): Promise<AnalyticsMetric[]> {
   return safeFetch(async () => {
-    const dashboard = await getMuseumDashboard();
+    const token = await getServerAccessToken();
+    const dashboard = await getMuseumDashboard(token);
     return [
       {
         label: "Total QR scans",

@@ -1,4 +1,4 @@
-import { apiDeleteAuth, apiGet, apiGetAuth, apiPost, apiPostAuth, apiPutAuth } from "@/services/api-client";
+import { apiDeleteAuth, apiGet, apiGetAuth, apiPostAuth, apiPutAuth } from "@/services/api-client";
 import { normalizeMuseumDto, normalizeTicketTypeDto } from "@/lib/normalize-dto";
 import type {
   CreateTicketTypeDto,
@@ -30,7 +30,7 @@ export function getTicketTypes() {
 }
 
 export function createTicketType(payload: CreateTicketTypeDto) {
-  return apiPost<unknown>("/api/admin/ticket-types", payload).then(
+  return apiPostAuth<unknown>("/api/admin/ticket-types", payload).then(
     normalizeTicketTypeDto,
   );
 }
