@@ -59,6 +59,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     res = await fetch(getApiUrl(path), {
       method,
       headers: requestHeaders,
+      cache: "no-store",
       body:
         body === undefined
           ? undefined

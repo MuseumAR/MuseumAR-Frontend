@@ -53,7 +53,7 @@ export function UpdateArtifactForm({
 
   const [title, setTitle] = useState(artifact.name);
   const [exhibitCode, setExhibitCode] = useState(
-    artifact.id.startsWith("EX-") ? "" : artifact.id,
+    /^EX-\d+$/i.test(artifact.id) ? "" : artifact.id,
   );
   const [description, setDescription] = useState(artifact.description);
   const [languageCode, setLanguageCode] = useState("vi");
@@ -69,6 +69,11 @@ export function UpdateArtifactForm({
   const [imagePreview, setImagePreview] = useState<string | null>(artifact.image);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [arFile, setArFile] = useState<File | null>(null);
+  const [arPreview, setArPreview] = useState<string | null>(
+    artifact.arOverlayUrl && /\.(png|jpg|jpeg|webp)$/i.test(artifact.arOverlayUrl)
+      ? artifact.arOverlayUrl
+      : null
+  );
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -97,7 +102,7 @@ export function UpdateArtifactForm({
     }
 
     if (!exhibitId || Number.isNaN(exhibitId)) {
-      setError("Unable to find this exhibit.");
+      setError("Unable to find this artifact.");
       return;
     }
 
@@ -127,13 +132,16 @@ export function UpdateArtifactForm({
 
       if (imageFile) await uploadExhibitImage(exhibitId, imageFile, title.trim());
       if (audioFile) await uploadExhibitAudio(exhibitId, languageCode, audioFile);
-      if (arFile) await uploadArAsset(exhibitId, "model", arFile);
+      if (arFile) {
+        const arType = arFile.type.startsWith("image/") ? "OverlayImage" : "Model3D";
+        await uploadArAsset(exhibitId, arType, arFile);
+      }
       await syncExhibitTags(exhibitId, selectedTagIds);
 
       router.push(`/content-manager/artifact/${artifact.id}`);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Unable to update exhibit."));
+      setError(getDisplayError(err, "Unable to update artifact."));
     } finally {
       setIsSubmitting(false);
     }
@@ -146,12 +154,12 @@ export function UpdateArtifactForm({
         className="mb-6 inline-flex items-center gap-2 text-sm"
         style={{ color: T.muted }}
       >
-        <span>←</span> Back to exhibit
+        <span>←</span> Back to artifact
       </Link>
 
       <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-          Update Exhibit
+          Update Artifact
         </h1>
         <StatusBadge status={artifact.status} />
       </div>
@@ -180,19 +188,43 @@ export function UpdateArtifactForm({
                 setImagePreview(URL.createObjectURL(file));
               }}
             />
-            <UploadBox label={arFile?.name ?? "AR model"} onClick={() => arRef.current?.click()} />
+            <UploadBox
+              label={
+                arFile?.name ??
+                (artifact.arOverlayUrl
+                  ? `✓ AR: ${fileNameFromUrl(artifact.arOverlayUrl)}`
+                  : artifact.arModelStatus === "Active"
+                    ? "✓ AR asset active (Click to change)"
+                    : "AR asset (Image/3D)")
+              }
+              preview={arPreview}
+              onClick={() => arRef.current?.click()}
+            />
             <input
               ref={arRef}
               type="file"
-              accept=".glb,.gltf"
+              accept="image/*,.glb,.gltf"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) setArFile(file);
+                if (!file) return;
+                setArFile(file);
+                if (file.type.startsWith("image/")) {
+                  setArPreview(URL.createObjectURL(file));
+                } else {
+                  setArPreview(null);
+                }
               }}
             />
             <UploadBox
-              label={audioFile?.name ?? "Audio guide"}
+              label={
+                audioFile?.name ??
+                (artifact.audioUrl
+                  ? `✓ Audio: ${fileNameFromUrl(artifact.audioUrl)}`
+                  : artifact.audio === "Active"
+                    ? "✓ Audio guide active (Click to change)"
+                    : "Audio guide")
+              }
               onClick={() => audioRef.current?.click()}
             />
             <input
@@ -209,8 +241,8 @@ export function UpdateArtifactForm({
 
           <div className="flex-1 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Title *" value={title} onChange={setTitle} placeholder="Exhibit title" />
-              <Field label="Exhibit code" value={exhibitCode} onChange={setExhibitCode} placeholder="CAT-001" />
+              <Field label="Title *" value={title} onChange={setTitle} placeholder="Artifact title" />
+              <Field label="Artifact code" value={exhibitCode} onChange={setExhibitCode} placeholder="CAT-001" />
               <Field label="Language" value={languageCode} onChange={setLanguageCode} placeholder="vi" />
               <SelectField
                 label="Category"
@@ -405,4 +437,16 @@ function StatusBadge({ status }: { status: Artifact["status"] }) {
       {status}
     </span>
   );
+}
+
+function fileNameFromUrl(url: string | null | undefined) {
+  if (!url) return "";
+  try {
+    const path = new URL(url, "https://local").pathname;
+    const name = path.split("/").filter(Boolean).pop();
+    return name ? decodeURIComponent(name) : url;
+  } catch {
+    const parts = url.split("/");
+    return parts[parts.length - 1] || url;
+  }
 }

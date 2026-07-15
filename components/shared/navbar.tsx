@@ -20,6 +20,7 @@ const C = {
 
 const NAV_LINKS = [
   { label: "Home", href: "/" },
+  { label: "Test API", href: "/test-api" },
   { label: "Collections", href: "#collections" },
   { label: "Museums", href: "#museums" },
   { label: "About", href: "#about" },

@@ -8,7 +8,7 @@ import {
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 
 const QUICK_LINKS = [
-  { href: "/content-manager/artifact", label: "Exhibits" },
+  { href: "/content-manager/artifact", label: "Artifacts" },
   { href: "/content-manager/exhibition", label: "Exhibitions" },
   { href: "/content-manager/content-versions", label: "Versions" },
   { href: "/content-manager/offline-packages", label: "Packages" },
@@ -33,7 +33,7 @@ export async function ContentManagerOverview() {
           </h2>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
-          <StatCard label="Total Exhibits" value={stats.total} icon="layers" watermark="scroll" />
+          <StatCard label="Total Artifacts" value={stats.total} icon="layers" watermark="scroll" />
           <StatCard label="Published" value={stats.published} icon="box" watermark="column" />
           <StatCard label="Draft" value={stats.draft} icon="layers" watermark="vase" />
           <StatCard label="With AR" value={stats.withAr} icon="box" watermark="map" />

@@ -56,6 +56,9 @@ export type Artifact = {
   qrLinked: ActiveInactive;
   arModelStatus: ActiveInactive;
   audio: ActiveInactive;
+  audioUrl?: string | null;
+  arOverlayUrl?: string | null;
+  arMarkerUrl?: string | null;
   image: string | null;
   description: string;
 };
