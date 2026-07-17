@@ -80,7 +80,7 @@ export function CreateExhibitForm({
     setIsSubmitting(true);
 
     try {
-      const exhibit = await createExhibit({
+      const res = await createExhibit({
         museumId,
         categoryId: categoryId ? Number(categoryId) : undefined,
         exhibitCode: exhibitCode.trim() || undefined,
@@ -100,14 +100,16 @@ export function CreateExhibitForm({
         ],
       });
 
-      if (imageFile) await uploadExhibitImage(exhibit.id, imageFile, title);
-      if (audioFile) await uploadExhibitAudio(exhibit.id, languageCode, audioFile);
+      const exhibitId = typeof res === "object" && res && "id" in res ? (res as any).id : (res as unknown as number);
+
+      if (imageFile) await uploadExhibitImage(exhibitId, imageFile, title);
+      if (audioFile) await uploadExhibitAudio(exhibitId, languageCode, audioFile);
       if (arFile) {
         const arType = arFile.type.startsWith("image/") ? "OverlayImage" : "Model3D";
-        await uploadArAsset(exhibit.id, arType, arFile);
+        await uploadArAsset(exhibitId, arType, arFile);
       }
       if (selectedTagIds.length > 0) {
-        await syncExhibitTags(exhibit.id, selectedTagIds);
+        await syncExhibitTags(exhibitId, selectedTagIds);
       }
 
       router.push("/content-manager/artifact");

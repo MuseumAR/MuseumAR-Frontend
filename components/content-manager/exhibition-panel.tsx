@@ -6,22 +6,22 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
-import { createExhibitionEntry } from "@/services/content-manager/exhibition.service";
+import { createExhibitionEntry, uploadExhibitionImage } from "@/services/content-manager/exhibition.service";
 import type { ExhibitionDto, ThemeDto } from "@/types/api";
 
 function StatusBadge({ status }: { status: string }) {
   const active = status === "Active";
-  const upcoming = status === "Upcoming";
+  const inactive = status === "Inactive";
   return (
     <span
       className="rounded-full px-2.5 py-0.5 text-xs font-medium"
       style={{
         background: active
           ? "rgba(79,125,74,0.12)"
-          : upcoming
+          : inactive
             ? "rgba(200,155,69,0.15)"
             : "rgba(109,90,69,0.12)",
-        color: active ? T.success : upcoming ? T.primaryDark : T.muted,
+        color: active ? T.success : inactive ? T.primaryDark : T.muted,
       }}
     >
       {status}
@@ -40,10 +40,13 @@ export function ExhibitionPanel({
 }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [status, setStatus] = useState("Upcoming");
+  const [status, setStatus] = useState("Active");
   const [themeId, setThemeId] = useState("");
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,18 +54,41 @@ export function ExhibitionPanel({
     e.preventDefault();
     setError(null);
     setIsSubmitting(true);
+
+    if (!name.trim()) {
+      setError("Exhibition Name is required.");
+      setIsSubmitting(false);
+      return;
+    }
+
+    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+      setError("End date must be after or equal to Start date.");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      await createExhibitionEntry({
+      const exhibition = await createExhibitionEntry({
         museumId,
         themeId: themeId ? Number(themeId) : undefined,
+        name: name.trim(),
+        description: description.trim() || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
         status,
       });
+
+      if (thumbnailFile) {
+        await uploadExhibitionImage(exhibition.id, thumbnailFile);
+      }
+
       setShowForm(false);
+      setName("");
+      setDescription("");
       setStartDate("");
       setEndDate("");
       setThemeId("");
+      setThumbnailFile(null);
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to create exhibition."));
@@ -97,9 +123,34 @@ export function ExhibitionPanel({
       {showForm && (
         <form
           onSubmit={handleSubmit}
-          className="rounded-3xl p-6"
+          className="rounded-3xl p-6 space-y-4"
           style={{ background: T.surface, border: `1px solid ${T.border}` }}
         >
+          <div className="space-y-1.5">
+            <label className="block text-sm" style={{ color: T.muted }}>Exhibition Name</label>
+            <input
+              type="text"
+              required
+              placeholder="e.g., Saigon Nature and Archaeology Exhibition"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+              style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm" style={{ color: T.muted }}>Description</label>
+            <textarea
+              placeholder="Provide a detailed description of the exhibition..."
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className="w-full rounded-xl px-4 py-2.5 text-sm outline-none resize-none"
+              style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+            />
+          </div>
+
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-1.5">
               <label className="block text-sm" style={{ color: T.muted }}>Start date</label>
@@ -121,10 +172,20 @@ export function ExhibitionPanel({
             <div className="space-y-1.5">
               <label className="block text-sm" style={{ color: T.muted }}>Status</label>
               <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}>
-                <option value="Upcoming">Upcoming</option>
                 <option value="Active">Active</option>
-                <option value="Closed">Closed</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Ended">Ended</option>
               </select>
+            </div>
+            <div className="space-y-1.5 sm:col-span-2 lg:col-span-4">
+              <label className="block text-sm" style={{ color: T.muted }}>Thumbnail Image</label>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setThumbnailFile(e.target.files?.[0] ?? null)}
+                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-[rgba(200,155,69,0.15)] file:px-3 file:py-1 file:text-xs file:font-semibold file:text-[#A67C1E]"
+                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+              />
             </div>
           </div>
           {error && <p className="mt-4 text-sm" style={{ color: "#8B2E2E" }}>{error}</p>}
@@ -149,17 +210,21 @@ export function ExhibitionPanel({
             >
               {item.thumbnailUrl ? (
                 <div
-                  className="mb-4 h-32 overflow-hidden rounded-2xl"
+                  className="mb-4 h-48 overflow-hidden rounded-2xl"
                   style={{ border: `1px solid ${T.border}` }}
                 >
                   <img
                     src={item.thumbnailUrl}
                     alt=""
                     className="h-full w-full object-cover"
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
                   />
                 </div>
               ) : null}
-              <p className="text-xs" style={{ color: T.mutedLight }}>Exhibition #{item.id}</p>
+              <h3 className="font-semibold text-lg" style={{ fontFamily: cinzel, color: T.primaryDark }}>
+                {item.name || `Exhibition #${item.id}`}
+              </h3>
+              <p className="text-xs mt-0.5" style={{ color: T.mutedLight }}>ID: {item.id}</p>
               <div className="mt-3 space-y-2 text-sm" style={{ color: T.muted }}>
                 <div className="flex justify-between">
                   <span>Start</span>

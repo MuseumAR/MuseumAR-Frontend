@@ -155,6 +155,8 @@ export type ExhibitionDto = {
   id: number;
   museumId: number;
   themeId?: number | null;
+  name?: string | null;
+  description?: string | null;
   thumbnailUrl?: string | null;
   startDate?: string | null;
   endDate?: string | null;
@@ -164,6 +166,8 @@ export type ExhibitionDto = {
 export type CreateExhibitionDto = {
   museumId: number;
   themeId?: number | null;
+  name: string;
+  description?: string | null;
   startDate?: string | null;
   endDate?: string | null;
   status?: string;

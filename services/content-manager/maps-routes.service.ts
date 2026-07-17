@@ -46,8 +46,10 @@ export async function createMapWithImage(
   museumId: number,
   file: File,
   mapType: string,
+  mapName: string,
+  floorNumber: number,
 ) {
-  return uploadMuseumMap(museumId, file, mapType);
+  return uploadMuseumMap(museumId, file, mapType, mapName, floorNumber);
 }
 
 export async function createRouteEntry(payload: CreateTourRouteDto) {

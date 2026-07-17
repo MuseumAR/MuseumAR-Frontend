@@ -274,18 +274,10 @@ function parseApiResponse(text: string): ApiResponse | null {
 
 export function mapApiMessage(message: string): string {
   const trimmed = message.trim();
-  if (!trimmed) return API_MESSAGE_MAP["Request failed"];
+  if (!trimmed) return "Request failed";
 
   if (API_MESSAGE_MAP[trimmed]) {
     return API_MESSAGE_MAP[trimmed];
-  }
-
-  if (isTechnicalMessage(trimmed)) {
-    return "A system error occurred. Please try again later.";
-  }
-
-  if (trimmed.length > 120) {
-    return "Unable to process your request. Please check your input and try again.";
   }
 
   return trimmed;

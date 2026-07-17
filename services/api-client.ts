@@ -75,7 +75,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   try {
     json = (await res.json()) as ApiResponse<T>;
   } catch {
-    throw new AppError("Request failed", res.status);
+    throw new AppError(`Server returned ${res.status} ${res.statusText || "Error"}`, res.status);
   }
 
   // Support both camelCase and PascalCase ResponseModel keys from BE
@@ -86,6 +86,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   const message =
     (json as ApiResponse<T> & { Message?: string }).message ??
     (json as ApiResponse<T> & { Message?: string }).Message ??
+    res.statusText ??
     "Request failed";
   const data =
     (json as ApiResponse<T> & { Data?: T }).data ??
@@ -108,7 +109,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       clearAuthSession();
     }
 
-    throw new AppError(message || "Request failed", statusCode);
+    throw new AppError(message || `HTTP Error ${statusCode}`, statusCode);
   }
 
   return data as T;

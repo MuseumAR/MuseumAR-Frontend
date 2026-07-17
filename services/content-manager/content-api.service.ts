@@ -126,15 +126,37 @@ export function createExhibition(payload: CreateExhibitionDto) {
   return apiPostAuth<ExhibitionDto>("/api/content/exhibitions", payload);
 }
 
+export function uploadExhibitionImage(id: number, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiPostFormAuth<ExhibitionDto>(`/api/content/exhibitions/${id}/upload-image`, formData);
+}
+
+export function updateExhibition(id: number, payload: CreateExhibitionDto) {
+  return apiPutAuth<ExhibitionDto>(`/api/content/exhibitions/${id}`, payload);
+}
+
+export function deleteExhibition(id: number) {
+  return apiDeleteAuth<null>(`/api/content/exhibitions/${id}`);
+}
+
 export function getMuseumMaps() {
   return apiGet<MuseumMapDto[]>("/api/content/maps");
 }
 
-export function uploadMuseumMap(museumId: number, file: File, mapType: string) {
+export function uploadMuseumMap(
+  museumId: number,
+  file: File,
+  mapType: string,
+  mapName: string,
+  floorNumber: number,
+) {
   const formData = new FormData();
   formData.append("MuseumId", String(museumId));
   formData.append("MapImage", file);
   formData.append("MapType", mapType);
+  formData.append("MapName", mapName);
+  formData.append("FloorNumber", String(floorNumber));
   return apiPostFormAuth<MuseumMapDto>("/api/content/maps", formData);
 }
 

@@ -97,6 +97,9 @@ export function MapsRoutesPanel({
   const [mapFile, setMapFile] = useState<File | null>(null);
   const [mapPreview, setMapPreview] = useState<string | null>(null);
   const [mapType, setMapType] = useState("floor");
+  const [mapName, setMapName] = useState("");
+  const [floorNumber, setFloorNumber] = useState("1");
+  const [selectedMap, setSelectedMap] = useState<MuseumMapDto | null>(null);
   const [routeName, setRouteName] = useState("");
   const [routeMinutes, setRouteMinutes] = useState("");
   const [mapError, setMapError] = useState<string | null>(null);
@@ -109,12 +112,19 @@ export function MapsRoutesPanel({
       setMapError("Please choose a map image from your device.");
       return;
     }
+    if (!mapName.trim()) {
+      setMapError("Map name is required.");
+      return;
+    }
     setSubmitting("map");
     setMapError(null);
     try {
-      await createMapWithImage(museumId, mapFile, mapType);
+      await createMapWithImage(museumId, mapFile, mapType, mapName.trim(), Number(floorNumber));
       setMapFile(null);
       setMapPreview(null);
+      setMapName("");
+      setFloorNumber("1");
+      setMapType("floor");
       if (mapFileRef.current) mapFileRef.current.value = "";
       setShowMapForm(false);
       router.refresh();
@@ -286,9 +296,23 @@ export function MapsRoutesPanel({
                     </p>
                   )}
                 </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="block text-sm" style={{ color: T.muted }}>
+                    Map Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g., Bản đồ Tầng trệt, Bản đồ Lầu 1"
+                    value={mapName}
+                    onChange={(e) => setMapName(e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                  />
+                </div>
                 <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Map type
+                    Map Type
                   </label>
                   <select
                     value={mapType}
@@ -300,6 +324,21 @@ export function MapsRoutesPanel({
                     <option value="overview">Overview</option>
                   </select>
                 </div>
+                {mapType === "floor" && (
+                  <div className="space-y-1.5">
+                    <label className="block text-sm" style={{ color: T.muted }}>
+                      Floor Number *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={floorNumber}
+                      onChange={(e) => setFloorNumber(e.target.value)}
+                      className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                      style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                    />
+                  </div>
+                )}
               </div>
               {mapError && (
                 <p className="mt-4 text-sm" style={{ color: "#8B2E2E" }}>
@@ -337,13 +376,15 @@ export function MapsRoutesPanel({
                 return (
                 <article
                   key={item.id}
-                  className="rounded-3xl p-5"
+                  className="rounded-3xl p-5 transition-transform hover:scale-[1.01]"
                   style={{ background: T.surface, border: `1px solid ${T.border}` }}
                 >
-                  <MapPreview url={item.mapImageUrl} title={name} />
+                  <div onClick={() => setSelectedMap(item)} className="cursor-pointer">
+                    <MapPreview url={item.mapImageUrl} title={name} />
+                  </div>
                   <div className="mt-4 flex items-start justify-between gap-2">
                     <div>
-                      <p className="font-medium" style={{ color: T.text }}>
+                      <p onClick={() => setSelectedMap(item)} className="font-medium cursor-pointer hover:underline" style={{ color: T.text }}>
                         {name}
                       </p>
                       <p className="text-xs" style={{ color: T.mutedLight }}>
@@ -353,18 +394,31 @@ export function MapsRoutesPanel({
                         <MapTypeBadge kind={kind} />
                       </div>
                     </div>
-                    {item.mapImageUrl ? (
-                      <a
-                        href={item.mapImageUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs font-medium"
-                        style={{ color: T.primaryDark }}
-                      >
-                        Open
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    ) : null}
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      {item.mapImageUrl ? (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedMap(item)}
+                          className="inline-flex items-center gap-1 text-xs font-medium"
+                          style={{ color: T.primaryDark }}
+                        >
+                          <Info className="h-3.5 w-3.5" />
+                          Detail
+                        </button>
+                      ) : null}
+                      {item.mapImageUrl ? (
+                        <a
+                          href={item.mapImageUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-xs font-medium"
+                          style={{ color: T.mutedLight }}
+                        >
+                          Open
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      ) : null}
+                    </div>
                   </div>
                 </article>
                 );
@@ -505,6 +559,84 @@ export function MapsRoutesPanel({
                 </tbody>
               </table>
             )}
+          </div>
+        </div>
+      )}
+
+      {selectedMap && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => setSelectedMap(null)}
+        >
+          <div 
+            className="relative max-w-4xl w-full rounded-3xl p-6 shadow-2xl flex flex-col md:flex-row gap-6 max-h-[90vh] overflow-y-auto"
+            style={{ background: T.surface, border: `1px solid ${T.border}` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button 
+              type="button"
+              onClick={() => setSelectedMap(null)}
+              className="absolute top-4 right-4 rounded-full p-2 text-sm font-semibold hover:bg-[rgba(200,155,69,0.15)] transition-colors"
+              style={{ color: T.muted }}
+            >
+              ✕
+            </button>
+
+            <div className="flex-1 flex items-center justify-center bg-black/5 rounded-2xl overflow-hidden min-h-[300px] md:max-h-[70vh]">
+              <img 
+                src={selectedMap.mapImageUrl} 
+                alt={getMapDisplayName(selectedMap)} 
+                className="max-h-full max-w-full object-contain"
+                style={{ maxHeight: "70vh", maxWidth: "100%", objectFit: "contain" }}
+              />
+            </div>
+
+            <div className="w-full md:w-80 flex flex-col justify-between">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-xl font-bold" style={{ fontFamily: cinzel, color: T.primaryDark }}>
+                    {getMapDisplayName(selectedMap)}
+                  </h3>
+                  <p className="text-xs" style={{ color: T.mutedLight }}>Map ID: {selectedMap.id}</p>
+                </div>
+
+                <div className="space-y-2 border-t pt-4 text-sm" style={{ borderColor: T.border, color: T.muted }}>
+                  <div className="flex justify-between">
+                    <span>Floor</span>
+                    <span className="font-semibold" style={{ color: T.text }}>
+                      {selectedMap.floorNumber === 0 ? "Ground floor (0)" : selectedMap.floorNumber ?? "N/A"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Type</span>
+                    <span className="font-semibold capitalize" style={{ color: T.text }}>
+                      {mapKind(selectedMap)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Image Link</span>
+                    <a 
+                      href={selectedMap.mapImageUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="underline truncate max-w-[150px] inline-block hover:text-black"
+                      style={{ color: T.primaryDark }}
+                    >
+                      Open original
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                type="button"
+                onClick={() => setSelectedMap(null)}
+                className="mt-6 w-full rounded-xl py-2.5 text-sm font-medium"
+                style={{ background: T.primary, color: T.surface }}
+              >
+                Close Detail
+              </button>
+            </div>
           </div>
         </div>
       )}
