@@ -2,12 +2,14 @@ import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import type { AnalyticsMetric } from "@/types";
 import { AnalyticsCharts } from "./analytics-charts";
 import { TrendingDown, TrendingUp } from "lucide-react";
+import type { MuseumDashboardDto } from "@/types/api";
 
 interface Props {
   metrics: AnalyticsMetric[];
+  dashboard?: MuseumDashboardDto | null;
 }
 
-export function AnalyticsPageContent({ metrics }: Props) {
+export function AnalyticsPageContent({ metrics, dashboard }: Props) {
   return (
     <div className="space-y-8 px-8 pb-10">
       <section>
@@ -92,7 +94,7 @@ export function AnalyticsPageContent({ metrics }: Props) {
             Engagement Breakdown
           </h2>
         </div>
-        <AnalyticsCharts />
+        <AnalyticsCharts dashboard={dashboard} />
       </section>
     </div>
   );

@@ -7,6 +7,7 @@ import { Plus } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
 import { createExhibitionEntry, uploadExhibitionImage } from "@/services/content-manager/exhibition.service";
+import { createThemeEntry } from "@/services/content-manager";
 import type { ExhibitionDto, ThemeDto } from "@/types/api";
 
 function StatusBadge({ status }: { status: string }) {
@@ -45,7 +46,7 @@ export function ExhibitionPanel({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [status, setStatus] = useState("Active");
-  const [themeId, setThemeId] = useState("");
+  const [themeInput, setThemeInput] = useState("");
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,9 +69,29 @@ export function ExhibitionPanel({
     }
 
     try {
+      let finalThemeId: number | undefined = undefined;
+      const trimmedTheme = themeInput.trim();
+      if (trimmedTheme) {
+        const existing = themes.find(
+          (t) => t.themeName.toLowerCase() === trimmedTheme.toLowerCase()
+        );
+        if (existing) {
+          finalThemeId = existing.id;
+        } else {
+          try {
+            const newTheme = await createThemeEntry({ themeName: trimmedTheme });
+            finalThemeId = newTheme.id;
+          } catch (err) {
+            setError("Failed to create new theme.");
+            setIsSubmitting(false);
+            return;
+          }
+        }
+      }
+
       const exhibition = await createExhibitionEntry({
         museumId,
-        themeId: themeId ? Number(themeId) : undefined,
+        themeId: finalThemeId,
         name: name.trim(),
         description: description.trim() || undefined,
         startDate: startDate || undefined,
@@ -87,7 +108,7 @@ export function ExhibitionPanel({
       setDescription("");
       setStartDate("");
       setEndDate("");
-      setThemeId("");
+      setThemeInput("");
       setThumbnailFile(null);
       router.refresh();
     } catch (err) {
@@ -160,14 +181,22 @@ export function ExhibitionPanel({
               <label className="block text-sm" style={{ color: T.muted }}>End date</label>
               <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }} />
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 relative">
               <label className="block text-sm" style={{ color: T.muted }}>Theme</label>
-              <select value={themeId} onChange={(e) => setThemeId(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}>
-                <option value="">None</option>
+              <input
+                type="text"
+                list="theme-suggestions"
+                placeholder="Select or type new..."
+                value={themeInput}
+                onChange={(e) => setThemeInput(e.target.value)}
+                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+              />
+              <datalist id="theme-suggestions">
                 {themes.map((theme) => (
-                  <option key={theme.id} value={theme.id}>{theme.themeName}</option>
+                  <option key={theme.id} value={theme.themeName} />
                 ))}
-              </select>
+              </datalist>
             </div>
             <div className="space-y-1.5">
               <label className="block text-sm" style={{ color: T.muted }}>Status</label>

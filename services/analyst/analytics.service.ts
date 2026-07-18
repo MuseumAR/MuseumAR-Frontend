@@ -38,3 +38,11 @@ export async function getAnalyticsMetrics(): Promise<AnalyticsMetric[]> {
     ];
   }, EMPTY_METRICS);
 }
+
+export async function getAnalyticsDashboard() {
+  return safeFetch(async () => {
+    const token = await getServerAccessToken();
+    return getMuseumDashboard(token);
+  }, null);
+}
+

@@ -4,12 +4,25 @@ import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 const CHART_HEIGHT = 280;
 const CHART_WIDTH = 520;
 const PADDING = { top: 20, right: 20, bottom: 40, left: 48 };
-const Y_MAX = 600;
-const Y_TICKS = [100, 200, 300, 400, 500, 600];
+
+function formatCompactNumber(value: number): string {
+  if (value >= 1_000_000) {
+    return (value / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+  }
+  if (value >= 1_000) {
+    return (value / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+  }
+  return value.toString();
+}
 
 export function VisitorsTrendChart({ data }: { data: VisitorTrend[] }) {
   const innerWidth = CHART_WIDTH - PADDING.left - PADDING.right;
   const innerHeight = CHART_HEIGHT - PADDING.top - PADDING.bottom;
+
+  // Calculate dynamic Y_MAX and Y_TICKS based on data values
+  const maxVal = Math.max(...data.map((d) => d.value), 1);
+  const Y_MAX = maxVal <= 5 ? 5 : maxVal <= 10 ? 10 : maxVal <= 50 ? 50 : maxVal <= 100 ? 100 : Math.ceil(maxVal / 100) * 100;
+  const Y_TICKS = Array.from({ length: 5 }, (_, i) => Math.round((Y_MAX / 5) * (i + 1)));
 
   const points = data.map((item, index) => ({
     ...item,
@@ -58,7 +71,7 @@ export function VisitorsTrendChart({ data }: { data: VisitorTrend[] }) {
                   fill={T.mutedLight}
                   fontSize="11"
                 >
-                  {tick}
+                  {formatCompactNumber(tick)}
                 </text>
               </g>
             );
@@ -81,9 +94,9 @@ export function VisitorsTrendChart({ data }: { data: VisitorTrend[] }) {
                 y={CHART_HEIGHT - 12}
                 textAnchor="middle"
                 fill={T.mutedLight}
-                fontSize="12"
+                fontSize="10"
               >
-                {point.day}
+                {point.day.length > 8 ? point.day.substring(0, 8) + ".." : point.day}
               </text>
             </g>
           ))}
