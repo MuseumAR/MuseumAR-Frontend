@@ -155,5 +155,6 @@ export function normalizeTicketTypeDto(
     description: pickStr(o, "description", "Description") ?? null,
     museumId: Number(pickField(o, "museumId", "MuseumId") ?? 0),
     exhibitionId: pickNum(o, "exhibitionId", "ExhibitionId") ?? null,
+    status: String(pickField(o, "status", "Status") ?? "Pending"),
   };
 }
