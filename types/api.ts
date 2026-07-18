@@ -260,6 +260,7 @@ export type TicketTypeDto = {
   description?: string | null;
   museumId: number;
   exhibitionId?: number | null;
+  status: string;
   /** Create-only on BE today — not returned on list DTO */
   isActive?: boolean;
 };

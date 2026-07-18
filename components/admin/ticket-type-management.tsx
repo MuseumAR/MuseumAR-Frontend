@@ -1,15 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Plus } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
-import { createTicketTypeEntry } from "@/services/admin";
-import {
-  getDisplayError,
-  getFirstValidationError,
-  validateCreateTicketType,
-} from "@/lib/validation";
 import type { TicketTypeDto } from "@/types/api";
 
 function formatPrice(price: number) {
@@ -29,57 +20,6 @@ export function TicketTypeManagementPanel({
   museumId: number | null;
   museumName?: string | null;
 }) {
-  const router = useRouter();
-  const [showForm, setShowForm] = useState(false);
-  const [name, setName] = useState("");
-  const [price, setPrice] = useState("");
-  const [description, setDescription] = useState("");
-  const [exhibitionId, setExhibitionId] = useState("");
-  const [isActive, setIsActive] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const canCreate = museumId != null && museumId > 0;
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (museumId == null) {
-      setError("Museum profile is not available.");
-      return;
-    }
-
-    const validation = validateCreateTicketType({ museumId, name, price });
-    if (!validation.valid) {
-      setError(getFirstValidationError(validation));
-      return;
-    }
-
-    setError(null);
-    setIsSubmitting(true);
-
-    try {
-      await createTicketTypeEntry({
-        museumId,
-        name: name.trim(),
-        price: Number(price),
-        description: description.trim() || undefined,
-        exhibitionId: exhibitionId.trim() ? Number(exhibitionId) : undefined,
-        isActive,
-      });
-      setShowForm(false);
-      setName("");
-      setPrice("");
-      setDescription("");
-      setExhibitionId("");
-      setIsActive(true);
-      router.refresh();
-    } catch (err) {
-      setError(getDisplayError(err, "Unable to create ticket type. Please try again."));
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
   return (
     <div className="space-y-6 px-8 pb-10">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -92,127 +32,7 @@ export function TicketTypeManagementPanel({
             <span style={{ color: T.mutedLight }}>{` · ${museumName}`}</span>
           ) : null}
         </p>
-        <button
-          type="button"
-          onClick={() => setShowForm((v) => !v)}
-          disabled={!canCreate}
-          className="inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
-          style={{
-            background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
-            color: T.surface,
-          }}
-        >
-          <Plus className="h-4 w-4" />
-          {showForm ? "Close form" : "Create ticket type"}
-        </button>
       </div>
-
-      {!canCreate && (
-        <p
-          className="rounded-2xl px-4 py-3 text-sm"
-          style={{ background: "rgba(200,155,69,0.10)", color: T.muted }}
-        >
-          Museum profile is required before adding ticket types.
-        </p>
-      )}
-
-      {showForm && canCreate && (
-        <form
-          onSubmit={handleSubmit}
-          className="rounded-3xl p-6"
-          style={{ background: T.surface, border: `1px solid ${T.border}` }}
-        >
-          <h2 className="mb-4 text-lg font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-            New ticket type
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <label className="block text-sm" style={{ color: T.muted }}>
-                Name *
-              </label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Adult ticket"
-                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
-                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="block text-sm" style={{ color: T.muted }}>
-                Price (VND) *
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="1000"
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                placeholder="50000"
-                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
-                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="block text-sm" style={{ color: T.muted }}>
-                Exhibition ID (optional)
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={exhibitionId}
-                onChange={(e) => setExhibitionId(e.target.value)}
-                placeholder="Leave empty for museum-wide"
-                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
-                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
-              />
-            </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="block text-sm" style={{ color: T.muted }}>
-                Description
-              </label>
-              <input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional description"
-                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
-                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
-              />
-            </div>
-            <label className="flex items-center gap-2 text-sm sm:col-span-2" style={{ color: T.muted }}>
-              <input
-                type="checkbox"
-                checked={isActive}
-                onChange={(e) => setIsActive(e.target.checked)}
-              />
-              Active
-            </label>
-          </div>
-
-          {error && (
-            <p
-              className="mt-4 rounded-xl px-3 py-2 text-sm"
-              style={{ background: "rgba(180,40,40,0.08)", color: "#8B2E2E" }}
-            >
-              {error}
-            </p>
-          )}
-
-          <div className="mt-5 flex justify-end">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="rounded-xl px-6 py-2 text-sm font-medium disabled:opacity-50"
-              style={{
-                background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
-                color: T.surface,
-              }}
-            >
-              {isSubmitting ? "Saving…" : "Create ticket type"}
-            </button>
-          </div>
-        </form>
-      )}
 
       <div
         className="overflow-hidden rounded-3xl"
@@ -234,7 +54,7 @@ export function TicketTypeManagementPanel({
                     background: "rgba(245,230,200,0.35)",
                   }}
                 >
-                  {["ID", "Name", "Price", "Exhibition ID", "Description"].map((label) => (
+                  {["ID", "Name", "Price", "Exhibition ID", "Description", "Status"].map((label) => (
                     <th
                       key={label}
                       className="px-5 py-4 font-medium"
@@ -267,6 +87,20 @@ export function TicketTypeManagementPanel({
                     <td className="max-w-[200px] truncate px-5 py-4" style={{ color: T.muted }}>
                       {ticket.description ?? "—"}
                     </td>
+                    <td className="px-5 py-4">
+                      <span
+                        className="rounded-full px-2 py-0.5 text-xs font-medium"
+                        style={{
+                          background:
+                            ticket.status === "Approved"
+                              ? "rgba(79,125,74,0.12)"
+                              : "rgba(200,155,69,0.15)",
+                          color: ticket.status === "Approved" ? T.success : T.primaryDark,
+                        }}
+                      >
+                        {ticket.status}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -277,3 +111,4 @@ export function TicketTypeManagementPanel({
     </div>
   );
 }
+

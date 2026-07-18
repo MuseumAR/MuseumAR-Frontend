@@ -112,7 +112,7 @@ export type Ticket = {
   id: string;
   type: string;
   price: string;
-  status: "Active" | "Draft";
+  status: "Active" | "Pending";
 };
 
 // ─── Staff ─────────────────────────────────────────────────────────────────
