@@ -9,6 +9,7 @@ import { normalizeExhibitDto, normalizeTourRouteDto } from "@/lib/normalize-dto"
 import type {
   AgeGroupDto,
   CategoryDto,
+  ContentVersionDto,
   CreateCategoryDto,
   CreateExhibitDto,
   CreateExhibitionDto,
@@ -80,6 +81,10 @@ export function getExhibitTranslations(id: number) {
 export function createContentVersion(versionNumber: string, description: string) {
   const params = new URLSearchParams({ versionNumber, description });
   return apiPostAuth<number>(`/api/content/versions?${params.toString()}`);
+}
+
+export function getContentVersions() {
+  return apiGet<ContentVersionDto[]>("/api/content/versions");
 }
 
 export function getArAssets(exhibitId: number) {
