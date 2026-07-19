@@ -7,16 +7,20 @@ import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
 import {
   createVersionEntry,
-  type CreatedVersionRow,
 } from "@/services/content-manager/content-version.service";
+import type { ContentVersionDto } from "@/types/api";
 
-export function ContentVersionsPanel() {
+export function ContentVersionsPanel({
+  initialVersions,
+}: {
+  initialVersions: ContentVersionDto[];
+}) {
   const [showForm, setShowForm] = useState(false);
   const [versionNumber, setVersionNumber] = useState("");
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [created, setCreated] = useState<CreatedVersionRow[]>([]);
+  const [versions, setVersions] = useState<ContentVersionDto[]>(initialVersions);
   const [lastId, setLastId] = useState<number | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -32,14 +36,15 @@ export function ContentVersionsPanel() {
         versionNumber.trim(),
         description.trim(),
       );
-      const row: CreatedVersionRow = {
+      const row: ContentVersionDto = {
         id: result.id,
         versionNumber: result.versionNumber,
         changeDescription: result.changeDescription || null,
         status: "Draft",
         createdAt: new Date().toISOString(),
+        museumId: 0,
       };
-      setCreated((prev) => [row, ...prev]);
+      setVersions((prev) => [row, ...prev]);
       setLastId(result.id);
       setVersionNumber("");
       setDescription("");
@@ -80,9 +85,9 @@ export function ContentVersionsPanel() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <p className="text-sm" style={{ fontFamily: cinzel, color: T.muted }}>
           <span className="font-semibold" style={{ color: T.text }}>
-            {created.length}
+            {versions.length}
           </span>
-          {` created this session`}
+          {` version${versions.length === 1 ? "" : "s"} total`}
         </p>
         <button
           type="button"
@@ -163,10 +168,9 @@ export function ContentVersionsPanel() {
         className="overflow-hidden rounded-3xl"
         style={{ background: T.surface, border: `1px solid ${T.border}` }}
       >
-        {created.length === 0 ? (
+        {versions.length === 0 ? (
           <p className="px-8 py-16 text-center text-sm" style={{ color: T.muted }}>
-            No versions created in this session yet. Create one to get a version ID for
-            offline packages.
+            No content versions found. Create one to get started.
           </p>
         ) : (
           <table className="w-full text-left text-sm">
@@ -185,7 +189,7 @@ export function ContentVersionsPanel() {
               </tr>
             </thead>
             <tbody>
-              {created.map((item) => (
+              {versions.map((item) => (
                 <tr key={item.id} style={{ borderBottom: `1px solid ${T.border}` }}>
                   <td className="px-5 py-4 font-medium tabular-nums" style={{ color: T.text }}>
                     {item.id}

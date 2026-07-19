@@ -1,5 +1,10 @@
+import { safeFetch } from "@/lib/fetch-safe";
 import type { ContentVersionDto } from "@/types/api";
-import { createContentVersion } from "./content-api.service";
+import { createContentVersion, getContentVersions } from "./content-api.service";
+
+export async function getVersionList(): Promise<ContentVersionDto[]> {
+  return safeFetch(() => getContentVersions(), []);
+}
 
 function asNumber(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) return value;
