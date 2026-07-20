@@ -11,6 +11,7 @@ export {
   updateMuseumProfile,
   updateSystemConfig,
   updateUser,
+  uploadMuseumImage,
 } from "./admin-api.service";
 export * from "./audit-log.service";
 export * from "./museum-management.service";

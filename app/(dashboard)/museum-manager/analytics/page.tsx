@@ -1,7 +1,10 @@
 import { AnalyticsPageContent } from "@/components/shared/analytics-page";
-import { getAnalyticsMetrics } from "@/services/analyst";
+import { getAnalyticsMetrics, getAnalyticsDashboard } from "@/services/analyst";
 
 export default async function AnalyticsPage() {
-  const metrics = await getAnalyticsMetrics();
-  return <AnalyticsPageContent metrics={metrics} />;
+  const [metrics, dashboard] = await Promise.all([
+    getAnalyticsMetrics(),
+    getAnalyticsDashboard(),
+  ]);
+  return <AnalyticsPageContent metrics={metrics} dashboard={dashboard} />;
 }

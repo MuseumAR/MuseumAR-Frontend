@@ -71,14 +71,14 @@ export function ExhibitTable({
   }
 
   async function handleDelete(id: number) {
-    if (!confirm("Delete this exhibit?")) return;
+    if (!confirm("Delete this artifact?")) return;
     setActingId(id);
     setError(null);
     try {
       await deleteExhibit(id);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Unable to delete exhibit."));
+      setError(getDisplayError(err, "Unable to delete artifact."));
     } finally {
       setActingId(null);
     }
@@ -88,7 +88,7 @@ export function ExhibitTable({
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h3 className="text-lg font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-          Exhibits
+          Artifacts
         </h3>
         <div className="flex items-center gap-3">
           <div className="relative w-64 min-w-[200px]">
@@ -98,7 +98,7 @@ export function ExhibitTable({
             />
             <input
               type="search"
-              placeholder="Search exhibits..."
+              placeholder="Search artifacts..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -121,7 +121,7 @@ export function ExhibitTable({
                 color: T.surface,
               }}
             >
-              Create exhibit
+              Create artifact
             </Link>
           )}
         </div>
@@ -146,7 +146,7 @@ export function ExhibitTable({
       >
         {rows.length === 0 ? (
           <div className="px-8 py-16 text-center text-sm" style={{ color: T.muted }}>
-            No exhibits found.
+            No artifacts found.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -158,7 +158,7 @@ export function ExhibitTable({
                     background: "rgba(245,230,200,0.35)",
                   }}
                 >
-                  {["Exhibit", "Code", "Status", "AR", "QR", "Audio", "Actions"].map((col) => (
+                  {["Artifact", "Code", "Status", "AR", "QR", "Audio", "Actions"].map((col) => (
                     <th
                       key={col}
                       className="px-5 py-4 text-xs font-medium uppercase tracking-wider"

@@ -56,6 +56,9 @@ export type Artifact = {
   qrLinked: ActiveInactive;
   arModelStatus: ActiveInactive;
   audio: ActiveInactive;
+  audioUrl?: string | null;
+  arOverlayUrl?: string | null;
+  arMarkerUrl?: string | null;
   image: string | null;
   description: string;
 };
@@ -109,7 +112,7 @@ export type Ticket = {
   id: string;
   type: string;
   price: string;
-  status: "Active" | "Draft";
+  status: "Active" | "Pending";
 };
 
 // ─── Staff ─────────────────────────────────────────────────────────────────

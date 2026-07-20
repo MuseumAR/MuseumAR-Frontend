@@ -80,7 +80,7 @@ export function CreateExhibitForm({
     setIsSubmitting(true);
 
     try {
-      const exhibit = await createExhibit({
+      const res = await createExhibit({
         museumId,
         categoryId: categoryId ? Number(categoryId) : undefined,
         exhibitCode: exhibitCode.trim() || undefined,
@@ -100,17 +100,22 @@ export function CreateExhibitForm({
         ],
       });
 
-      if (imageFile) await uploadExhibitImage(exhibit.id, imageFile, title);
-      if (audioFile) await uploadExhibitAudio(exhibit.id, languageCode, audioFile);
-      if (arFile) await uploadArAsset(exhibit.id, "model", arFile);
+      const exhibitId = typeof res === "object" && res && "id" in res ? (res as any).id : (res as unknown as number);
+
+      if (imageFile) await uploadExhibitImage(exhibitId, imageFile, title);
+      if (audioFile) await uploadExhibitAudio(exhibitId, languageCode, audioFile);
+      if (arFile) {
+        const arType = arFile.type.startsWith("image/") ? "OverlayImage" : "Model3D";
+        await uploadArAsset(exhibitId, arType, arFile);
+      }
       if (selectedTagIds.length > 0) {
-        await syncExhibitTags(exhibit.id, selectedTagIds);
+        await syncExhibitTags(exhibitId, selectedTagIds);
       }
 
       router.push("/content-manager/artifact");
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Unable to create exhibit."));
+      setError(getDisplayError(err, "Unable to create artifact."));
     } finally {
       setIsSubmitting(false);
     }
@@ -119,10 +124,10 @@ export function CreateExhibitForm({
   return (
     <div className="px-8 pb-10">
       <Link href="/content-manager/artifact" className="mb-6 inline-flex items-center gap-2 text-sm" style={{ color: T.muted }}>
-        <span>←</span> Back to exhibits
+        <span>←</span> Back to artifacts
       </Link>
       <h1 className="mb-8 text-3xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-        Create Exhibit
+        Create Artifact
       </h1>
 
       <form
@@ -143,8 +148,8 @@ export function CreateExhibitForm({
               setImageFile(file);
               setImagePreview(URL.createObjectURL(file));
             }} />
-            <UploadBox label={arFile?.name ?? "AR model"} onClick={() => arRef.current?.click()} />
-            <input ref={arRef} type="file" accept=".glb,.gltf" className="hidden" onChange={(e) => {
+            <UploadBox label={arFile?.name ?? "AR asset (Image/3D)"} onClick={() => arRef.current?.click()} />
+            <input ref={arRef} type="file" accept="image/*,.glb,.gltf" className="hidden" onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) setArFile(file);
             }} />
@@ -157,8 +162,8 @@ export function CreateExhibitForm({
 
           <div className="flex-1 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Title *" value={title} onChange={setTitle} placeholder="Exhibit title" />
-              <Field label="Exhibit code" value={exhibitCode} onChange={setExhibitCode} placeholder="CAT-001" />
+              <Field label="Title *" value={title} onChange={setTitle} placeholder="Artifact title" />
+              <Field label="Artifact code" value={exhibitCode} onChange={setExhibitCode} placeholder="CAT-001" />
               <Field label="Language" value={languageCode} onChange={setLanguageCode} placeholder="vi" />
               <SelectField
                 label="Category"
@@ -233,7 +238,7 @@ export function CreateExhibitForm({
               color: T.surface,
             }}
           >
-            {isSubmitting ? "Creating…" : "Create exhibit"}
+            {isSubmitting ? "Creating…" : "Create artifact"}
           </button>
         </div>
       </form>

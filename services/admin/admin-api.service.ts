@@ -1,4 +1,4 @@
-import { apiDeleteAuth, apiGet, apiGetAuth, apiPost, apiPostAuth, apiPutAuth } from "@/services/api-client";
+import { apiDeleteAuth, apiGet, apiGetAuth, apiPostAuth, apiPutAuth, apiPostFormAuth } from "@/services/api-client";
 import { normalizeMuseumDto, normalizeTicketTypeDto } from "@/lib/normalize-dto";
 import type {
   CreateTicketTypeDto,
@@ -30,7 +30,7 @@ export function getTicketTypes() {
 }
 
 export function createTicketType(payload: CreateTicketTypeDto) {
-  return apiPost<unknown>("/api/admin/ticket-types", payload).then(
+  return apiPostAuth<unknown>("/api/admin/ticket-types", payload).then(
     normalizeTicketTypeDto,
   );
 }
@@ -95,3 +95,10 @@ export function getAuditLogs(params?: {
   const qs = query.toString();
   return apiGetAuth<PagedAuditLogsDto>(`/api/admin/audit-logs${qs ? `?${qs}` : ""}`);
 }
+
+export function uploadMuseumImage(file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiPostFormAuth<string>("/api/admin/museum-profile/upload-image", formData);
+}
+

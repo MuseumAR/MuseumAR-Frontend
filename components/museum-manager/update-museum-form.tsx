@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { getDisplayError } from "@/lib/validation";
 import { updateMuseumProfileEntry } from "@/services/museum-manager/museum-profile.service";
+import { uploadMuseumImage } from "@/services/admin/admin-api.service";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, "0")}:00`);
 
@@ -26,12 +27,14 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
     HOURS.includes(profile.closingHours) ? profile.closingHours : "",
   );
   const [imagePreview, setImagePreview] = useState<string | null>(profile.image);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
   }
 
@@ -39,14 +42,6 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
     e.preventDefault();
     if (!name.trim()) {
       setError("Museum name is required.");
-      return;
-    }
-
-    // Local object URLs are not valid thumbnail URLs for the API.
-    if (imagePreview?.startsWith("blob:")) {
-      setError(
-        "Selected image cannot be saved yet — the API only accepts a public thumbnail URL.",
-      );
       return;
     }
 
@@ -58,13 +53,19 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
           ? `${openingHours} - ${closingHours}`
           : openingHours || closingHours || undefined;
 
+      let currentThumbnailUrl = imagePreview ?? undefined;
+
+      if (imageFile) {
+        currentThumbnailUrl = await uploadMuseumImage(imageFile);
+      }
+
       await updateMuseumProfileEntry({
         name: name.trim(),
         address: address.trim() || undefined,
         contactEmail: email.trim() || undefined,
         contactPhone: phone.trim() || undefined,
         openingHours: hours,
-        thumbnailUrl: imagePreview ?? undefined,
+        thumbnailUrl: currentThumbnailUrl,
       });
       router.push("/museum-manager/museum-profile");
       router.refresh();

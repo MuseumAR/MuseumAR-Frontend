@@ -25,10 +25,10 @@ export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" 
 
   async function handleDelete() {
     if (!exhibitId || Number.isNaN(exhibitId)) {
-      setError("Unable to find this exhibit.");
+      setError("Unable to find this artifact.");
       return;
     }
-    if (!confirm("Delete this exhibit?")) return;
+    if (!confirm("Delete this artifact?")) return;
 
     setIsDeleting(true);
     setError(null);
@@ -37,7 +37,7 @@ export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" 
       router.push(backPath);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Unable to delete exhibit."));
+      setError(getDisplayError(err, "Unable to delete artifact."));
     } finally {
       setIsDeleting(false);
     }
@@ -93,12 +93,54 @@ export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" 
               <InfoRow label={ARTIFACT_LABELS.location!} value={artifact.location} />
               <ActiveRow label={ARTIFACT_LABELS.qrLinked!} value={artifact.qrLinked} />
               <ActiveRow label={ARTIFACT_LABELS.arModelStatus!} value={artifact.arModelStatus} />
+              <ActiveRow label={ARTIFACT_LABELS.audio!} value={artifact.audio} />
             </dl>
 
             <p className="mt-2 text-sm leading-relaxed" style={{ color: T.muted }}>
               <span style={{ color: T.mutedLight }}>{ARTIFACT_LABELS.description}: </span>
               {artifact.description}
             </p>
+
+            {artifact.audioUrl && (
+              <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(200,155,69,0.04)", border: `1px solid ${T.border}` }}>
+                <p className="mb-2 text-sm font-semibold flex items-center gap-2" style={{ color: T.primaryDark }}>
+                  <span>🔊</span> Audio Guide Preview
+                </p>
+                <audio controls src={artifact.audioUrl} className="w-full max-w-md" />
+              </div>
+            )}
+
+            {(artifact.arOverlayUrl || artifact.arMarkerUrl) && (
+              <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(79,125,74,0.04)", border: `1px solid ${T.border}` }}>
+                <p className="mb-3 text-sm font-semibold flex items-center gap-2" style={{ color: T.success }}>
+                  <span>🕶️</span> AR Assets Details
+                </p>
+                <div className="flex flex-wrap gap-4 text-xs">
+                  {artifact.arOverlayUrl && (
+                    <div className="flex flex-col gap-1.5 rounded-xl p-3 border" style={{ background: T.bg, borderColor: T.border }}>
+                      <span className="font-semibold" style={{ color: T.muted }}>Overlay Model/Image</span>
+                      {artifact.arOverlayUrl.match(/\.(png|jpg|jpeg|webp)$/i) ? (
+                        <a href={artifact.arOverlayUrl} target="_blank" rel="noreferrer" className="block h-20 w-20 overflow-hidden rounded-lg border">
+                          <img src={artifact.arOverlayUrl} alt="AR Overlay Preview" className="h-full w-full object-cover" />
+                        </a>
+                      ) : (
+                        <a href={artifact.arOverlayUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-emerald-700 hover:underline">
+                          📎 Download 3D Model (.glb)
+                        </a>
+                      )}
+                    </div>
+                  )}
+                  {artifact.arMarkerUrl && (
+                    <div className="flex flex-col gap-1.5 rounded-xl p-3 border" style={{ background: T.bg, borderColor: T.border }}>
+                      <span className="font-semibold" style={{ color: T.muted }}>Marker Target Image</span>
+                      <a href={artifact.arMarkerUrl} target="_blank" rel="noreferrer" className="block h-20 w-20 overflow-hidden rounded-lg border">
+                        <img src={artifact.arMarkerUrl} alt="AR Marker Target" className="h-full w-full object-cover" />
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

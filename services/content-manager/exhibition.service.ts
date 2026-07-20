@@ -4,6 +4,9 @@ import {
   createExhibition,
   getExhibitionById as fetchExhibitionById,
   getExhibitions as fetchExhibitions,
+  uploadExhibitionImage,
+  updateExhibition,
+  deleteExhibition,
 } from "./content-api.service";
 
 export async function getExhibitionList(): Promise<ExhibitionDto[]> {
@@ -29,3 +32,5 @@ export async function getExhibitionById(
 export async function createExhibitionEntry(payload: CreateExhibitionDto) {
   return createExhibition(payload);
 }
+
+export { uploadExhibitionImage, updateExhibition, deleteExhibition };

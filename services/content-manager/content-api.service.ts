@@ -1,8 +1,6 @@
 import {
   apiDeleteAuth,
   apiGet,
-  apiGetAuth,
-  apiPost,
   apiPostAuth,
   apiPostFormAuth,
   apiPutAuth,
@@ -11,6 +9,7 @@ import { normalizeExhibitDto, normalizeTourRouteDto } from "@/lib/normalize-dto"
 import type {
   AgeGroupDto,
   CategoryDto,
+  ContentVersionDto,
   CreateCategoryDto,
   CreateExhibitDto,
   CreateExhibitionDto,
@@ -42,7 +41,7 @@ export function getExhibitById(id: number) {
 }
 
 export function createExhibit(payload: CreateExhibitDto) {
-  return apiPost<ExhibitDto>("/api/content/exhibits", payload);
+  return apiPostAuth<ExhibitDto>("/api/content/exhibits", payload);
 }
 
 export function updateExhibit(id: number, payload: CreateExhibitDto) {
@@ -82,6 +81,10 @@ export function getExhibitTranslations(id: number) {
 export function createContentVersion(versionNumber: string, description: string) {
   const params = new URLSearchParams({ versionNumber, description });
   return apiPostAuth<number>(`/api/content/versions?${params.toString()}`);
+}
+
+export function getContentVersions() {
+  return apiGet<ContentVersionDto[]>("/api/content/versions");
 }
 
 export function getArAssets(exhibitId: number) {
@@ -125,18 +128,40 @@ export function getExhibitionById(id: number) {
 }
 
 export function createExhibition(payload: CreateExhibitionDto) {
-  return apiPost<ExhibitionDto>("/api/content/exhibitions", payload);
+  return apiPostAuth<ExhibitionDto>("/api/content/exhibitions", payload);
+}
+
+export function uploadExhibitionImage(id: number, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiPostFormAuth<ExhibitionDto>(`/api/content/exhibitions/${id}/upload-image`, formData);
+}
+
+export function updateExhibition(id: number, payload: CreateExhibitionDto) {
+  return apiPutAuth<ExhibitionDto>(`/api/content/exhibitions/${id}`, payload);
+}
+
+export function deleteExhibition(id: number) {
+  return apiDeleteAuth<null>(`/api/content/exhibitions/${id}`);
 }
 
 export function getMuseumMaps() {
   return apiGet<MuseumMapDto[]>("/api/content/maps");
 }
 
-export function uploadMuseumMap(museumId: number, file: File, mapType: string) {
+export function uploadMuseumMap(
+  museumId: number,
+  file: File,
+  mapType: string,
+  mapName: string,
+  floorNumber: number,
+) {
   const formData = new FormData();
   formData.append("MuseumId", String(museumId));
   formData.append("MapImage", file);
   formData.append("MapType", mapType);
+  formData.append("MapName", mapName);
+  formData.append("FloorNumber", String(floorNumber));
   return apiPostFormAuth<MuseumMapDto>("/api/content/maps", formData);
 }
 
@@ -147,7 +172,7 @@ export function getTourRoutes() {
 }
 
 export function createTourRoute(payload: CreateTourRouteDto) {
-  return apiPost<TourRouteDto>("/api/content/routes", payload);
+  return apiPostAuth<TourRouteDto>("/api/content/routes", payload);
 }
 
 // ─── Taxonomy ─────────────────────────────────────────────────────────────────
