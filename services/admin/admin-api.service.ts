@@ -23,8 +23,8 @@ export function updateMuseumProfile(payload: UpdateMuseumProfileDto) {
   );
 }
 
-export function getTicketTypes() {
-  return apiGet<unknown[]>("/api/admin/ticket-types").then((data) =>
+export function getTicketTypes(accessToken?: string | null) {
+  return apiGetAuth<unknown[]>("/api/admin/ticket-types", accessToken).then((data) =>
     (Array.isArray(data) ? data : []).map(normalizeTicketTypeDto),
   );
 }
