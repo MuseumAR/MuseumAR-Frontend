@@ -2,16 +2,47 @@
 
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { Clock, ExternalLink, Info, Map, MapPin, Plus, Route, Upload } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Edit3,
+  ExternalLink,
+  GripVertical,
+  Info,
+  Map,
+  MapPin,
+  Plus,
+  Route,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
 import {
+  addRouteStop,
   createMapWithImage,
   createRouteEntry,
+  deleteRouteEntry,
+  removeRouteStop,
+  updateRouteEntry,
 } from "@/services/content-manager/maps-routes.service";
-import type { MuseumMapDto, TourRouteDto } from "@/types/api";
+import type {
+  AgeGroupDto,
+  ExhibitDto,
+  ExhibitionDto,
+  MuseumMapDto,
+  TourRouteDto,
+  TourRouteStopDto,
+} from "@/types/api";
 
 type Tab = "maps" | "routes";
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MAP HELPERS (unchanged)
+   ═══════════════════════════════════════════════════════════════════════════════ */
 
 function getMapDisplayName(item: MuseumMapDto): string {
   if (item.mapName?.trim()) return item.mapName.trim();
@@ -80,14 +111,571 @@ function MapPreview({ url, title }: { url: string; title: string }) {
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ROUTE HELPERS
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+function StatusBadge({ status }: { status: string }) {
+  const s = status?.toLowerCase();
+  const isActive = s === "active" || s === "published";
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium"
+      style={{
+        background: isActive ? "rgba(79,125,74,0.12)" : "rgba(200,155,69,0.12)",
+        color: isActive ? T.success : T.muted,
+      }}
+    >
+      <span
+        className="h-1.5 w-1.5 rounded-full"
+        style={{ background: isActive ? T.success : T.mutedLight }}
+      />
+      {status || "Active"}
+    </span>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   ROUTE DETAIL MODAL
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+function RouteDetailModal({
+  route,
+  exhibits,
+  onClose,
+  onRefresh,
+}: {
+  route: TourRouteDto;
+  exhibits: ExhibitDto[];
+  onClose: () => void;
+  onRefresh: () => void;
+}) {
+  const [addingStop, setAddingStop] = useState(false);
+  const [selectedExhibitId, setSelectedExhibitId] = useState<number | "">("");
+  const [stopMinutes, setStopMinutes] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(route.name);
+  const [editDesc, setEditDesc] = useState(route.description ?? "");
+  const [editDuration, setEditDuration] = useState(
+    route.estimatedDurationMinutes?.toString() ?? "",
+  );
+  const [editStatus, setEditStatus] = useState(route.status);
+  const router = useRouter();
+
+  // Exhibits not already in stops
+  const usedExhibitIds = new Set(route.stops.map((s) => s.exhibitId));
+  const availableExhibits = exhibits.filter((e) => !usedExhibitIds.has(e.id));
+
+  const sortedStops = [...route.stops].sort((a, b) => a.stopOrder - b.stopOrder);
+
+  async function handleAddStop() {
+    if (!selectedExhibitId) return;
+    setSaving(true);
+    setError(null);
+    try {
+      await addRouteStop(route.id, {
+        exhibitId: Number(selectedExhibitId),
+        stopOrder: route.stops.length + 1,
+        estimatedMinutes: stopMinutes ? Number(stopMinutes) : undefined,
+      });
+      setSelectedExhibitId("");
+      setStopMinutes("");
+      setAddingStop(false);
+      onRefresh();
+    } catch (err) {
+      setError(getDisplayError(err, "Unable to add stop."));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleRemoveStop(exhibitId: number) {
+    setSaving(true);
+    setError(null);
+    try {
+      await removeRouteStop(route.id, exhibitId);
+      onRefresh();
+    } catch (err) {
+      setError(getDisplayError(err, "Unable to remove stop."));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDeleteRoute() {
+    setSaving(true);
+    setError(null);
+    try {
+      await deleteRouteEntry(route.id);
+      onClose();
+      onRefresh();
+    } catch (err) {
+      setError(getDisplayError(err, "Unable to delete route."));
+      setSaving(false);
+    }
+  }
+
+  async function handleSaveEdit() {
+    setSaving(true);
+    setError(null);
+    try {
+      await updateRouteEntry(route.id, {
+        name: editName.trim() || null,
+        estimatedDurationMinutes: editDuration ? Number(editDuration) : undefined,
+        status: editStatus || undefined,
+      });
+      setEditing(false);
+      onRefresh();
+    } catch (err) {
+      setError(getDisplayError(err, "Unable to update route."));
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function getExhibitDisplayName(exhibit: ExhibitDto): string {
+    const vi = exhibit.translations?.find((t) => t.languageCode === "vi");
+    const any = exhibit.translations?.[0];
+    return vi?.title || any?.title || exhibit.exhibitCode || `Exhibit #${exhibit.id}`;
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-3xl rounded-3xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto"
+        style={{ background: T.surface, border: `1px solid ${T.border}` }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 mb-6">
+          <div className="flex-1 min-w-0">
+            {editing ? (
+              <input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full rounded-xl px-4 py-2.5 text-lg font-bold outline-none"
+                style={{
+                  border: `1px solid ${T.border}`,
+                  background: T.bg,
+                  color: T.text,
+                  fontFamily: cinzel,
+                }}
+              />
+            ) : (
+              <h3
+                className="text-xl font-bold"
+                style={{ fontFamily: cinzel, color: T.primaryDark }}
+              >
+                {route.name}
+              </h3>
+            )}
+            <p className="text-xs mt-1" style={{ color: T.mutedLight }}>
+              Route ID: {route.id}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {!editing && (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="rounded-xl p-2 hover:bg-[rgba(200,155,69,0.1)] transition-colors"
+                style={{ color: T.primaryDark }}
+                title="Edit route"
+              >
+                <Edit3 className="h-4 w-4" />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full p-2 hover:bg-[rgba(200,155,69,0.15)] transition-colors"
+              style={{ color: T.muted }}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Route info */}
+        <div
+          className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 rounded-2xl p-4 mb-6"
+          style={{ background: "rgba(200,155,69,0.06)", border: `1px solid ${T.border}` }}
+        >
+          <div className="space-y-0.5">
+            <p className="text-xs" style={{ color: T.mutedLight }}>Duration</p>
+            {editing ? (
+              <input
+                type="number"
+                min="1"
+                value={editDuration}
+                onChange={(e) => setEditDuration(e.target.value)}
+                placeholder="45"
+                className="w-full rounded-lg px-3 py-1.5 text-sm outline-none"
+                style={{ border: `1px solid ${T.border}`, background: T.surface, color: T.text }}
+              />
+            ) : (
+              <p className="text-sm font-medium flex items-center gap-1.5" style={{ color: T.text }}>
+                <Clock className="h-3.5 w-3.5" style={{ color: T.mutedLight }} />
+                {route.estimatedDurationMinutes ? `${route.estimatedDurationMinutes} min` : "—"}
+              </p>
+            )}
+          </div>
+          <div className="space-y-0.5">
+            <p className="text-xs" style={{ color: T.mutedLight }}>Status</p>
+            {editing ? (
+              <select
+                value={editStatus}
+                onChange={(e) => setEditStatus(e.target.value)}
+                className="w-full rounded-lg px-3 py-1.5 text-sm outline-none"
+                style={{ border: `1px solid ${T.border}`, background: T.surface, color: T.text }}
+              >
+                <option value="Active">Active</option>
+                <option value="Draft">Draft</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            ) : (
+              <StatusBadge status={route.status} />
+            )}
+          </div>
+          <div className="space-y-0.5">
+            <p className="text-xs" style={{ color: T.mutedLight }}>Stops</p>
+            <p className="text-sm font-medium" style={{ color: T.text }}>
+              {route.stops.length} điểm dừng
+            </p>
+          </div>
+          {route.exhibitionName && (
+            <div className="space-y-0.5">
+              <p className="text-xs" style={{ color: T.mutedLight }}>Exhibition</p>
+              <p className="text-sm font-medium" style={{ color: T.text }}>
+                {route.exhibitionName}
+              </p>
+            </div>
+          )}
+          {route.ageGroupName && (
+            <div className="space-y-0.5">
+              <p className="text-xs" style={{ color: T.mutedLight }}>Age group</p>
+              <p className="text-sm font-medium" style={{ color: T.text }}>
+                {route.ageGroupName}
+              </p>
+            </div>
+          )}
+          {route.isDefault && (
+            <div className="space-y-0.5">
+              <p className="text-xs" style={{ color: T.mutedLight }}>Default</p>
+              <p className="text-sm font-medium flex items-center gap-1" style={{ color: T.success }}>
+                <Check className="h-3.5 w-3.5" /> Default route
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Description */}
+        {(route.description || editing) && (
+          <div className="mb-6">
+            <p className="text-xs mb-1.5 font-medium" style={{ color: T.mutedLight }}>
+              Description
+            </p>
+            {editing ? (
+              <textarea
+                value={editDesc}
+                onChange={(e) => setEditDesc(e.target.value)}
+                rows={3}
+                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none resize-none"
+                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                placeholder="Mô tả tour route…"
+              />
+            ) : (
+              <p className="text-sm leading-relaxed" style={{ color: T.muted }}>
+                {route.description}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Edit buttons */}
+        {editing && (
+          <div className="flex gap-2 mb-6">
+            <button
+              type="button"
+              onClick={handleSaveEdit}
+              disabled={saving}
+              className="rounded-xl px-5 py-2 text-sm font-medium disabled:opacity-50"
+              style={{ background: T.primary, color: T.surface }}
+            >
+              {saving ? "Saving…" : "Save changes"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(false);
+                setEditName(route.name);
+                setEditDesc(route.description ?? "");
+                setEditDuration(route.estimatedDurationMinutes?.toString() ?? "");
+                setEditStatus(route.status);
+              }}
+              className="rounded-xl px-5 py-2 text-sm font-medium"
+              style={{ border: `1px solid ${T.border}`, color: T.muted }}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
+        {/* Stops section */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-semibold" style={{ color: T.text }}>
+              Điểm dừng ({sortedStops.length})
+            </h4>
+            {!addingStop && (
+              <button
+                type="button"
+                onClick={() => setAddingStop(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium transition-colors"
+                style={{
+                  background: "rgba(200,155,69,0.12)",
+                  color: T.primaryDark,
+                }}
+              >
+                <Plus className="h-3.5 w-3.5" /> Thêm điểm dừng
+              </button>
+            )}
+          </div>
+
+          {/* Add stop form */}
+          {addingStop && (
+            <div
+              className="rounded-2xl p-4 mb-3"
+              style={{ background: "rgba(200,155,69,0.06)", border: `1px solid ${T.border}` }}
+            >
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="sm:col-span-2 space-y-1">
+                  <label className="text-xs" style={{ color: T.muted }}>Chọn exhibit *</label>
+                  <select
+                    value={selectedExhibitId}
+                    onChange={(e) => setSelectedExhibitId(e.target.value ? Number(e.target.value) : "")}
+                    className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                    style={{ border: `1px solid ${T.border}`, background: T.surface, color: T.text }}
+                  >
+                    <option value="">-- Chọn exhibit --</option>
+                    {availableExhibits.map((e) => (
+                      <option key={e.id} value={e.id}>
+                        {getExhibitDisplayName(e)} (#{e.id})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs" style={{ color: T.muted }}>Thời gian (phút)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={stopMinutes}
+                    onChange={(e) => setStopMinutes(e.target.value)}
+                    placeholder="5"
+                    className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                    style={{ border: `1px solid ${T.border}`, background: T.surface, color: T.text }}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 mt-3">
+                <button
+                  type="button"
+                  onClick={handleAddStop}
+                  disabled={saving || !selectedExhibitId}
+                  className="rounded-lg px-4 py-1.5 text-xs font-medium disabled:opacity-50"
+                  style={{ background: T.primary, color: T.surface }}
+                >
+                  {saving ? "Adding…" : "Add"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAddingStop(false); setSelectedExhibitId(""); setStopMinutes(""); }}
+                  className="rounded-lg px-4 py-1.5 text-xs font-medium"
+                  style={{ border: `1px solid ${T.border}`, color: T.muted }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Stops list */}
+          {sortedStops.length === 0 ? (
+            <div
+              className="rounded-2xl px-6 py-8 text-center"
+              style={{ background: "rgba(200,155,69,0.04)", border: `1px dashed ${T.border}` }}
+            >
+              <MapPin className="mx-auto h-8 w-8 mb-2" style={{ color: T.mutedLight }} />
+              <p className="text-sm" style={{ color: T.muted }}>
+                Chưa có điểm dừng nào. Thêm exhibit để tạo lộ trình tham quan.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {sortedStops.map((stop, idx) => (
+                <div
+                  key={`${stop.exhibitId}-${idx}`}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 group transition-colors hover:bg-[rgba(200,155,69,0.04)]"
+                  style={{ border: `1px solid ${T.border}` }}
+                >
+                  <div
+                    className="flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold shrink-0"
+                    style={{
+                      background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
+                      color: T.surface,
+                    }}
+                  >
+                    {stop.stopOrder}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate" style={{ color: T.text }}>
+                      {stop.exhibitName || `Exhibit #${stop.exhibitId}`}
+                    </p>
+                    <div className="flex items-center gap-3 text-xs" style={{ color: T.mutedLight }}>
+                      {stop.exhibitCode && <span>Code: {stop.exhibitCode}</span>}
+                      {stop.estimatedMinutes != null && (
+                        <span className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" /> {stop.estimatedMinutes} min
+                        </span>
+                      )}
+                      {stop.floorNumber != null && <span>Floor {stop.floorNumber}</span>}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveStop(stop.exhibitId)}
+                    disabled={saving}
+                    className="opacity-0 group-hover:opacity-100 rounded-lg p-1.5 transition-all hover:bg-red-50"
+                    style={{ color: "#B45309" }}
+                    title="Remove stop"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Translations preview */}
+        {route.translations.length > 0 && (
+          <div className="mb-6">
+            <h4 className="text-sm font-semibold mb-2" style={{ color: T.text }}>
+              Translations ({route.translations.length})
+            </h4>
+            <div className="space-y-2">
+              {route.translations.map((t) => (
+                <div
+                  key={t.languageCode}
+                  className="rounded-xl px-4 py-3"
+                  style={{ background: "rgba(200,155,69,0.04)", border: `1px solid ${T.border}` }}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span
+                      className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase"
+                      style={{ background: "rgba(200,155,69,0.15)", color: T.primaryDark }}
+                    >
+                      {t.languageCode}
+                    </span>
+                    <span className="text-sm font-medium" style={{ color: T.text }}>
+                      {t.routeName}
+                    </span>
+                  </div>
+                  {t.description && (
+                    <p className="text-xs leading-relaxed ml-8" style={{ color: T.muted }}>
+                      {t.description}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Error */}
+        {error && (
+          <p className="mb-4 text-sm" style={{ color: "#8B2E2E" }}>
+            {error}
+          </p>
+        )}
+
+        {/* Footer */}
+        <div
+          className="flex items-center justify-between pt-4"
+          style={{ borderTop: `1px solid ${T.border}` }}
+        >
+          {confirmDelete ? (
+            <div className="flex items-center gap-2">
+              <span className="text-sm" style={{ color: "#8B2E2E" }}>
+                Xác nhận xóa route này?
+              </span>
+              <button
+                type="button"
+                onClick={handleDeleteRoute}
+                disabled={saving}
+                className="rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50"
+                style={{ background: "#8B2E2E", color: "#fff" }}
+              >
+                {saving ? "Deleting…" : "Delete"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(false)}
+                className="rounded-lg px-3 py-1.5 text-xs font-medium"
+                style={{ border: `1px solid ${T.border}`, color: T.muted }}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors hover:opacity-80"
+              style={{ color: "#8B2E2E" }}
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Delete route
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl px-5 py-2 text-sm font-medium"
+            style={{ background: T.primary, color: T.surface }}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
+   MAIN PANEL
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
 export function MapsRoutesPanel({
   maps,
   routes,
   museumId,
+  exhibitions = [],
+  ageGroups = [],
+  exhibits = [],
 }: {
   maps: MuseumMapDto[];
   routes: TourRouteDto[];
   museumId: number;
+  exhibitions?: ExhibitionDto[];
+  ageGroups?: AgeGroupDto[];
+  exhibits?: ExhibitDto[];
 }) {
   const router = useRouter();
   const mapFileRef = useRef<HTMLInputElement>(null);
@@ -100,8 +688,16 @@ export function MapsRoutesPanel({
   const [mapName, setMapName] = useState("");
   const [floorNumber, setFloorNumber] = useState("1");
   const [selectedMap, setSelectedMap] = useState<MuseumMapDto | null>(null);
+  const [selectedRoute, setSelectedRoute] = useState<TourRouteDto | null>(null);
+
+  // Route form state
   const [routeName, setRouteName] = useState("");
+  const [routeDesc, setRouteDesc] = useState("");
   const [routeMinutes, setRouteMinutes] = useState("");
+  const [routeExhibitionId, setRouteExhibitionId] = useState<number | "">("");
+  const [routeAgeGroupId, setRouteAgeGroupId] = useState<number | "">("");
+  const [routeIsDefault, setRouteIsDefault] = useState(false);
+
   const [mapError, setMapError] = useState<string | null>(null);
   const [routeError, setRouteError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<"map" | "route" | null>(null);
@@ -160,9 +756,16 @@ export function MapsRoutesPanel({
         museumId,
         name: routeName.trim(),
         estimatedDurationMinutes: routeMinutes ? Number(routeMinutes) : undefined,
+        exhibitionId: routeExhibitionId ? Number(routeExhibitionId) : undefined,
+        ageGroupId: routeAgeGroupId ? Number(routeAgeGroupId) : undefined,
+        isDefault: routeIsDefault,
       });
       setRouteName("");
+      setRouteDesc("");
       setRouteMinutes("");
+      setRouteExhibitionId("");
+      setRouteAgeGroupId("");
+      setRouteIsDefault(false);
       setShowRouteForm(false);
       router.refresh();
     } catch (err) {
@@ -170,6 +773,16 @@ export function MapsRoutesPanel({
     } finally {
       setSubmitting(null);
     }
+  }
+
+  function resetRouteForm() {
+    setRouteName("");
+    setRouteDesc("");
+    setRouteMinutes("");
+    setRouteExhibitionId("");
+    setRouteAgeGroupId("");
+    setRouteIsDefault(false);
+    setRouteError(null);
   }
 
   const tabBtn = (id: Tab, label: string, count: number, Icon: typeof Map) => {
@@ -215,7 +828,7 @@ export function MapsRoutesPanel({
           </p>
           <p>
             <strong>Museum maps</strong> — floor or area layout images.{" "}
-            <strong>Tour routes</strong> — suggested paths (name + estimated duration).
+            <strong>Tour routes</strong> — suggested visit paths with stops, descriptions, and estimated duration.
           </p>
         </div>
       </div>
@@ -225,6 +838,7 @@ export function MapsRoutesPanel({
         {tabBtn("routes", "Tour routes", routes.length, Route)}
       </div>
 
+      {/* ═══ MAPS TAB ═══ */}
       {tab === "maps" && (
         <div className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -428,6 +1042,7 @@ export function MapsRoutesPanel({
         </div>
       )}
 
+      {/* ═══ ROUTES TAB ═══ */}
       {tab === "routes" && (
         <div className="space-y-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -439,7 +1054,10 @@ export function MapsRoutesPanel({
             </p>
             <button
               type="button"
-              onClick={() => setShowRouteForm((v) => !v)}
+              onClick={() => {
+                if (showRouteForm) resetRouteForm();
+                setShowRouteForm((v) => !v);
+              }}
               className="inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium"
               style={{
                 background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
@@ -451,6 +1069,7 @@ export function MapsRoutesPanel({
             </button>
           </div>
 
+          {/* Create route form */}
           {showRouteForm && (
             <form
               onSubmit={handleCreateRoute}
@@ -465,7 +1084,7 @@ export function MapsRoutesPanel({
                   <input
                     value={routeName}
                     onChange={(e) => setRouteName(e.target.value)}
-                    placeholder="Bronze Essence Express Tour"
+                    placeholder="Hành trình Khám phá Di sản"
                     className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                     style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                   />
@@ -483,6 +1102,74 @@ export function MapsRoutesPanel({
                     className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                     style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                   />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="block text-sm" style={{ color: T.muted }}>
+                    Description
+                  </label>
+                  <textarea
+                    value={routeDesc}
+                    onChange={(e) => setRouteDesc(e.target.value)}
+                    rows={3}
+                    placeholder="Mô tả chi tiết lộ trình tham quan…"
+                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none resize-none"
+                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                  />
+                </div>
+                {exhibitions.length > 0 && (
+                  <div className="space-y-1.5">
+                    <label className="block text-sm" style={{ color: T.muted }}>
+                      Exhibition
+                    </label>
+                    <select
+                      value={routeExhibitionId}
+                      onChange={(e) => setRouteExhibitionId(e.target.value ? Number(e.target.value) : "")}
+                      className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                      style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                    >
+                      <option value="">-- None --</option>
+                      {exhibitions.map((ex) => (
+                        <option key={ex.id} value={ex.id}>
+                          {ex.name || `Exhibition #${ex.id}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {ageGroups.length > 0 && (
+                  <div className="space-y-1.5">
+                    <label className="block text-sm" style={{ color: T.muted }}>
+                      Age group
+                    </label>
+                    <select
+                      value={routeAgeGroupId}
+                      onChange={(e) => setRouteAgeGroupId(e.target.value ? Number(e.target.value) : "")}
+                      className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                      style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                    >
+                      <option value="">-- None --</option>
+                      {ageGroups.map((ag) => (
+                        <option key={ag.id} value={ag.id}>
+                          {ag.groupName}
+                          {ag.minAge != null && ag.maxAge != null ? ` (${ag.minAge}–${ag.maxAge})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div className="flex items-center gap-3 sm:col-span-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={routeIsDefault}
+                      onChange={(e) => setRouteIsDefault(e.target.checked)}
+                      className="rounded"
+                      style={{ accentColor: T.primary }}
+                    />
+                    <span className="text-sm" style={{ color: T.muted }}>
+                      Set as default route
+                    </span>
+                  </label>
                 </div>
               </div>
               {routeError && (
@@ -503,6 +1190,7 @@ export function MapsRoutesPanel({
             </form>
           )}
 
+          {/* Routes table */}
           <div
             className="overflow-hidden rounded-3xl"
             style={{ background: T.surface, border: `1px solid ${T.border}` }}
@@ -515,54 +1203,107 @@ export function MapsRoutesPanel({
                 </p>
               </div>
             ) : (
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr
-                    style={{
-                      borderBottom: `1px solid ${T.border}`,
-                      background: "rgba(245,230,200,0.35)",
-                    }}
-                  >
-                    {["ID", "Route name", "Duration"].map((h) => (
-                      <th
-                        key={h}
-                        className="px-5 py-4 font-medium"
-                        style={{ color: T.mutedLight }}
-                      >
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {routes.map((item) => (
-                    <tr key={item.id} style={{ borderBottom: `1px solid ${T.border}` }}>
-                      <td className="px-5 py-4 font-medium" style={{ color: T.text }}>
-                        {item.id}
-                      </td>
-                      <td className="px-5 py-4" style={{ color: T.text }}>
-                        {item.name}
-                      </td>
-                      <td className="px-5 py-4">
-                        <span
-                          className="inline-flex items-center gap-1.5"
-                          style={{ color: T.muted }}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr
+                      style={{
+                        borderBottom: `1px solid ${T.border}`,
+                        background: "rgba(245,230,200,0.35)",
+                      }}
+                    >
+                      {["ID", "Route name", "Description", "Exhibition", "Stops", "Duration", "Status", ""].map((h) => (
+                        <th
+                          key={h || "actions"}
+                          className="px-5 py-4 font-medium whitespace-nowrap"
+                          style={{ color: T.mutedLight }}
                         >
-                          <Clock className="h-3.5 w-3.5" />
-                          {item.estimatedDurationMinutes != null
-                            ? `${item.estimatedDurationMinutes} min`
-                            : "—"}
-                        </span>
-                      </td>
+                          {h}
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {routes.map((item) => (
+                      <tr
+                        key={item.id}
+                        className="cursor-pointer transition-colors hover:bg-[rgba(200,155,69,0.04)]"
+                        style={{ borderBottom: `1px solid ${T.border}` }}
+                        onClick={() => setSelectedRoute(item)}
+                      >
+                        <td className="px-5 py-4 font-medium" style={{ color: T.text }}>
+                          {item.id}
+                        </td>
+                        <td className="px-5 py-4" style={{ color: T.text }}>
+                          <div>
+                            <p className="font-medium hover:underline">{item.name}</p>
+                            {item.isDefault && (
+                              <span
+                                className="inline-flex items-center gap-1 mt-0.5 text-[10px] font-medium"
+                                style={{ color: T.success }}
+                              >
+                                <Check className="h-3 w-3" /> Default
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-5 py-4 max-w-[200px]" style={{ color: T.muted }}>
+                          <p className="truncate text-xs">
+                            {item.description || "—"}
+                          </p>
+                        </td>
+                        <td className="px-5 py-4 whitespace-nowrap" style={{ color: T.muted }}>
+                          {item.exhibitionName || "—"}
+                        </td>
+                        <td className="px-5 py-4 text-center" style={{ color: T.text }}>
+                          <span
+                            className="inline-flex items-center justify-center h-6 min-w-[24px] rounded-full px-1.5 text-xs font-medium"
+                            style={{
+                              background: item.stops.length > 0 ? "rgba(79,125,74,0.12)" : "rgba(200,155,69,0.08)",
+                              color: item.stops.length > 0 ? T.success : T.mutedLight,
+                            }}
+                          >
+                            {item.stops.length}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <span
+                            className="inline-flex items-center gap-1.5"
+                            style={{ color: T.muted }}
+                          >
+                            <Clock className="h-3.5 w-3.5" />
+                            {item.estimatedDurationMinutes != null
+                              ? `${item.estimatedDurationMinutes} min`
+                              : "—"}
+                          </span>
+                        </td>
+                        <td className="px-5 py-4 whitespace-nowrap">
+                          <StatusBadge status={item.status} />
+                        </td>
+                        <td className="px-5 py-4">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedRoute(item);
+                            }}
+                            className="text-xs font-medium"
+                            style={{ color: T.primaryDark }}
+                          >
+                            Detail →
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         </div>
       )}
 
+      {/* ═══ MAP DETAIL MODAL ═══ */}
       {selectedMap && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
@@ -639,6 +1380,19 @@ export function MapsRoutesPanel({
             </div>
           </div>
         </div>
+      )}
+
+      {/* ═══ ROUTE DETAIL MODAL ═══ */}
+      {selectedRoute && (
+        <RouteDetailModal
+          route={selectedRoute}
+          exhibits={exhibits}
+          onClose={() => setSelectedRoute(null)}
+          onRefresh={() => {
+            setSelectedRoute(null);
+            router.refresh();
+          }}
+        />
       )}
     </div>
   );
