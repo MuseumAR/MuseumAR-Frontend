@@ -30,7 +30,6 @@ export {
   listPublicTicketTypes,
   mockConfirmPayment,
   placeTicketOrder,
-  purchaseTickets,
   removeBookmark,
   trackAction,
   trackVisitedExhibit,

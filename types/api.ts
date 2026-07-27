@@ -331,10 +331,12 @@ export type CreateOrderRequestDto = {
   quantity: number;
 };
 
-/** POST /api/ticketing/create-order — mock mode returns local confirm URL */
+/** POST /api/ticketing/create-order — returns orderCode and optional PayOS link/QR */
 export type CreateOrderResponseDto = {
-  paymentUrl: string;
   orderCode: string;
+  checkoutUrl?: string | null;
+  qrCode?: string | null;
+  amount?: number | null;
 };
 
 export type TicketDto = {

@@ -223,7 +223,9 @@ export function normalizeCreateOrderResponse(
 ): import("@/types/api").CreateOrderResponseDto {
   const o = asRecord(raw);
   return {
-    paymentUrl: String(pickField(o, "paymentUrl", "PaymentUrl") ?? ""),
     orderCode: String(pickField(o, "orderCode", "OrderCode") ?? ""),
+    checkoutUrl: pickStr(o, "checkoutUrl", "CheckoutUrl", "paymentUrl", "PaymentUrl") ?? null,
+    qrCode: pickStr(o, "qrCode", "QrCode", "QRCode") ?? null,
+    amount: pickNum(o, "amount", "Amount") ?? null,
   };
 }
