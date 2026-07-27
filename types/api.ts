@@ -236,19 +236,71 @@ export type CreateMuseumMapDto = {
 
 // ─── Tour route ───────────────────────────────────────────────────────────────
 
+export type TourRouteStopDto = {
+  exhibitId: number;
+  exhibitName?: string | null;
+  exhibitCode?: string | null;
+  stopOrder: number;
+  estimatedMinutes?: number | null;
+  mapId?: number | null;
+  floorNumber?: number | null;
+  locationX?: number | null;
+  locationY?: number | null;
+};
+
+export type TourRouteTranslationFE = {
+  languageCode: string;
+  routeName: string;
+  description?: string | null;
+};
+
 export type TourRouteDto = {
   id: number;
   museumId: number;
   /** May be empty from BE mapping — FE falls back to `Route #{id}` */
   name: string;
+  description?: string | null;
   /** Also accepts EstimatedMinutes from entity-shaped payloads */
   estimatedDurationMinutes?: number | null;
+  thumbnailUrl?: string | null;
+  ageGroupId?: number | null;
+  ageGroupName?: string | null;
+  exhibitionId?: number | null;
+  exhibitionName?: string | null;
+  isDefault: boolean;
+  status: string;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  stops: TourRouteStopDto[];
+  translations: TourRouteTranslationFE[];
 };
 
 export type CreateTourRouteDto = {
   museumId: number;
   name: string;
   estimatedDurationMinutes?: number | null;
+  ageGroupId?: number | null;
+  exhibitionId?: number | null;
+  isDefault?: boolean;
+  thumbnailUrl?: string | null;
+  stops?: CreateTourRouteStopDto[];
+  translations?: TourRouteTranslationFE[];
+};
+
+export type UpdateTourRouteDto = {
+  name?: string | null;
+  estimatedDurationMinutes?: number | null;
+  ageGroupId?: number | null;
+  exhibitionId?: number | null;
+  isDefault?: boolean;
+  thumbnailUrl?: string | null;
+  status?: string | null;
+};
+
+export type CreateTourRouteStopDto = {
+  exhibitId: number;
+  stopOrder: number;
+  estimatedMinutes?: number | null;
 };
 
 // ─── Ticketing ────────────────────────────────────────────────────────────────

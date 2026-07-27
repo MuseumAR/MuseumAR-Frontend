@@ -1,13 +1,21 @@
 import { safeFetch } from "@/lib/fetch-safe";
 import type {
   CreateTourRouteDto,
+  CreateTourRouteStopDto,
   MuseumMapDto,
   TourRouteDto,
+  UpdateTourRouteDto,
 } from "@/types/api";
 import {
+  addStopToRoute,
   createTourRoute,
+  deleteTourRoute,
   getMuseumMaps,
+  getTourRouteById,
   getTourRoutes,
+  removeStopFromRoute,
+  reorderRouteStops,
+  updateTourRoute,
   uploadMuseumMap,
 } from "./content-api.service";
 
@@ -42,6 +50,10 @@ export async function getRouteList(): Promise<TourRouteDto[]> {
   return safeFetch(() => getTourRoutes(), []);
 }
 
+export async function getRouteDetail(id: number): Promise<TourRouteDto | null> {
+  return safeFetch(() => getTourRouteById(id), null);
+}
+
 export async function createMapWithImage(
   museumId: number,
   file: File,
@@ -55,3 +67,24 @@ export async function createMapWithImage(
 export async function createRouteEntry(payload: CreateTourRouteDto) {
   return createTourRoute(payload);
 }
+
+export async function updateRouteEntry(id: number, payload: UpdateTourRouteDto) {
+  return updateTourRoute(id, payload);
+}
+
+export async function deleteRouteEntry(id: number) {
+  return deleteTourRoute(id);
+}
+
+export async function addRouteStop(routeId: number, stop: CreateTourRouteStopDto) {
+  return addStopToRoute(routeId, stop);
+}
+
+export async function removeRouteStop(routeId: number, exhibitId: number) {
+  return removeStopFromRoute(routeId, exhibitId);
+}
+
+export async function reorderStops(routeId: number, exhibitIds: number[]) {
+  return reorderRouteStops(routeId, exhibitIds);
+}
+

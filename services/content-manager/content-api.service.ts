@@ -18,6 +18,7 @@ import type {
   CreateTagGroupDto,
   CreateThemeDto,
   CreateTourRouteDto,
+  CreateTourRouteStopDto,
   ExhibitArassetDto,
   ExhibitDto,
   ExhibitTranslationDto,
@@ -28,6 +29,7 @@ import type {
   TagGroupDto,
   ThemeDto,
   TourRouteDto,
+  UpdateTourRouteDto,
 } from "@/types/api";
 
 export function getExhibits() {
@@ -173,6 +175,30 @@ export function getTourRoutes() {
 
 export function createTourRoute(payload: CreateTourRouteDto) {
   return apiPostAuth<TourRouteDto>("/api/content/routes", payload);
+}
+
+export function getTourRouteById(id: number) {
+  return apiGet<unknown>(`/api/content/routes/${id}`).then(normalizeTourRouteDto);
+}
+
+export function updateTourRoute(id: number, payload: UpdateTourRouteDto) {
+  return apiPutAuth<TourRouteDto>(`/api/content/routes/${id}`, payload);
+}
+
+export function deleteTourRoute(id: number) {
+  return apiDeleteAuth<null>(`/api/content/routes/${id}`);
+}
+
+export function addStopToRoute(routeId: number, stop: CreateTourRouteStopDto) {
+  return apiPostAuth<unknown>(`/api/content/routes/${routeId}/stops`, stop);
+}
+
+export function removeStopFromRoute(routeId: number, exhibitId: number) {
+  return apiDeleteAuth<null>(`/api/content/routes/${routeId}/stops/${exhibitId}`);
+}
+
+export function reorderRouteStops(routeId: number, exhibitIdsInOrder: number[]) {
+  return apiPutAuth<unknown>(`/api/content/routes/${routeId}/stops/reorder`, exhibitIdsInOrder);
 }
 
 // ─── Taxonomy ─────────────────────────────────────────────────────────────────
