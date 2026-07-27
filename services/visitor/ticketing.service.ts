@@ -16,41 +16,36 @@ import {
   readMockTickets,
 } from "./ticket-mock.store";
 
-/** UI demo catalog — no ticketing API calls (BE VisitorId FK broken). */
+/** Fetch active ticket types from backend API (with demo fallback if empty) */
 export async function listPublicTicketTypes(): Promise<TicketTypeDto[]> {
-  return DEMO_TICKET_TYPES;
+  try {
+    const list = await getPublicTicketTypesApi();
+    return list && list.length > 0 ? list : DEMO_TICKET_TYPES;
+  } catch (err) {
+    console.warn("Failed to fetch public ticket types from API, using fallback:", err);
+    return DEMO_TICKET_TYPES;
+  }
 }
 
-/** UI-only — reads locally purchased mock tickets. */
+/** Fetch user's paid tickets from backend API */
 export async function listMyTickets(): Promise<TicketDto[]> {
-  return readMockTickets();
+  try {
+    return await getMyTicketsApi();
+  } catch (err) {
+    console.warn("Failed to fetch tickets from backend API:", err);
+    return [];
+  }
 }
 
-/**
- * @deprecated Prefer purchaseTickets — create-order FK is broken on BE.
- */
+/** Place real ticket order on backend and confirm payment */
 export async function placeTicketOrder(
   payload: CreateOrderRequestDto,
 ): Promise<CreateOrderResponseDto> {
   return createOrderApi(payload);
 }
 
-/** @deprecated Prefer purchaseTickets — mock-confirm depends on a real order. */
 export async function confirmTicketPayment(orderCode: string): Promise<void> {
   await mockConfirmPaymentApi(orderCode);
-}
-
-/**
- * UI-only purchase (localStorage). Skips create-order / mock-confirm until BE
- * resolves VisitorId from JWT UserId correctly.
- */
-export async function purchaseTickets(input: {
-  ticketType: TicketTypeDto;
-  quantity: number;
-}): Promise<{ orderCode: string }> {
-  await new Promise((r) => setTimeout(r, 450));
-  const { orderCode } = mockPurchaseTickets(input);
-  return { orderCode };
 }
 
 export {

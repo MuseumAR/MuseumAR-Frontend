@@ -5,5 +5,4 @@ export {
   listMyTickets,
   placeTicketOrder,
   confirmTicketPayment,
-  purchaseTickets,
 } from "./ticketing.service";

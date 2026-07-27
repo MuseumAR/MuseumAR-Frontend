@@ -80,20 +80,20 @@ export function MyTicketsPanel() {
             Vé của tôi
           </h1>
           <p className="mt-3 text-sm" style={{ color: C.muted }}>
-            Demo UI — vé lưu tạm trên trình duyệt, chưa đồng bộ server.
+            Danh sách các vé tham quan bạn đã đặt thành công.
           </p>
         </header>
 
         {purchased && (
           <div
-            className="mb-6 rounded-2xl px-4 py-3 text-sm"
+            className="mb-6 rounded-2xl px-4 py-3 text-sm font-medium"
             style={{
               background: "rgba(60,120,80,0.10)",
               border: "1px solid rgba(60,120,80,0.25)",
               color: "#2F5D3A",
             }}
           >
-            Đã thêm vé demo vào danh sách (local).
+            ✓ Mua vé thành công! Đơn hàng và vé của bạn đã được ghi nhận trên hệ thống.
           </div>
         )}
 
