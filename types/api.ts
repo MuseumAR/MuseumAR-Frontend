@@ -279,6 +279,12 @@ export type CreateOrderRequestDto = {
   quantity: number;
 };
 
+/** POST /api/ticketing/create-order — mock mode returns local confirm URL */
+export type CreateOrderResponseDto = {
+  paymentUrl: string;
+  orderCode: string;
+};
+
 export type TicketDto = {
   id: number;
   ticketCode: string;
@@ -286,6 +292,65 @@ export type TicketDto = {
   purchaseDate: string;
   validDate?: string | null;
   status: string;
+};
+
+/**
+ * Proposed BE contract — GET /api/ticketing/my-tickets/{id}
+ * (not implemented on BE yet; FE uses mock detail for UX / handoff)
+ */
+export type TicketDetailDto = {
+  id: number;
+  ticketCode: string;
+  status: string;
+  purchaseDate: string;
+  validDate?: string | null;
+  ticketType: {
+    id: number;
+    name: string;
+    price: number;
+    description?: string | null;
+  };
+  museum: {
+    id: number;
+    name: string;
+    address?: string | null;
+  };
+  exhibition?: {
+    id: number;
+    name: string;
+  } | null;
+  order: {
+    orderCode: string;
+    totalAmount: number;
+    currency: string;
+    paymentStatus: string;
+    paymentMethod?: string | null;
+    paidAt?: string | null;
+  };
+  /** Optional QR payload / image for check-in */
+  qrCodeData?: string | null;
+  qrCodeImageUrl?: string | null;
+};
+
+/**
+ * Proposed enrichment for GET /api/ticketing/types (list or GET /types/{id})
+ */
+export type TicketTypeDetailDto = {
+  id: number;
+  name: string;
+  price: number;
+  description?: string | null;
+  isActive: boolean;
+  museum: {
+    id: number;
+    name: string;
+    address?: string | null;
+    thumbnailUrl?: string | null;
+  };
+  exhibition?: {
+    id: number;
+    name: string;
+  } | null;
 };
 
 // ─── Visitor ──────────────────────────────────────────────────────────────────

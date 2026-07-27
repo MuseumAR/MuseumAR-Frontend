@@ -1,17 +1,11 @@
 import type { Ticket } from "@/types";
 import { safeFetch } from "@/lib/fetch-safe";
-import type { CreateOrderRequestDto, TicketTypeDto, CreateTicketTypeDto } from "@/types/api";
+import type { TicketTypeDto, CreateTicketTypeDto } from "@/types/api";
 import {
   getManagerTicketTypes,
   createManagerTicketType,
   publishManagerTicketType,
 } from "./ticket-api.service";
-import {
-  createOrder,
-  getMyTickets,
-  getPublicTicketTypes as fetchPublicTicketTypes,
-  mockConfirmPayment,
-} from "@/services/visitor/ticketing-api.service";
 
 function mapTicketType(dto: TicketTypeDto): Ticket {
   return {
@@ -40,11 +34,3 @@ export async function createTicketTypeEntryForManager(payload: CreateTicketTypeD
 export async function publishTicketTypeEntryForManager(id: number) {
   return publishManagerTicketType(id);
 }
-
-export async function getPublicTicketTypes() {
-  return fetchPublicTicketTypes();
-}
-
-export { createOrder, getMyTickets, mockConfirmPayment };
-export type { CreateOrderRequestDto };
-
