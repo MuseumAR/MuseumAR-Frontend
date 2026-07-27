@@ -1,20 +1,34 @@
 import { apiGet, apiGetAuth, apiPostAuth } from "@/services/api-client";
+import {
+  normalizeCreateOrderResponse,
+  normalizeTicketDto,
+  normalizeTicketTypeDto,
+} from "@/lib/normalize-dto";
 import type {
   CreateOrderRequestDto,
+  CreateOrderResponseDto,
   TicketDto,
   TicketTypeDto,
 } from "@/types/api";
 
-export function getPublicTicketTypes() {
-  return apiGet<TicketTypeDto[]>("/api/ticketing/types");
+export function getPublicTicketTypes(): Promise<TicketTypeDto[]> {
+  return apiGet<unknown[]>("/api/ticketing/types").then((data) =>
+    (Array.isArray(data) ? data : []).map(normalizeTicketTypeDto),
+  );
 }
 
-export function createOrder(payload: CreateOrderRequestDto) {
-  return apiPostAuth<unknown>("/api/ticketing/create-order", payload);
+export function createOrder(
+  payload: CreateOrderRequestDto,
+): Promise<CreateOrderResponseDto> {
+  return apiPostAuth<unknown>("/api/ticketing/create-order", payload).then(
+    normalizeCreateOrderResponse,
+  );
 }
 
-export function getMyTickets() {
-  return apiGetAuth<TicketDto[]>("/api/ticketing/my-tickets");
+export function getMyTickets(): Promise<TicketDto[]> {
+  return apiGetAuth<unknown[]>("/api/ticketing/my-tickets").then((data) =>
+    (Array.isArray(data) ? data : []).map(normalizeTicketDto),
+  );
 }
 
 export function mockConfirmPayment(orderCode: string) {

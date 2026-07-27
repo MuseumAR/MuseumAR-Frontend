@@ -53,7 +53,7 @@ export const ROLE_HOME_PATH: Record<BackendRole, string> = {
   SystemAdmin: "/admin/museum-management",
   MuseumManager: "/museum-manager/overview",
   ContentManager: "/content-manager/overview",
-  Visitor: "/",
+  Visitor: "/tickets",
 };
 
 export function isDashboardRole(roleName: string): roleName is DashboardRole {

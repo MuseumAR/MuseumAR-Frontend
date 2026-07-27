@@ -292,7 +292,7 @@ export default function LandingPage() {
           <motion.div {...fadeUp(0.65)} className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
               <Link
-                href="/login"
+                href="/tickets"
                 className="flex items-center gap-2.5 rounded-full px-8 py-3.5 text-sm font-semibold transition-opacity hover:opacity-90"
                 style={{
                   background: "linear-gradient(135deg, #C89B3C 0%, #A67C2D 100%)",
@@ -301,7 +301,7 @@ export default function LandingPage() {
                   fontFamily: "inherit",
                 }}
               >
-                Start Exploring
+                Buy Tickets
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </motion.div>
@@ -593,7 +593,7 @@ export default function LandingPage() {
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
               <Link
-                href="/register"
+                href="/tickets"
                 className="flex items-center gap-2 rounded-full px-8 py-3 text-sm font-semibold transition-opacity hover:opacity-90"
                 style={{
                   background: "linear-gradient(135deg, #C89B3C 0%, #A67C2D 100%)",
@@ -601,7 +601,7 @@ export default function LandingPage() {
                   boxShadow: "0 4px 20px rgba(166,124,45,0.35)",
                 }}
               >
-                Get Started Free
+                Buy Tickets
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </motion.div>

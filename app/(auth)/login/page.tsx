@@ -14,6 +14,18 @@ import {
   validateLogin,
 } from "@/lib/validation";
 
+function resolvePostLoginPath(roleName: string, next: string | null) {
+  if (next && next.startsWith("/") && !next.startsWith("//")) {
+    return next;
+  }
+  return getHomePathForRole(roleName);
+}
+
+function readNextParam() {
+  if (typeof window === "undefined") return null;
+  return new URLSearchParams(window.location.search).get("next");
+}
+
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const C = {
   bg: "#F5E6C8",
@@ -146,7 +158,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
-      router.replace(getHomePathForRole(user.roleName));
+      router.replace(resolvePostLoginPath(user.roleName, readNextParam()));
     }
   }, [isAuthenticated, isLoading, router, user]);
 
@@ -155,7 +167,7 @@ export default function LoginPage() {
     setIsGoogleLoading(true);
     try {
       const result = await loginWithGoogle({ idToken });
-      router.push(getHomePathForRole(result.roleName));
+      router.push(resolvePostLoginPath(result.roleName, readNextParam()));
     } catch (err) {
       setError(getDisplayError(err, "Google sign-in failed. Please try again."));
     } finally {
@@ -177,7 +189,7 @@ export default function LoginPage() {
 
     try {
       const result = await login({ email: email.trim(), password });
-      router.push(getHomePathForRole(result.roleName));
+      router.push(resolvePostLoginPath(result.roleName, readNextParam()));
     } catch (err) {
       setError(getDisplayError(err, "Login failed. Please try again."));
     } finally {

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, KeyRound, LayoutDashboard, LogOut } from "lucide-react";
+import { ChevronDown, KeyRound, LayoutDashboard, LogOut, Ticket } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { getHomePathForRole, getRoleDisplayLabel } from "@/services/auth";
 import { isDashboardRole } from "@/lib/roles";
@@ -20,7 +20,7 @@ const C = {
 
 const NAV_LINKS = [
   { label: "Home", href: "/" },
-  { label: "Test API", href: "/test-api" },
+  { label: "Tickets", href: "/tickets" },
   { label: "Collections", href: "#collections" },
   { label: "Museums", href: "#museums" },
   { label: "About", href: "#about" },
@@ -208,6 +208,23 @@ function UserMenu() {
                 Dashboard
               </Link>
             )}
+
+            <Link
+              href="/tickets/mine"
+              className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors"
+              style={{ color: C.text }}
+              onClick={() => setOpen(false)}
+              role="menuitem"
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLElement).style.background = "rgba(200,155,60,0.08)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLElement).style.background = "transparent";
+              }}
+            >
+              <Ticket className="h-4 w-4" style={{ color: C.primary }} />
+              My tickets
+            </Link>
 
             <Link
               href="/change-password"

@@ -158,3 +158,29 @@ export function normalizeTicketTypeDto(
     status: String(pickField(o, "status", "Status") ?? "Pending"),
   };
 }
+
+export function normalizeTicketDto(
+  raw: unknown,
+): import("@/types/api").TicketDto {
+  const o = asRecord(raw);
+  return {
+    id: Number(pickField(o, "id", "Id") ?? 0),
+    ticketCode: String(pickField(o, "ticketCode", "TicketCode") ?? ""),
+    ticketTypeName: String(
+      pickField(o, "ticketTypeName", "TicketTypeName") ?? "",
+    ),
+    purchaseDate: String(pickField(o, "purchaseDate", "PurchaseDate") ?? ""),
+    validDate: pickStr(o, "validDate", "ValidDate") ?? null,
+    status: String(pickField(o, "status", "Status") ?? ""),
+  };
+}
+
+export function normalizeCreateOrderResponse(
+  raw: unknown,
+): import("@/types/api").CreateOrderResponseDto {
+  const o = asRecord(raw);
+  return {
+    paymentUrl: String(pickField(o, "paymentUrl", "PaymentUrl") ?? ""),
+    orderCode: String(pickField(o, "orderCode", "OrderCode") ?? ""),
+  };
+}
