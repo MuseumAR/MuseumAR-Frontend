@@ -10,7 +10,7 @@ import {
   validateCreateArtifact,
 } from "@/lib/validation";
 import type { Artifact } from "@/types";
-import type { AgeGroupDto, CategoryDto, TagDto } from "@/types/api";
+import type { AgeGroupDto, CategoryDto, MuseumMapDto, RoomDto, TagDto } from "@/types/api";
 import {
   updateExhibit,
   uploadArAsset,
@@ -29,22 +29,30 @@ export function UpdateArtifactForm({
   categories,
   ageGroups,
   tags,
+  maps = [],
+  rooms = [],
   initialCategoryId,
   initialAgeGroupId,
   initialEra,
   initialHistoricalEvent,
   initialTagIds,
+  initialMapId,
+  initialRoomId,
 }: {
   artifact: Artifact;
   museumId: number;
   categories: CategoryDto[];
   ageGroups: AgeGroupDto[];
   tags: TagDto[];
+  maps?: MuseumMapDto[];
+  rooms?: RoomDto[];
   initialCategoryId?: number | null;
   initialAgeGroupId?: number | null;
   initialEra?: string;
   initialHistoricalEvent?: string;
   initialTagIds?: number[];
+  initialMapId?: number | null;
+  initialRoomId?: number | null;
 }) {
   const router = useRouter();
   const imageRef = useRef<HTMLInputElement>(null);
@@ -65,7 +73,14 @@ export function UpdateArtifactForm({
   );
   const [era, setEra] = useState(initialEra ?? "");
   const [historicalEvent, setHistoricalEvent] = useState(initialHistoricalEvent ?? "");
+  const [mapId, setMapId] = useState(initialMapId != null ? String(initialMapId) : "");
+  const [roomId, setRoomId] = useState(initialRoomId != null ? String(initialRoomId) : "");
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>(initialTagIds ?? []);
+
+  const availableRooms = useMemo(
+    () => rooms.filter((r) => !mapId || !r.mapId || String(r.mapId) === mapId),
+    [rooms, mapId],
+  );
   const [imagePreview, setImagePreview] = useState<string | null>(artifact.image);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [arFile, setArFile] = useState<File | null>(null);
@@ -115,6 +130,8 @@ export function UpdateArtifactForm({
         categoryId: categoryId ? Number(categoryId) : undefined,
         exhibitCode: exhibitCode.trim() || undefined,
         status: artifact.status === "Published" ? "Published" : "Draft",
+        mapId: mapId ? Number(mapId) : undefined,
+        roomId: roomId ? Number(roomId) : undefined,
         exhibitMetadata: {
           ageGroupId: ageGroupId ? Number(ageGroupId) : undefined,
           era: era.trim() || undefined,
@@ -255,6 +272,27 @@ export function UpdateArtifactForm({
                 value={ageGroupId}
                 onChange={setAgeGroupId}
                 options={ageGroups.map((g) => ({ value: String(g.id), label: g.groupName }))}
+              />
+              <SelectField
+                label="Floor / Map"
+                value={mapId}
+                onChange={(val) => {
+                  setMapId(val);
+                  setRoomId("");
+                }}
+                options={maps.map((m) => ({
+                  value: String(m.id),
+                  label: `${m.floorNumber != null ? `Tầng ${m.floorNumber}` : "Tầng"}${m.mapName ? ` (${m.mapName})` : ""}`,
+                }))}
+              />
+              <SelectField
+                label="Official Museum Room"
+                value={roomId}
+                onChange={setRoomId}
+                options={availableRooms.map((r) => ({
+                  value: String(r.id),
+                  label: `${r.roomCode} - ${r.roomName}`,
+                }))}
               />
               <Field label="Era" value={era} onChange={setEra} placeholder="e.g. Nguyễn dynasty" />
               <Field

@@ -5,7 +5,7 @@ import {
   apiPostFormAuth,
   apiPutAuth,
 } from "@/services/api-client";
-import { normalizeExhibitDto, normalizeTourRouteDto } from "@/lib/normalize-dto";
+import { normalizeExhibitDto, normalizeMuseumMapDto, normalizeTourRouteDto } from "@/lib/normalize-dto";
 import type {
   AgeGroupDto,
   CategoryDto,
@@ -148,7 +148,9 @@ export function deleteExhibition(id: number) {
 }
 
 export function getMuseumMaps() {
-  return apiGet<MuseumMapDto[]>("/api/content/maps");
+  return apiGet<unknown[]>("/api/content/maps").then((data) =>
+    (Array.isArray(data) ? data : []).map(normalizeMuseumMapDto),
+  );
 }
 
 export function uploadMuseumMap(

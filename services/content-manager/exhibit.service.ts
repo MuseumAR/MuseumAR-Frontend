@@ -19,6 +19,9 @@ export type ExhibitRow = {
   hasQr: boolean;
   hasAudio: boolean;
   thumbnailUrl: string | null;
+  floorNumber?: number | null;
+  roomCode?: string | null;
+  roomName?: string | null;
 };
 
 function getPrimaryTitle(exhibit: ExhibitDto): string {
@@ -36,6 +39,9 @@ export function mapExhibitToRow(exhibit: ExhibitDto): ExhibitRow {
     hasQr: !!exhibit.qrCodeData,
     hasAudio: !!translation?.audioUrl,
     thumbnailUrl: exhibit.thumbnailUrl ?? null,
+    floorNumber: exhibit.floorNumber ?? null,
+    roomCode: exhibit.roomCode ?? null,
+    roomName: exhibit.roomName ?? null,
   };
 }
 

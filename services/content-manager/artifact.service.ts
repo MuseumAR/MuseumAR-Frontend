@@ -21,6 +21,21 @@ function mapExhibitStatus(status: string): Artifact["status"] {
   return "Pending";
 }
 
+function formatLocation(exhibit: ExhibitDto): string {
+  const parts: string[] = [];
+  if (exhibit.floorNumber !== undefined && exhibit.floorNumber !== null) {
+    parts.push(`Floor ${exhibit.floorNumber}`);
+  }
+  if (exhibit.roomCode || exhibit.roomName) {
+    const roomStr = [exhibit.roomCode, exhibit.roomName].filter(Boolean).join(" ");
+    parts.push(roomStr);
+  }
+  if (parts.length > 0) {
+    return parts.join(" · ");
+  }
+  return "Not assigned";
+}
+
 function mapExhibitToArtifact(exhibit: ExhibitDto): Artifact {
   const translation = getPrimaryTranslation(exhibit);
 
@@ -34,7 +49,7 @@ function mapExhibitToArtifact(exhibit: ExhibitDto): Artifact {
     status: mapExhibitStatus(exhibit.status),
     category: exhibit.categoryId ? `Category ${exhibit.categoryId}` : "—",
     era: exhibit.exhibitMetadata?.era ?? "—",
-    location: `Museum ${exhibit.museumId}`,
+    location: formatLocation(exhibit),
     qrLinked: exhibit.qrCodeData ? "Active" : "Inactive",
     arModelStatus: exhibit.arOverlayUrl ? "Active" : "Inactive",
     audio: translation?.audioUrl ? "Active" : "Inactive",

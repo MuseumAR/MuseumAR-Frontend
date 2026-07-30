@@ -19,18 +19,22 @@ import {
   categoryDisplayName,
   syncExhibitTags,
 } from "@/services/content-manager/taxonomy.service";
-import type { AgeGroupDto, CategoryDto, TagDto } from "@/types/api";
+import type { AgeGroupDto, CategoryDto, MuseumMapDto, RoomDto, TagDto } from "@/types/api";
 
 export function CreateExhibitForm({
   museumId,
   categories,
   ageGroups,
   tags,
+  maps = [],
+  rooms = [],
 }: {
   museumId: number;
   categories: CategoryDto[];
   ageGroups: AgeGroupDto[];
   tags: TagDto[];
+  maps?: MuseumMapDto[];
+  rooms?: RoomDto[];
 }) {
   const router = useRouter();
   const imageRef = useRef<HTMLInputElement>(null);
@@ -45,6 +49,8 @@ export function CreateExhibitForm({
   const [ageGroupId, setAgeGroupId] = useState("");
   const [era, setEra] = useState("");
   const [historicalEvent, setHistoricalEvent] = useState("");
+  const [mapId, setMapId] = useState("");
+  const [roomId, setRoomId] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -52,6 +58,11 @@ export function CreateExhibitForm({
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const availableRooms = useMemo(
+    () => rooms.filter((r) => !mapId || !r.mapId || String(r.mapId) === mapId),
+    [rooms, mapId],
+  );
 
   const categoryOptions = useMemo(
     () =>
@@ -85,6 +96,8 @@ export function CreateExhibitForm({
         categoryId: categoryId ? Number(categoryId) : undefined,
         exhibitCode: exhibitCode.trim() || undefined,
         status: "Draft",
+        mapId: mapId ? Number(mapId) : undefined,
+        roomId: roomId ? Number(roomId) : undefined,
         exhibitMetadata: {
           ageGroupId: ageGroupId ? Number(ageGroupId) : undefined,
           era: era.trim() || undefined,
@@ -176,6 +189,27 @@ export function CreateExhibitForm({
                 value={ageGroupId}
                 onChange={setAgeGroupId}
                 options={ageGroups.map((g) => ({ value: String(g.id), label: g.groupName }))}
+              />
+              <SelectField
+                label="Floor / Map"
+                value={mapId}
+                onChange={(val) => {
+                  setMapId(val);
+                  setRoomId("");
+                }}
+                options={maps.map((m) => ({
+                  value: String(m.id),
+                  label: `${m.floorNumber != null ? `Tầng ${m.floorNumber}` : "Tầng"}${m.mapName ? ` (${m.mapName})` : ""}`,
+                }))}
+              />
+              <SelectField
+                label="Official Museum Room"
+                value={roomId}
+                onChange={setRoomId}
+                options={availableRooms.map((r) => ({
+                  value: String(r.id),
+                  label: `${r.roomCode} - ${r.roomName}`,
+                }))}
               />
               <Field label="Era" value={era} onChange={setEra} placeholder="e.g. Nguyễn dynasty" />
               <Field

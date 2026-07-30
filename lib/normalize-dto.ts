@@ -70,6 +70,12 @@ export function normalizeExhibitDto(raw: unknown): import("@/types/api").Exhibit
       null,
     status: String(pickField(o, "status", "Status") ?? ""),
     publishedAt: pickStr(o, "publishedAt", "PublishedAt") ?? null,
+    mapId: pickNum(o, "mapId", "MapId") ?? null,
+    mapName: pickStr(o, "mapName", "MapName") ?? null,
+    floorNumber: pickNum(o, "floorNumber", "FloorNumber") ?? null,
+    roomId: pickNum(o, "roomId", "RoomId") ?? null,
+    roomCode: pickStr(o, "roomCode", "RoomCode") ?? null,
+    roomName: pickStr(o, "roomName", "RoomName") ?? null,
     exhibitMetadata: metaRaw
       ? {
           ageGroupId: pickNum(meta, "ageGroupId", "AgeGroupId") ?? null,
@@ -143,8 +149,9 @@ export function normalizeTourRouteDto(
       estimatedMinutes: pickNum(sr, "estimatedMinutes", "EstimatedMinutes") ?? null,
       mapId: pickNum(sr, "mapId", "MapId") ?? null,
       floorNumber: pickNum(sr, "floorNumber", "FloorNumber") ?? null,
-      locationX: pickNum(sr, "locationX", "LocationX") ?? null,
-      locationY: pickNum(sr, "locationY", "LocationY") ?? null,
+      roomId: pickNum(sr, "roomId", "RoomId") ?? null,
+      roomCode: pickStr(sr, "roomCode", "RoomCode") ?? null,
+      roomName: pickStr(sr, "roomName", "RoomName") ?? null,
     };
   });
 
@@ -227,5 +234,34 @@ export function normalizeCreateOrderResponse(
     checkoutUrl: pickStr(o, "checkoutUrl", "CheckoutUrl", "paymentUrl", "PaymentUrl") ?? null,
     qrCode: pickStr(o, "qrCode", "QrCode", "QRCode") ?? null,
     amount: pickNum(o, "amount", "Amount") ?? null,
+  };
+}
+
+export function normalizeRoomDto(raw: unknown): import("@/types/api").RoomDto {
+  const o = asRecord(raw);
+  return {
+    id: Number(pickField(o, "id", "Id") ?? 0),
+    museumId: Number(pickField(o, "museumId", "MuseumId") ?? 0),
+    mapId: pickNum(o, "mapId", "MapId") ?? null,
+    roomCode: String(pickField(o, "roomCode", "RoomCode") ?? ""),
+    roomName: String(pickField(o, "roomName", "RoomName") ?? ""),
+    floorNumber: Number(pickField(o, "floorNumber", "FloorNumber") ?? 1),
+    description: pickStr(o, "description", "Description") ?? null,
+    createdAt: pickStr(o, "createdAt", "CreatedAt") ?? undefined,
+    updatedAt: pickStr(o, "updatedAt", "UpdatedAt") ?? undefined,
+  };
+}
+
+export function normalizeMuseumMapDto(
+  raw: unknown,
+): import("@/types/api").MuseumMapDto {
+  const o = asRecord(raw);
+  return {
+    id: Number(pickField(o, "id", "Id") ?? 0),
+    museumId: Number(pickField(o, "museumId", "MuseumId") ?? 0),
+    mapImageUrl: pickStr(o, "mapImageUrl", "MapImageUrl") ?? "",
+    mapType: pickStr(o, "mapType", "MapType") ?? "floor",
+    floorNumber: pickNum(o, "floorNumber", "FloorNumber") ?? undefined,
+    mapName: pickStr(o, "mapName", "MapName") ?? undefined,
   };
 }

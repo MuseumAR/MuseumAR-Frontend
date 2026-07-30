@@ -158,7 +158,7 @@ export function ExhibitTable({
                     background: "rgba(245,230,200,0.35)",
                   }}
                 >
-                  {["Artifact", "Code", "Status", "AR", "QR", "Audio", "Actions"].map((col) => (
+                  {["Artifact", "Code", "Location", "Status", "AR", "QR", "Audio", "Actions"].map((col) => (
                     <th
                       key={col}
                       className="px-5 py-4 text-xs font-medium uppercase tracking-wider"
@@ -206,6 +206,16 @@ export function ExhibitTable({
                       </td>
                       <td className="px-5 py-4 font-mono text-xs" style={{ color: T.muted }}>
                         {row.exhibitCode}
+                      </td>
+                      <td className="px-5 py-4 text-xs font-medium" style={{ color: T.text }}>
+                        {(typeof row.floorNumber === "number" && !Number.isNaN(row.floorNumber)) || row.roomName || row.roomCode ? (
+                          <span>
+                            {typeof row.floorNumber === "number" && !Number.isNaN(row.floorNumber) ? `Floor ${row.floorNumber}` : ""}
+                            {row.roomName || row.roomCode ? `${typeof row.floorNumber === "number" && !Number.isNaN(row.floorNumber) ? " · " : ""}${row.roomCode ? `${row.roomCode} ` : ""}${row.roomName ?? ""}`.trim() : ""}
+                          </span>
+                        ) : (
+                          <span style={{ color: T.muted }}>—</span>
+                        )}
                       </td>
                       <td className="px-5 py-4">
                         <span
