@@ -7,6 +7,8 @@ import {
   getCategoryOptions,
   getTagOptions,
 } from "@/services/content-manager/taxonomy.service";
+import { getMuseumMaps } from "@/services/content-manager/content-api.service";
+import { getRoomList } from "@/services/content-manager/room.service";
 
 export default async function CreateArtifactPage() {
   const museumId =
@@ -15,10 +17,12 @@ export default async function CreateArtifactPage() {
     return <ContentNoMuseumState />;
   }
 
-  const [categories, ageGroups, tags] = await Promise.all([
+  const [categories, ageGroups, tags, maps, rooms] = await Promise.all([
     getCategoryOptions(),
     getAgeGroupOptions(),
     getTagOptions(),
+    getMuseumMaps(),
+    getRoomList(museumId),
   ]);
 
   return (
@@ -27,6 +31,8 @@ export default async function CreateArtifactPage() {
       categories={categories}
       ageGroups={ageGroups}
       tags={tags}
+      maps={maps}
+      rooms={rooms}
     />
   );
 }

@@ -101,6 +101,37 @@ export type DashboardStatsDto = {
   totalAudioPlays: number;
 };
 
+// ─── Room ─────────────────────────────────────────────────────────────────────
+
+export type RoomDto = {
+  id: number;
+  museumId: number;
+  mapId?: number | null;
+  roomCode: string;
+  roomName: string;
+  floorNumber: number;
+  description?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type CreateRoomDto = {
+  museumId: number;
+  mapId?: number | null;
+  roomCode: string;
+  roomName: string;
+  floorNumber?: number;
+  description?: string | null;
+};
+
+export type UpdateRoomDto = {
+  mapId?: number | null;
+  roomCode?: string;
+  roomName?: string;
+  floorNumber?: number;
+  description?: string | null;
+};
+
 // ─── Exhibit ──────────────────────────────────────────────────────────────────
 
 export type ExhibitTranslationDto = {
@@ -127,6 +158,12 @@ export type ExhibitDto = {
   arMarkerUrl?: string | null;
   status: string;
   publishedAt?: string | null;
+  mapId?: number | null;
+  mapName?: string | null;
+  floorNumber?: number | null;
+  roomId?: number | null;
+  roomCode?: string | null;
+  roomName?: string | null;
   exhibitMetadata?: ExhibitMetadataDto | null;
   translations: ExhibitTranslationDto[];
 };
@@ -145,6 +182,8 @@ export type CreateExhibitDto = {
   arOverlayUrl?: string | null;
   arMarkerUrl?: string | null;
   status?: string;
+  mapId?: number | null;
+  roomId?: number | null;
   exhibitMetadata?: ExhibitMetadataDto | null;
   translations: ExhibitTranslationDto[];
 };
@@ -244,8 +283,9 @@ export type TourRouteStopDto = {
   estimatedMinutes?: number | null;
   mapId?: number | null;
   floorNumber?: number | null;
-  locationX?: number | null;
-  locationY?: number | null;
+  roomId?: number | null;
+  roomCode?: string | null;
+  roomName?: string | null;
 };
 
 export type TourRouteTranslationFE = {

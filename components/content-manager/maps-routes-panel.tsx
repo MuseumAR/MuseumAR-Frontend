@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import {
   ArrowDown,
   ArrowLeft,
@@ -40,16 +40,18 @@ import {
   removeRouteStop,
   updateRouteEntry,
 } from "@/services/content-manager/maps-routes.service";
+import { createRoom, deleteRoom } from "@/services/content-manager/room.service";
 import type {
   AgeGroupDto,
   ExhibitDto,
   ExhibitionDto,
   MuseumMapDto,
+  RoomDto,
   TourRouteDto,
   TourRouteStopDto,
 } from "@/types/api";
 
-type Tab = "maps" | "routes";
+type Tab = "maps" | "rooms" | "routes";
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    MAP HELPERS (unchanged)
@@ -150,26 +152,6 @@ function StatusBadge({ status }: { status: string }) {
    MOBILE ROUTE GUIDE MODAL (INTERACTIVE MAP WITH DIRECTIONAL ARROWS)
    ═══════════════════════════════════════════════════════════════════════════════ */
 
-interface RoomNode {
-  id: string;
-  name: string;
-  code: string;
-  row: number; // 0..1
-  col: number; // 0..3
-  desc: string;
-}
-
-const MUSEUM_ROOMS: RoomNode[] = [
-  { id: "r101", name: "Phòng 101", code: "P101", row: 0, col: 0, desc: "Cổ vật Tiền sử" },
-  { id: "r102", name: "Phòng 102", code: "P102", row: 0, col: 1, desc: "Thời kỳ Đông Sơn" },
-  { id: "r103", name: "Phòng 103", code: "P103", row: 0, col: 2, desc: "Văn hóa Sa Huỳnh" },
-  { id: "r104", name: "Phòng 104", code: "P104", row: 0, col: 3, desc: "Văn hóa Óc Eo" },
-  { id: "r105", name: "Phòng 105", code: "P105", row: 1, col: 0, desc: "Triều đại Lý - Trần" },
-  { id: "r106", name: "Phòng 106", code: "P106", row: 1, col: 1, desc: "Triều đại Lê - Nguyễn" },
-  { id: "r107", name: "Phòng 107", code: "P107", row: 1, col: 2, desc: "Hiện vật AR Đặc sắc" },
-  { id: "r108", name: "Phòng 108", code: "P108", row: 1, col: 3, desc: "Bảo vật Quốc gia" },
-];
-
 function MobileRouteGuideModal({
   route,
   onClose,
@@ -177,71 +159,41 @@ function MobileRouteGuideModal({
   route: TourRouteDto;
   onClose: () => void;
 }) {
-  // Current standing room (Default: Room 102)
-  const [startRoomId, setStartRoomId] = useState<string>("r102");
-  // Target exhibit room (Default: Room 107)
-  const [targetRoomId, setTargetRoomId] = useState<string>("r107");
+  const sortedStops = useMemo(
+    () => [...(route.stops ?? [])].sort((a, b) => a.stopOrder - b.stopOrder),
+    [route.stops],
+  );
 
-  // Active step index in stops list
   const [currentStopIndex, setCurrentStopIndex] = useState<number>(0);
 
-  const startRoom = MUSEUM_ROOMS.find((r) => r.id === startRoomId) ?? MUSEUM_ROOMS[1];
-  const targetRoom = MUSEUM_ROOMS.find((r) => r.id === targetRoomId) ?? MUSEUM_ROOMS[6];
-
-  // Calculate direction vectors:
-  const deltaCol = targetRoom.col - startRoom.col;
-  const deltaRow = targetRoom.row - startRoom.row;
-
-  // Directions summary
-  const directionSteps: { text: string; icon: string }[] = [];
-  if (deltaCol > 0) {
-    directionSteps.push({ text: `Đi sang Phải ➡️ qua ${deltaCol} phòng`, icon: "right" });
-  } else if (deltaCol < 0) {
-    directionSteps.push({ text: `Đi sang Trái ⬅️ qua ${Math.abs(deltaCol)} phòng`, icon: "left" });
-  }
-
-  if (deltaRow > 0) {
-    directionSteps.push({ text: `Rẽ Xuống ⬇️ vào hàng phòng phía dưới`, icon: "down" });
-  } else if (deltaRow < 0) {
-    directionSteps.push({ text: `Rẽ Lên ⬆️ vào hàng phòng phía trên`, icon: "up" });
-  }
-
-  if (directionSteps.length === 0) {
-    directionSteps.push({ text: `Bạn đang ở cùng vị trí phòng hiện vật!`, icon: "up" });
-  }
-
-  // Handle route stops sync
-  const sortedStops = [...route.stops].sort((a, b) => a.stopOrder - b.stopOrder);
+  const currentStop = sortedStops[currentStopIndex] as TourRouteStopDto | undefined;
+  const nextStop = sortedStops[(currentStopIndex + 1) % (sortedStops.length || 1)] as TourRouteStopDto | undefined;
 
   function handleNextStop() {
     if (sortedStops.length === 0) return;
-    const nextIdx = (currentStopIndex + 1) % sortedStops.length;
-    setCurrentStopIndex(nextIdx);
-    const roomKeys = ["r102", "r107", "r103", "r106", "r108", "r101"];
-    setStartRoomId(roomKeys[nextIdx % roomKeys.length]);
-    setTargetRoomId(roomKeys[(nextIdx + 1) % roomKeys.length]);
+    setCurrentStopIndex((prev) => (prev + 1) % sortedStops.length);
   }
 
   function handlePrevStop() {
     if (sortedStops.length === 0) return;
-    const prevIdx = (currentStopIndex - 1 + sortedStops.length) % sortedStops.length;
-    setCurrentStopIndex(prevIdx);
-    const roomKeys = ["r102", "r107", "r103", "r106", "r108", "r101"];
-    setStartRoomId(roomKeys[prevIdx % roomKeys.length]);
-    setTargetRoomId(roomKeys[(prevIdx + 1) % roomKeys.length]);
+    setCurrentStopIndex((prev) => (prev - 1 + sortedStops.length) % sortedStops.length);
   }
 
-  // Manual D-Pad movement
-  function moveStartRoom(direction: "up" | "down" | "left" | "right") {
-    let r = startRoom.row;
-    let c = startRoom.col;
-    if (direction === "up" && r > 0) r--;
-    if (direction === "down" && r < 1) r++;
-    if (direction === "left" && c > 0) c--;
-    if (direction === "right" && c < 3) c++;
-    const found = MUSEUM_ROOMS.find((room) => room.row === r && room.col === c);
-    if (found) setStartRoomId(found.id);
-  }
+  // Current room & floor details
+  const currentRoomName = currentStop
+    ? [currentStop.roomCode, currentStop.roomName].filter(Boolean).join(" - ") || `Phòng chưa đặt tên`
+    : "Chưa chọn điểm dừng";
+
+  const currentFloorText = currentStop?.floorNumber != null ? `Tầng ${currentStop.floorNumber}` : "Chưa gán tầng";
+
+  const nextRoomName = nextStop
+    ? [nextStop.roomCode, nextStop.roomName].filter(Boolean).join(" - ") || `Phòng chưa đặt tên`
+    : "Chưa chọn điểm dừng";
+
+  const isFloorChange =
+    currentStop?.floorNumber != null &&
+    nextStop?.floorNumber != null &&
+    currentStop.floorNumber !== nextStop.floorNumber;
 
   return (
     <div
@@ -256,7 +208,6 @@ function MobileRouteGuideModal({
         {/* Mobile top status bar */}
         <div className="flex items-center justify-between px-4 pt-1 pb-2 text-[11px] font-semibold text-neutral-400">
           <span>09:41</span>
-          {/* Speaker Notch */}
           <div className="h-4 w-28 rounded-full bg-neutral-800 flex items-center justify-center">
             <div className="h-1.5 w-10 rounded-full bg-neutral-700" />
           </div>
@@ -286,30 +237,32 @@ function MobileRouteGuideModal({
           </button>
         </div>
 
-        {/* Current & Next location summary banner */}
+        {/* Banner Vị trí hiện tại & Điểm đến kế tiếp */}
         <div className="m-3 p-3 rounded-2xl bg-gradient-to-r from-neutral-800 to-neutral-850 border border-neutral-700 space-y-2">
           <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
-              <span className="relative flex h-2 w-2">
+            <div className="flex items-center gap-1.5 text-emerald-400 font-semibold truncate max-w-[48%]">
+              <span className="relative flex h-2 w-2 shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span>Đang ở: {startRoom.name}</span>
+              <span className="truncate">Đang ở: {currentRoomName}</span>
             </div>
-            <span className="text-neutral-500">➔</span>
-            <div className="flex items-center gap-1.5 text-amber-400 font-semibold">
-              <Target className="h-3.5 w-3.5" />
-              <span>Đích: {targetRoom.name}</span>
+            <span className="text-neutral-500 shrink-0">➔</span>
+            <div className="flex items-center gap-1.5 text-amber-400 font-semibold truncate max-w-[48%]">
+              <Target className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">Đích: {nextRoomName}</span>
             </div>
           </div>
 
-          {/* Turn-by-turn guidance banner */}
-          <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2">
+          {/* Turn-by-turn Guidance Banner */}
+          <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2">
             <Compass className="h-4 w-4 text-amber-400 shrink-0 mt-0.5 animate-pulse" />
             <div className="text-[11px] leading-tight text-amber-200">
               <p className="font-bold">Hướng dẫn di chuyển:</p>
-              <p className="mt-0.5">
-                {directionSteps.map((s) => s.text).join(" ➔ ")}
+              <p className="mt-0.5 font-medium">
+                {isFloorChange
+                  ? `🚶‍♂️ Di chuyển thang bộ/thang máy từ ${currentFloorText} ➔ Tầng ${nextStop?.floorNumber} sang ${nextRoomName}`
+                  : `➡️ Đi theo lối đi hành lang sang ${nextRoomName} để xem ${nextStop?.exhibitName || "Hiện vật kế tiếp"}`}
               </p>
             </div>
           </div>
@@ -317,170 +270,63 @@ function MobileRouteGuideModal({
 
         {/* Floor plan Map Canvas */}
         <div className="mx-3 rounded-2xl p-3 bg-neutral-950 border border-neutral-800 relative">
-          <div className="flex items-center justify-between mb-2 px-1">
-            <span className="text-[10px] font-bold tracking-wider uppercase text-neutral-400 flex items-center gap-1">
-              <MapPin className="h-3 w-3 text-emerald-400" /> Sơ đồ Tầng 1 (Floor Plan)
+          <div className="flex items-center justify-between mb-3 px-1">
+            <span className="text-[10px] font-bold tracking-wider uppercase text-neutral-300 flex items-center gap-1">
+              <MapPin className="h-3.5 w-3.5 text-emerald-400" /> SƠ ĐỒ {currentFloorText.toUpperCase()}
             </span>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800">
+            <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800">
               Chỉ đường Live 📍
             </span>
           </div>
 
-          {/* 4x2 Room Grid Canvas */}
-          <div className="grid grid-cols-4 gap-2 relative">
-            {MUSEUM_ROOMS.map((room) => {
-              const isStart = room.id === startRoom.id;
-              const isTarget = room.id === targetRoom.id;
+          {/* Dynamic Stops Grid */}
+          {sortedStops.length === 0 ? (
+            <div className="p-8 text-center text-xs text-neutral-500">
+              Lộ trình này chưa có điểm dừng hiện vật nào.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+              {sortedStops.map((stop, idx) => {
+                const isCurrent = idx === currentStopIndex;
+                const isNext = idx === (currentStopIndex + 1) % sortedStops.length;
+                const roomStr = [stop.roomCode, stop.roomName].filter(Boolean).join(" - ") || `Chưa gán phòng`;
+                const floorStr = stop.floorNumber != null ? `Tầng ${stop.floorNumber}` : "";
 
-              // Check if room is along the vector path
-              const inRowRange =
-                room.row >= Math.min(startRoom.row, targetRoom.row) &&
-                room.row <= Math.max(startRoom.row, targetRoom.row);
-              const inColRange =
-                room.col >= Math.min(startRoom.col, targetRoom.col) &&
-                room.col <= Math.max(startRoom.col, targetRoom.col);
-              const isPath = inRowRange && inColRange && !isStart && !isTarget;
-
-              return (
-                <div
-                  key={room.id}
-                  onClick={() => {
-                    if (isStart) return;
-                    setTargetRoomId(room.id);
-                  }}
-                  className={`relative flex flex-col justify-between p-2 rounded-xl border text-left cursor-pointer transition-all min-h-[64px] ${
-                    isStart
-                      ? "bg-emerald-950/80 border-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.3)] scale-[1.03] z-10"
-                      : isTarget
-                      ? "bg-amber-950/80 border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.3)] scale-[1.03] z-10"
-                      : isPath
-                      ? "bg-neutral-800/90 border-amber-500/50"
-                      : "bg-neutral-900/60 border-neutral-800 hover:border-neutral-700"
-                  }`}
-                >
-                  {/* Status badges */}
-                  {isStart && (
-                    <span className="absolute -top-2 -right-1 px-1.5 py-0.5 rounded-full bg-emerald-500 text-[8px] font-black text-black uppercase shadow">
-                      Vị trí hiện tại
-                    </span>
-                  )}
-                  {isTarget && (
-                    <span className="absolute -top-2 -right-1 px-1.5 py-0.5 rounded-full bg-amber-500 text-[8px] font-black text-black uppercase shadow">
-                      Hiện vật kế tiếp
-                    </span>
-                  )}
-
-                  <div>
-                    <p className={`text-[11px] font-bold ${isStart ? "text-emerald-300" : isTarget ? "text-amber-300" : "text-neutral-200"}`}>
-                      {room.name}
-                    </p>
-                    <p className="text-[9px] text-neutral-400 truncate">{room.desc}</p>
-                  </div>
-
-                  {/* Directional Overlay Icons on Room Nodes */}
-                  <div className="flex items-center justify-between mt-1">
-                    <span className="text-[9px] text-neutral-500 font-mono">{room.code}</span>
-                    {isStart && (
-                      <span className="relative flex h-3 w-3 items-center justify-center">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                        <MapPin className="h-3 w-3 text-emerald-400" />
+                return (
+                  <div
+                    key={stop.exhibitId}
+                    onClick={() => setCurrentStopIndex(idx)}
+                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                      isCurrent
+                        ? "bg-emerald-950/80 border-emerald-500 shadow-md shadow-emerald-950"
+                        : isNext
+                        ? "bg-amber-950/60 border-amber-500/80"
+                        : "bg-neutral-900 border-neutral-800 hover:border-neutral-700"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                        isCurrent ? "bg-emerald-500 text-black" : isNext ? "bg-amber-500 text-black" : "bg-neutral-800 text-neutral-400"
+                      }`}>
+                        {isCurrent ? "Đang ở đây" : isNext ? "Tiếp theo" : `Điểm #${stop.stopOrder}`}
                       </span>
-                    )}
-                    {isTarget && <Target className="h-3.5 w-3.5 text-amber-400 animate-bounce" />}
-                    {isPath && (
-                      <div className="flex items-center gap-0.5 text-amber-400 animate-pulse">
-                        {deltaCol > 0 && <ArrowRight className="h-3 w-3" />}
-                        {deltaCol < 0 && <ArrowLeft className="h-3 w-3" />}
-                        {deltaRow > 0 && <ArrowDown className="h-3 w-3" />}
-                        {deltaRow < 0 && <ArrowUp className="h-3 w-3" />}
-                      </div>
-                    )}
+                      {floorStr && (
+                        <span className="text-[10px] text-neutral-400 font-mono">
+                          {floorStr}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs font-semibold text-white truncate">
+                      {stop.exhibitName || `Exhibit #${stop.exhibitId}`}
+                    </p>
+                    <p className="text-[10px] text-neutral-400 truncate mt-0.5">
+                      🚪 {roomStr}
+                    </p>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Directional Arrow Legend Overlay */}
-          <div className="mt-3 pt-2 border-t border-neutral-800 flex items-center justify-around text-[10px] text-neutral-400">
-            <div className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              <span>Phòng hiện tại</span>
+                );
+              })}
             </div>
-            <div className="flex items-center gap-1">
-              <span className="h-2 w-2 rounded-full bg-amber-500" />
-              <span>Phòng kế tiếp</span>
-            </div>
-            <div className="flex items-center gap-1 text-amber-400 font-medium">
-              <ArrowRight className="h-3 w-3" />
-              <span>Mũi tên chỉ đường</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Directional D-Pad Controls for Teacher / Mobile Simulation */}
-        <div className="m-3 p-3 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-xs font-bold text-neutral-200">Điều khiển vị trí di chuyển:</p>
-            <p className="text-[10px] text-neutral-400">Dùng nút mũi tên để di chuyển sang phòng khác</p>
-          </div>
-
-          {/* D-Pad controls */}
-          <div className="grid grid-cols-3 gap-1 w-24">
-            <div />
-            <button
-              type="button"
-              onClick={() => moveStartRoom("up")}
-              className={`p-1.5 rounded-lg flex items-center justify-center transition-all ${
-                deltaRow < 0
-                  ? "bg-amber-500 text-black font-bold shadow-[0_0_8px_rgba(245,158,11,0.6)]"
-                  : "bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
-              }`}
-              title="Lên"
-            >
-              <ArrowUp className="h-3.5 w-3.5" />
-            </button>
-            <div />
-
-            <button
-              type="button"
-              onClick={() => moveStartRoom("left")}
-              className={`p-1.5 rounded-lg flex items-center justify-center transition-all ${
-                deltaCol < 0
-                  ? "bg-amber-500 text-black font-bold shadow-[0_0_8px_rgba(245,158,11,0.6)]"
-                  : "bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
-              }`}
-              title="Trái"
-            >
-              <ArrowLeft className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => moveStartRoom("down")}
-              className={`p-1.5 rounded-lg flex items-center justify-center transition-all ${
-                deltaRow > 0
-                  ? "bg-amber-500 text-black font-bold shadow-[0_0_8px_rgba(245,158,11,0.6)]"
-                  : "bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
-              }`}
-              title="Xuống"
-            >
-              <ArrowDown className="h-3.5 w-3.5" />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => moveStartRoom("right")}
-              className={`p-1.5 rounded-lg flex items-center justify-center transition-all ${
-                deltaCol > 0
-                  ? "bg-amber-500 text-black font-bold shadow-[0_0_8px_rgba(245,158,11,0.6)]"
-                  : "bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
-              }`}
-              title="Phải"
-            >
-              <ArrowRight className="h-3.5 w-3.5" />
-            </button>
-          </div>
+          )}
         </div>
 
         {/* Step navigation bar (Previous / Next Stop) */}
@@ -1055,6 +901,7 @@ function RouteDetailModal({
 export function MapsRoutesPanel({
   maps,
   routes,
+  rooms = [],
   museumId,
   exhibitions = [],
   ageGroups = [],
@@ -1062,6 +909,7 @@ export function MapsRoutesPanel({
 }: {
   maps: MuseumMapDto[];
   routes: TourRouteDto[];
+  rooms?: RoomDto[];
   museumId: number;
   exhibitions?: ExhibitionDto[];
   ageGroups?: AgeGroupDto[];
@@ -1072,6 +920,7 @@ export function MapsRoutesPanel({
   const [tab, setTab] = useState<Tab>("maps");
   const [showMapForm, setShowMapForm] = useState(false);
   const [showRouteForm, setShowRouteForm] = useState(false);
+  const [showRoomForm, setShowRoomForm] = useState(false);
   const [mapFile, setMapFile] = useState<File | null>(null);
   const [mapPreview, setMapPreview] = useState<string | null>(null);
   const [mapType, setMapType] = useState("floor");
@@ -1081,6 +930,15 @@ export function MapsRoutesPanel({
   const [selectedRoute, setSelectedRoute] = useState<TourRouteDto | null>(null);
   const [mobileSimRoute, setMobileSimRoute] = useState<TourRouteDto | null>(null);
 
+  // Room form state
+  const [roomCode, setRoomCode] = useState("");
+  const [roomName, setRoomName] = useState("");
+  const [roomFloorNumber, setRoomFloorNumber] = useState("1");
+  const [roomMapId, setRoomMapId] = useState("");
+  const [roomDesc, setRoomDesc] = useState("");
+  const [roomError, setRoomError] = useState<string | null>(null);
+  const [deletingRoomId, setDeletingRoomId] = useState<number | null>(null);
+
   // Route form state
   const [routeName, setRouteName] = useState("");
   const [routeDesc, setRouteDesc] = useState("");
@@ -1088,10 +946,110 @@ export function MapsRoutesPanel({
   const [routeExhibitionId, setRouteExhibitionId] = useState<number | "">("");
   const [routeAgeGroupId, setRouteAgeGroupId] = useState<number | "">("");
   const [routeIsDefault, setRouteIsDefault] = useState(false);
+  const [selectedExhibitIds, setSelectedExhibitIds] = useState<number[]>([]);
 
   const [mapError, setMapError] = useState<string | null>(null);
   const [routeError, setRouteError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState<"map" | "route" | null>(null);
+  const [submitting, setSubmitting] = useState<"map" | "route" | "room" | null>(null);
+
+  function toggleRouteExhibit(id: number) {
+    setSelectedExhibitIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
+    );
+  }
+
+  async function handleCreateRoute(e: React.FormEvent) {
+    e.preventDefault();
+    if (!routeName.trim()) {
+      setRouteError("Route name is required.");
+      return;
+    }
+    setSubmitting("route");
+    setRouteError(null);
+    try {
+      await createRouteEntry({
+        museumId,
+        name: routeName.trim(),
+        estimatedDurationMinutes: routeMinutes ? Number(routeMinutes) : undefined,
+        exhibitionId: routeExhibitionId ? Number(routeExhibitionId) : undefined,
+        ageGroupId: routeAgeGroupId ? Number(routeAgeGroupId) : undefined,
+        isDefault: routeIsDefault,
+        stops: selectedExhibitIds.map((exhibitId, idx) => ({
+          exhibitId,
+          stopOrder: idx + 1,
+        })),
+        translations: [
+          {
+            languageCode: "vi",
+            routeName: routeName.trim(),
+            description: routeDesc.trim() || undefined,
+          },
+        ],
+      });
+      resetRouteForm();
+      setShowRouteForm(false);
+      router.refresh();
+    } catch (err) {
+      setRouteError(getDisplayError(err, "Unable to create route."));
+    } finally {
+      setSubmitting(null);
+    }
+  }
+
+  function resetRouteForm() {
+    setRouteName("");
+    setRouteDesc("");
+    setRouteMinutes("");
+    setRouteExhibitionId("");
+    setRouteAgeGroupId("");
+    setRouteIsDefault(false);
+    setSelectedExhibitIds([]);
+    setRouteError(null);
+  }
+
+  async function handleCreateRoom(e: React.FormEvent) {
+    e.preventDefault();
+    if (!roomCode.trim() || !roomName.trim()) {
+      setRoomError("Room code and room name are required.");
+      return;
+    }
+    setSubmitting("room");
+    setRoomError(null);
+    try {
+      await createRoom({
+        museumId,
+        mapId: roomMapId ? Number(roomMapId) : undefined,
+        roomCode: roomCode.trim(),
+        roomName: roomName.trim(),
+        floorNumber: Number(roomFloorNumber),
+        description: roomDesc.trim() || undefined,
+      });
+      setRoomCode("");
+      setRoomName("");
+      setRoomDesc("");
+      setRoomMapId("");
+      setRoomFloorNumber("1");
+      setShowRoomForm(false);
+      router.refresh();
+    } catch (err) {
+      setRoomError(getDisplayError(err, "Unable to create room."));
+    } finally {
+      setSubmitting(null);
+    }
+  }
+
+  async function handleDeleteRoom(id: number) {
+    setDeletingRoomId(id);
+    setRoomError(null);
+    try {
+      await deleteRoom(id);
+      router.refresh();
+    } catch (err) {
+      setRoomError(getDisplayError(err, "Unable to delete room."));
+    } finally {
+      setDeletingRoomId(null);
+    }
+  }
 
   async function handleCreateMap(e: React.FormEvent) {
     e.preventDefault();
@@ -1132,48 +1090,6 @@ export function MapsRoutesPanel({
     setMapError(null);
     setMapFile(file);
     setMapPreview(URL.createObjectURL(file));
-  }
-
-  async function handleCreateRoute(e: React.FormEvent) {
-    e.preventDefault();
-    if (!routeName.trim()) {
-      setRouteError("Route name is required.");
-      return;
-    }
-    setSubmitting("route");
-    setRouteError(null);
-    try {
-      await createRouteEntry({
-        museumId,
-        name: routeName.trim(),
-        estimatedDurationMinutes: routeMinutes ? Number(routeMinutes) : undefined,
-        exhibitionId: routeExhibitionId ? Number(routeExhibitionId) : undefined,
-        ageGroupId: routeAgeGroupId ? Number(routeAgeGroupId) : undefined,
-        isDefault: routeIsDefault,
-      });
-      setRouteName("");
-      setRouteDesc("");
-      setRouteMinutes("");
-      setRouteExhibitionId("");
-      setRouteAgeGroupId("");
-      setRouteIsDefault(false);
-      setShowRouteForm(false);
-      router.refresh();
-    } catch (err) {
-      setRouteError(getDisplayError(err, "Unable to create route."));
-    } finally {
-      setSubmitting(null);
-    }
-  }
-
-  function resetRouteForm() {
-    setRouteName("");
-    setRouteDesc("");
-    setRouteMinutes("");
-    setRouteExhibitionId("");
-    setRouteAgeGroupId("");
-    setRouteIsDefault(false);
-    setRouteError(null);
   }
 
   const tabBtn = (id: Tab, label: string, count: number, Icon: typeof Map) => {
@@ -1226,6 +1142,7 @@ export function MapsRoutesPanel({
 
       <div className="flex flex-wrap gap-3">
         {tabBtn("maps", "Museum maps", maps.length, MapPin)}
+        {tabBtn("rooms", "Phòng trưng bày", rooms.length, Compass)}
         {tabBtn("routes", "Tour routes", routes.length, Route)}
       </div>
 
@@ -1433,6 +1350,197 @@ export function MapsRoutesPanel({
         </div>
       )}
 
+      {/* ═══ ROOMS TAB ═══ */}
+      {tab === "rooms" && (
+        <div className="space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <p className="text-sm" style={{ fontFamily: cinzel, color: T.muted }}>
+              <span className="font-semibold" style={{ color: T.text }}>
+                {rooms.length}
+              </span>
+              {` phòng trưng bày chính thức`}
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowRoomForm((v) => !v)}
+              className="inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium"
+              style={{
+                background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
+                color: T.surface,
+              }}
+            >
+              <Plus className="h-4 w-4" />
+              {showRoomForm ? "Close" : "Khai báo Phòng mới"}
+            </button>
+          </div>
+
+          {showRoomForm && (
+            <form
+              onSubmit={handleCreateRoom}
+              className="rounded-3xl p-6"
+              style={{ background: T.surface, border: `1px solid ${T.border}` }}
+            >
+              <h3 className="mb-4 text-lg font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
+                Khai báo Phòng trưng bày mới
+              </h3>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="block text-sm" style={{ color: T.muted }}>
+                    Mã phòng * (VD: P102)
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="P102"
+                    value={roomCode}
+                    onChange={(e) => setRoomCode(e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none font-mono"
+                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-sm" style={{ color: T.muted }}>
+                    Tên phòng * (VD: Phòng 102 - Văn hóa Đông Sơn)
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Phòng 102 - Văn hóa Đông Sơn"
+                    value={roomName}
+                    onChange={(e) => setRoomName(e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-sm" style={{ color: T.muted }}>
+                    Số tầng *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    value={roomFloorNumber}
+                    onChange={(e) => setRoomFloorNumber(e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-sm" style={{ color: T.muted }}>
+                    Liên kết Bản đồ Tầng (Tùy chọn)
+                  </label>
+                  <select
+                    value={roomMapId}
+                    onChange={(e) => setRoomMapId(e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                  >
+                    <option value="">-- Không gán bản đồ cụ thể --</option>
+                    {maps.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        Tầng {m.floorNumber} {m.mapName ? `(${m.mapName})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="block text-sm" style={{ color: T.muted }}>
+                    Mô tả phòng trưng bày
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Mô tả nội dung các hiện vật được trưng bày trong phòng này..."
+                    value={roomDesc}
+                    onChange={(e) => setRoomDesc(e.target.value)}
+                    className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
+                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                  />
+                </div>
+              </div>
+
+              {roomError && (
+                <p className="mt-3 text-sm font-medium" style={{ color: "#8B2E2E" }}>
+                  {roomError}
+                </p>
+              )}
+
+              <div className="mt-6 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowRoomForm(false)}
+                  className="rounded-xl px-5 py-2 text-sm font-medium"
+                  style={{ border: `1px solid ${T.border}`, color: T.muted }}
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting === "room"}
+                  className="rounded-xl px-6 py-2 text-sm font-medium text-white transition-opacity disabled:opacity-50"
+                  style={{ background: T.primary }}
+                >
+                  {submitting === "room" ? "Đang tạo..." : "Lưu Phòng mới"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {rooms.length === 0 ? (
+            <div
+              className="rounded-3xl p-12 text-center"
+              style={{ background: T.surface, border: `1px solid ${T.border}` }}
+            >
+              <Compass className="mx-auto mb-3 h-10 w-10 opacity-30" style={{ color: T.muted }} />
+              <p className="font-semibold" style={{ color: T.text }}>Chưa có phòng trưng bày nào</p>
+              <p className="mt-1 text-sm" style={{ color: T.muted }}>
+                Khai báo danh sách phòng chính thức để gán hiện vật và tạo lộ trình di chuyển.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {rooms.map((room) => (
+                <div
+                  key={room.id}
+                  className="rounded-3xl p-5 transition-shadow hover:shadow-md flex flex-col justify-between"
+                  style={{ background: T.surface, border: `1px solid ${T.border}` }}
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="rounded-full px-3 py-1 font-mono text-xs font-bold" style={{ background: "rgba(200,155,69,0.18)", color: T.primaryDark }}>
+                        {room.roomCode}
+                      </span>
+                      <span className="text-xs font-semibold" style={{ color: T.mutedLight }}>
+                        Tầng {room.floorNumber}
+                      </span>
+                    </div>
+                    <h4 className="font-semibold text-base mb-1" style={{ color: T.text }}>
+                      {room.roomName}
+                    </h4>
+                    {room.description && (
+                      <p className="text-xs line-clamp-2" style={{ color: T.muted }}>
+                        {room.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="mt-4 pt-3 flex items-center justify-between text-xs border-t" style={{ borderColor: T.border }}>
+                    <span style={{ color: T.mutedLight }}>ID #{room.id}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteRoom(room.id)}
+                      disabled={deletingRoomId === room.id}
+                      className="text-red-500 hover:text-red-700 font-medium transition-colors"
+                    >
+                      {deletingRoomId === room.id ? "Đang xóa..." : "Xóa phòng"}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ═══ ROUTES TAB ═══ */}
       {tab === "routes" && (
         <div className="space-y-6">
@@ -1548,6 +1656,76 @@ export function MapsRoutesPanel({
                     </select>
                   </div>
                 )}
+                {/* Select Artifacts (Stops) for this Route */}
+                <div className="space-y-2 sm:col-span-2 pt-2 border-t" style={{ borderColor: T.border }}>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-semibold" style={{ color: T.text }}>
+                      Chọn Hiện vật thuộc Lộ trình ({selectedExhibitIds.length} điểm dừng)
+                    </label>
+                    {selectedExhibitIds.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedExhibitIds([])}
+                        className="text-xs text-amber-600 hover:underline font-medium"
+                      >
+                        Bỏ chọn tất cả
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-xs" style={{ color: T.muted }}>
+                    Nhấp chọn các hiện vật theo thứ tự di chuyển mong muốn cho khách tham quan.
+                  </p>
+
+                  {exhibits.length === 0 ? (
+                    <p className="text-xs italic" style={{ color: T.muted }}>Chưa có hiện vật nào trong bảo tàng.</p>
+                  ) : (
+                    <div
+                      className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 max-h-60 overflow-y-auto p-2.5 rounded-2xl border"
+                      style={{ borderColor: T.border, background: T.bg }}
+                    >
+                      {exhibits.map((ex) => {
+                        const isSelected = selectedExhibitIds.includes(ex.id);
+                        const orderIdx = selectedExhibitIds.indexOf(ex.id);
+                        const title = ex.translations?.[0]?.title ?? ex.exhibitCode ?? `Exhibit #${ex.id}`;
+                        const locText = ex.floorNumber != null || ex.roomCode || ex.roomName
+                          ? `${ex.floorNumber != null ? `Tầng ${ex.floorNumber}` : ""} ${ex.roomCode ? `· ${ex.roomCode}` : ""}`.trim()
+                          : "Chưa gán vị trí";
+
+                        return (
+                          <button
+                            key={ex.id}
+                            type="button"
+                            onClick={() => toggleRouteExhibit(ex.id)}
+                            className="flex items-center gap-3 p-2.5 rounded-xl border text-left transition-all hover:scale-[1.01]"
+                            style={{
+                              borderColor: isSelected ? T.primary : T.border,
+                              background: isSelected ? "rgba(200,155,69,0.18)" : T.surface,
+                            }}
+                          >
+                            <div
+                              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-colors"
+                              style={{
+                                background: isSelected ? T.primary : "rgba(200,155,69,0.15)",
+                                color: isSelected ? T.surface : T.primaryDark,
+                              }}
+                            >
+                              {isSelected ? `#${orderIdx + 1}` : "+"}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold truncate" style={{ color: T.text }}>
+                                {title}
+                              </p>
+                              <p className="text-[11px] truncate" style={{ color: T.muted }}>
+                                {locText}
+                              </p>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex items-center gap-3 sm:col-span-2">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input

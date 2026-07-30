@@ -9,6 +9,8 @@ import {
   getExhibitTagList,
   getTagOptions,
 } from "@/services/content-manager/taxonomy.service";
+import { getMuseumMaps } from "@/services/content-manager/content-api.service";
+import { getRoomList } from "@/services/content-manager/room.service";
 import { notFound } from "next/navigation";
 
 export default async function UpdateArtifactPage({
@@ -27,12 +29,14 @@ export default async function UpdateArtifactPage({
 
   const exhibitId =
     artifact.exhibitId ?? Number(artifact.id.replace(/^EX-/i, ""));
-  const [categories, ageGroups, tags, exhibit, exhibitTags] = await Promise.all([
+  const [categories, ageGroups, tags, exhibit, exhibitTags, maps, rooms] = await Promise.all([
     getCategoryOptions(),
     getAgeGroupOptions(),
     getTagOptions(),
     Number.isFinite(exhibitId) ? getExhibitById(exhibitId).catch(() => null) : Promise.resolve(null),
     Number.isFinite(exhibitId) ? getExhibitTagList(exhibitId) : Promise.resolve([]),
+    getMuseumMaps(),
+    getRoomList(museumId),
   ]);
 
   return (
@@ -42,11 +46,15 @@ export default async function UpdateArtifactPage({
       categories={categories}
       ageGroups={ageGroups}
       tags={tags}
+      maps={maps}
+      rooms={rooms}
       initialCategoryId={exhibit?.categoryId ?? null}
       initialAgeGroupId={exhibit?.exhibitMetadata?.ageGroupId ?? null}
       initialEra={exhibit?.exhibitMetadata?.era ?? ""}
       initialHistoricalEvent={exhibit?.exhibitMetadata?.historicalEvent ?? ""}
       initialTagIds={exhibitTags.map((t) => t.id)}
+      initialMapId={exhibit?.mapId ?? null}
+      initialRoomId={exhibit?.roomId ?? null}
     />
   );
 }
