@@ -3,18 +3,29 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
   Clock,
+  Compass,
   Edit3,
   ExternalLink,
+  Footprints,
   GripVertical,
   Info,
   Map,
   MapPin,
+  Navigation,
   Plus,
   Route,
+  Smartphone,
+  Target,
   Trash2,
   Upload,
   X,
@@ -136,6 +147,370 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════════
+   MOBILE ROUTE GUIDE MODAL (INTERACTIVE MAP WITH DIRECTIONAL ARROWS)
+   ═══════════════════════════════════════════════════════════════════════════════ */
+
+interface RoomNode {
+  id: string;
+  name: string;
+  code: string;
+  row: number; // 0..1
+  col: number; // 0..3
+  desc: string;
+}
+
+const MUSEUM_ROOMS: RoomNode[] = [
+  { id: "r101", name: "Phòng 101", code: "P101", row: 0, col: 0, desc: "Cổ vật Tiền sử" },
+  { id: "r102", name: "Phòng 102", code: "P102", row: 0, col: 1, desc: "Thời kỳ Đông Sơn" },
+  { id: "r103", name: "Phòng 103", code: "P103", row: 0, col: 2, desc: "Văn hóa Sa Huỳnh" },
+  { id: "r104", name: "Phòng 104", code: "P104", row: 0, col: 3, desc: "Văn hóa Óc Eo" },
+  { id: "r105", name: "Phòng 105", code: "P105", row: 1, col: 0, desc: "Triều đại Lý - Trần" },
+  { id: "r106", name: "Phòng 106", code: "P106", row: 1, col: 1, desc: "Triều đại Lê - Nguyễn" },
+  { id: "r107", name: "Phòng 107", code: "P107", row: 1, col: 2, desc: "Hiện vật AR Đặc sắc" },
+  { id: "r108", name: "Phòng 108", code: "P108", row: 1, col: 3, desc: "Bảo vật Quốc gia" },
+];
+
+function MobileRouteGuideModal({
+  route,
+  onClose,
+}: {
+  route: TourRouteDto;
+  onClose: () => void;
+}) {
+  // Current standing room (Default: Room 102)
+  const [startRoomId, setStartRoomId] = useState<string>("r102");
+  // Target exhibit room (Default: Room 107)
+  const [targetRoomId, setTargetRoomId] = useState<string>("r107");
+
+  // Active step index in stops list
+  const [currentStopIndex, setCurrentStopIndex] = useState<number>(0);
+
+  const startRoom = MUSEUM_ROOMS.find((r) => r.id === startRoomId) ?? MUSEUM_ROOMS[1];
+  const targetRoom = MUSEUM_ROOMS.find((r) => r.id === targetRoomId) ?? MUSEUM_ROOMS[6];
+
+  // Calculate direction vectors:
+  const deltaCol = targetRoom.col - startRoom.col;
+  const deltaRow = targetRoom.row - startRoom.row;
+
+  // Directions summary
+  const directionSteps: { text: string; icon: string }[] = [];
+  if (deltaCol > 0) {
+    directionSteps.push({ text: `Đi sang Phải ➡️ qua ${deltaCol} phòng`, icon: "right" });
+  } else if (deltaCol < 0) {
+    directionSteps.push({ text: `Đi sang Trái ⬅️ qua ${Math.abs(deltaCol)} phòng`, icon: "left" });
+  }
+
+  if (deltaRow > 0) {
+    directionSteps.push({ text: `Rẽ Xuống ⬇️ vào hàng phòng phía dưới`, icon: "down" });
+  } else if (deltaRow < 0) {
+    directionSteps.push({ text: `Rẽ Lên ⬆️ vào hàng phòng phía trên`, icon: "up" });
+  }
+
+  if (directionSteps.length === 0) {
+    directionSteps.push({ text: `Bạn đang ở cùng vị trí phòng hiện vật!`, icon: "up" });
+  }
+
+  // Handle route stops sync
+  const sortedStops = [...route.stops].sort((a, b) => a.stopOrder - b.stopOrder);
+
+  function handleNextStop() {
+    if (sortedStops.length === 0) return;
+    const nextIdx = (currentStopIndex + 1) % sortedStops.length;
+    setCurrentStopIndex(nextIdx);
+    const roomKeys = ["r102", "r107", "r103", "r106", "r108", "r101"];
+    setStartRoomId(roomKeys[nextIdx % roomKeys.length]);
+    setTargetRoomId(roomKeys[(nextIdx + 1) % roomKeys.length]);
+  }
+
+  function handlePrevStop() {
+    if (sortedStops.length === 0) return;
+    const prevIdx = (currentStopIndex - 1 + sortedStops.length) % sortedStops.length;
+    setCurrentStopIndex(prevIdx);
+    const roomKeys = ["r102", "r107", "r103", "r106", "r108", "r101"];
+    setStartRoomId(roomKeys[prevIdx % roomKeys.length]);
+    setTargetRoomId(roomKeys[(prevIdx + 1) % roomKeys.length]);
+  }
+
+  // Manual D-Pad movement
+  function moveStartRoom(direction: "up" | "down" | "left" | "right") {
+    let r = startRoom.row;
+    let c = startRoom.col;
+    if (direction === "up" && r > 0) r--;
+    if (direction === "down" && r < 1) r++;
+    if (direction === "left" && c > 0) c--;
+    if (direction === "right" && c < 3) c++;
+    const found = MUSEUM_ROOMS.find((room) => room.row === r && room.col === c);
+    if (found) setStartRoomId(found.id);
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-md rounded-[40px] p-4 shadow-2xl overflow-hidden border-4 border-neutral-700 bg-neutral-900 text-white"
+        onClick={(e) => e.stopPropagation()}
+        style={{ fontFamily: "sans-serif" }}
+      >
+        {/* Mobile top status bar */}
+        <div className="flex items-center justify-between px-4 pt-1 pb-2 text-[11px] font-semibold text-neutral-400">
+          <span>09:41</span>
+          {/* Speaker Notch */}
+          <div className="h-4 w-28 rounded-full bg-neutral-800 flex items-center justify-center">
+            <div className="h-1.5 w-10 rounded-full bg-neutral-700" />
+          </div>
+          <div className="flex items-center gap-1">
+            <span>5G</span>
+            <span>100%</span>
+          </div>
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between px-3 py-2 border-b border-neutral-800">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-xl bg-amber-500/20 text-amber-400">
+              <Smartphone className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-amber-300 leading-tight">Bản đồ Lộ trình Mobile</p>
+              <p className="text-[10px] text-neutral-400 truncate max-w-[200px]">{route.name}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded-full hover:bg-neutral-800 text-neutral-400 hover:text-white"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Current & Next location summary banner */}
+        <div className="m-3 p-3 rounded-2xl bg-gradient-to-r from-neutral-800 to-neutral-850 border border-neutral-700 space-y-2">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-1.5 text-emerald-400 font-semibold">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              </span>
+              <span>Đang ở: {startRoom.name}</span>
+            </div>
+            <span className="text-neutral-500">➔</span>
+            <div className="flex items-center gap-1.5 text-amber-400 font-semibold">
+              <Target className="h-3.5 w-3.5" />
+              <span>Đích: {targetRoom.name}</span>
+            </div>
+          </div>
+
+          {/* Turn-by-turn guidance banner */}
+          <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2">
+            <Compass className="h-4 w-4 text-amber-400 shrink-0 mt-0.5 animate-pulse" />
+            <div className="text-[11px] leading-tight text-amber-200">
+              <p className="font-bold">Hướng dẫn di chuyển:</p>
+              <p className="mt-0.5">
+                {directionSteps.map((s) => s.text).join(" ➔ ")}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Floor plan Map Canvas */}
+        <div className="mx-3 rounded-2xl p-3 bg-neutral-950 border border-neutral-800 relative">
+          <div className="flex items-center justify-between mb-2 px-1">
+            <span className="text-[10px] font-bold tracking-wider uppercase text-neutral-400 flex items-center gap-1">
+              <MapPin className="h-3 w-3 text-emerald-400" /> Sơ đồ Tầng 1 (Floor Plan)
+            </span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800">
+              Chỉ đường Live 📍
+            </span>
+          </div>
+
+          {/* 4x2 Room Grid Canvas */}
+          <div className="grid grid-cols-4 gap-2 relative">
+            {MUSEUM_ROOMS.map((room) => {
+              const isStart = room.id === startRoom.id;
+              const isTarget = room.id === targetRoom.id;
+
+              // Check if room is along the vector path
+              const inRowRange =
+                room.row >= Math.min(startRoom.row, targetRoom.row) &&
+                room.row <= Math.max(startRoom.row, targetRoom.row);
+              const inColRange =
+                room.col >= Math.min(startRoom.col, targetRoom.col) &&
+                room.col <= Math.max(startRoom.col, targetRoom.col);
+              const isPath = inRowRange && inColRange && !isStart && !isTarget;
+
+              return (
+                <div
+                  key={room.id}
+                  onClick={() => {
+                    if (isStart) return;
+                    setTargetRoomId(room.id);
+                  }}
+                  className={`relative flex flex-col justify-between p-2 rounded-xl border text-left cursor-pointer transition-all min-h-[64px] ${
+                    isStart
+                      ? "bg-emerald-950/80 border-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.3)] scale-[1.03] z-10"
+                      : isTarget
+                      ? "bg-amber-950/80 border-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.3)] scale-[1.03] z-10"
+                      : isPath
+                      ? "bg-neutral-800/90 border-amber-500/50"
+                      : "bg-neutral-900/60 border-neutral-800 hover:border-neutral-700"
+                  }`}
+                >
+                  {/* Status badges */}
+                  {isStart && (
+                    <span className="absolute -top-2 -right-1 px-1.5 py-0.5 rounded-full bg-emerald-500 text-[8px] font-black text-black uppercase shadow">
+                      Vị trí hiện tại
+                    </span>
+                  )}
+                  {isTarget && (
+                    <span className="absolute -top-2 -right-1 px-1.5 py-0.5 rounded-full bg-amber-500 text-[8px] font-black text-black uppercase shadow">
+                      Hiện vật kế tiếp
+                    </span>
+                  )}
+
+                  <div>
+                    <p className={`text-[11px] font-bold ${isStart ? "text-emerald-300" : isTarget ? "text-amber-300" : "text-neutral-200"}`}>
+                      {room.name}
+                    </p>
+                    <p className="text-[9px] text-neutral-400 truncate">{room.desc}</p>
+                  </div>
+
+                  {/* Directional Overlay Icons on Room Nodes */}
+                  <div className="flex items-center justify-between mt-1">
+                    <span className="text-[9px] text-neutral-500 font-mono">{room.code}</span>
+                    {isStart && (
+                      <span className="relative flex h-3 w-3 items-center justify-center">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                        <MapPin className="h-3 w-3 text-emerald-400" />
+                      </span>
+                    )}
+                    {isTarget && <Target className="h-3.5 w-3.5 text-amber-400 animate-bounce" />}
+                    {isPath && (
+                      <div className="flex items-center gap-0.5 text-amber-400 animate-pulse">
+                        {deltaCol > 0 && <ArrowRight className="h-3 w-3" />}
+                        {deltaCol < 0 && <ArrowLeft className="h-3 w-3" />}
+                        {deltaRow > 0 && <ArrowDown className="h-3 w-3" />}
+                        {deltaRow < 0 && <ArrowUp className="h-3 w-3" />}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Directional Arrow Legend Overlay */}
+          <div className="mt-3 pt-2 border-t border-neutral-800 flex items-center justify-around text-[10px] text-neutral-400">
+            <div className="flex items-center gap-1">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              <span>Phòng hiện tại</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="h-2 w-2 rounded-full bg-amber-500" />
+              <span>Phòng kế tiếp</span>
+            </div>
+            <div className="flex items-center gap-1 text-amber-400 font-medium">
+              <ArrowRight className="h-3 w-3" />
+              <span>Mũi tên chỉ đường</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Directional D-Pad Controls for Teacher / Mobile Simulation */}
+        <div className="m-3 p-3 rounded-2xl bg-neutral-900 border border-neutral-800 flex items-center justify-between">
+          <div className="space-y-1">
+            <p className="text-xs font-bold text-neutral-200">Điều khiển vị trí di chuyển:</p>
+            <p className="text-[10px] text-neutral-400">Dùng nút mũi tên để di chuyển sang phòng khác</p>
+          </div>
+
+          {/* D-Pad controls */}
+          <div className="grid grid-cols-3 gap-1 w-24">
+            <div />
+            <button
+              type="button"
+              onClick={() => moveStartRoom("up")}
+              className={`p-1.5 rounded-lg flex items-center justify-center transition-all ${
+                deltaRow < 0
+                  ? "bg-amber-500 text-black font-bold shadow-[0_0_8px_rgba(245,158,11,0.6)]"
+                  : "bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
+              }`}
+              title="Lên"
+            >
+              <ArrowUp className="h-3.5 w-3.5" />
+            </button>
+            <div />
+
+            <button
+              type="button"
+              onClick={() => moveStartRoom("left")}
+              className={`p-1.5 rounded-lg flex items-center justify-center transition-all ${
+                deltaCol < 0
+                  ? "bg-amber-500 text-black font-bold shadow-[0_0_8px_rgba(245,158,11,0.6)]"
+                  : "bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
+              }`}
+              title="Trái"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => moveStartRoom("down")}
+              className={`p-1.5 rounded-lg flex items-center justify-center transition-all ${
+                deltaRow > 0
+                  ? "bg-amber-500 text-black font-bold shadow-[0_0_8px_rgba(245,158,11,0.6)]"
+                  : "bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
+              }`}
+              title="Xuống"
+            >
+              <ArrowDown className="h-3.5 w-3.5" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => moveStartRoom("right")}
+              className={`p-1.5 rounded-lg flex items-center justify-center transition-all ${
+                deltaCol > 0
+                  ? "bg-amber-500 text-black font-bold shadow-[0_0_8px_rgba(245,158,11,0.6)]"
+                  : "bg-neutral-800 hover:bg-neutral-700 text-neutral-300"
+              }`}
+              title="Phải"
+            >
+              <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Step navigation bar (Previous / Next Stop) */}
+        <div className="p-3 bg-neutral-950 border-t border-neutral-800 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={handlePrevStop}
+            className="px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-xs text-neutral-300 flex items-center gap-1"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" /> Điểm trước
+          </button>
+
+          <span className="text-xs text-neutral-400 font-medium">
+            Điểm dừng {sortedStops.length > 0 ? `${currentStopIndex + 1}/${sortedStops.length}` : "1/2"}
+          </span>
+
+          <button
+            type="button"
+            onClick={handleNextStop}
+            className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs flex items-center gap-1"
+          >
+            Điểm tiếp theo <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════
    ROUTE DETAIL MODAL
    ═══════════════════════════════════════════════════════════════════════════════ */
 
@@ -144,11 +519,13 @@ function RouteDetailModal({
   exhibits,
   onClose,
   onRefresh,
+  onOpenMobileSimulator,
 }: {
   route: TourRouteDto;
   exhibits: ExhibitDto[];
   onClose: () => void;
   onRefresh: () => void;
+  onOpenMobileSimulator?: () => void;
 }) {
   const [addingStop, setAddingStop] = useState(false);
   const [selectedExhibitId, setSelectedExhibitId] = useState<number | "">("");
@@ -280,6 +657,19 @@ function RouteDetailModal({
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {onOpenMobileSimulator && (
+              <button
+                type="button"
+                onClick={onOpenMobileSimulator}
+                className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold shadow-sm transition-all hover:scale-105"
+                style={{
+                  background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
+                  color: T.surface,
+                }}
+              >
+                <Smartphone className="h-3.5 w-3.5" /> Map Mobile 📱
+              </button>
+            )}
             {!editing && (
               <button
                 type="button"
@@ -689,6 +1079,7 @@ export function MapsRoutesPanel({
   const [floorNumber, setFloorNumber] = useState("1");
   const [selectedMap, setSelectedMap] = useState<MuseumMapDto | null>(null);
   const [selectedRoute, setSelectedRoute] = useState<TourRouteDto | null>(null);
+  const [mobileSimRoute, setMobileSimRoute] = useState<TourRouteDto | null>(null);
 
   // Route form state
   const [routeName, setRouteName] = useState("");
@@ -1281,17 +1672,33 @@ export function MapsRoutesPanel({
                           <StatusBadge status={item.status} />
                         </td>
                         <td className="px-5 py-4">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedRoute(item);
-                            }}
-                            className="text-xs font-medium"
-                            style={{ color: T.primaryDark }}
-                          >
-                            Detail →
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setMobileSimRoute(item);
+                              }}
+                              className="inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-semibold shadow-sm transition-all hover:scale-105"
+                              style={{
+                                background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
+                                color: T.surface,
+                              }}
+                            >
+                              <Smartphone className="h-3.5 w-3.5" /> Map Mobile 📱
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedRoute(item);
+                              }}
+                              className="text-xs font-medium"
+                              style={{ color: T.primaryDark }}
+                            >
+                              Detail →
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -1387,11 +1794,20 @@ export function MapsRoutesPanel({
         <RouteDetailModal
           route={selectedRoute}
           exhibits={exhibits}
+          onOpenMobileSimulator={() => setMobileSimRoute(selectedRoute)}
           onClose={() => setSelectedRoute(null)}
           onRefresh={() => {
             setSelectedRoute(null);
             router.refresh();
           }}
+        />
+      )}
+
+      {/* ═══ MOBILE ROUTE SIMULATOR MODAL ═══ */}
+      {mobileSimRoute && (
+        <MobileRouteGuideModal
+          route={mobileSimRoute}
+          onClose={() => setMobileSimRoute(null)}
         />
       )}
     </div>
