@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, KeyRound, LayoutDashboard, LogOut, Ticket } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
+import { useLanguage } from "@/context/language-context";
 import { getHomePathForRole, getRoleDisplayLabel } from "@/services/auth";
 import { isDashboardRole } from "@/lib/roles";
 
@@ -42,6 +43,7 @@ function AuthSkeleton() {
 }
 
 function GuestAuthActions() {
+  const { t } = useLanguage();
   return (
     <div className="flex items-center gap-2">
       <Link
@@ -57,7 +59,7 @@ function GuestAuthActions() {
           (e.currentTarget as HTMLElement).style.background = "transparent";
         }}
       >
-        Login
+        {t("nav.login")}
       </Link>
       <Link
         href="/register"
@@ -68,7 +70,7 @@ function GuestAuthActions() {
           boxShadow: "0 2px 10px rgba(166,124,45,0.30)",
         }}
       >
-        Register
+        {t("nav.register")}
       </Link>
     </div>
   );
@@ -76,6 +78,7 @@ function GuestAuthActions() {
 
 function UserMenu() {
   const { user, logout } = useAuth();
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -119,7 +122,7 @@ function UserMenu() {
           }}
         >
           <LayoutDashboard className="h-4 w-4" />
-          Dashboard
+          {t("nav.dashboard")}
         </Link>
       )}
 
@@ -205,7 +208,7 @@ function UserMenu() {
                 }}
               >
                 <LayoutDashboard className="h-4 w-4" style={{ color: C.primary }} />
-                Dashboard
+                {t("nav.dashboard")}
               </Link>
             )}
 
@@ -223,7 +226,7 @@ function UserMenu() {
               }}
             >
               <Ticket className="h-4 w-4" style={{ color: C.primary }} />
-              My tickets
+              {t("nav.my_tickets")}
             </Link>
 
             <Link
@@ -240,7 +243,7 @@ function UserMenu() {
               }}
             >
               <KeyRound className="h-4 w-4" style={{ color: C.primary }} />
-              Change password
+              {t("nav.change_password")}
             </Link>
 
             <button
@@ -260,7 +263,7 @@ function UserMenu() {
               }}
             >
               <LogOut className="h-4 w-4" />
-              Log out
+              {t("nav.logout")}
             </button>
           </div>
         )}
@@ -269,9 +272,55 @@ function UserMenu() {
   );
 }
 
+function LanguageSwitcher() {
+  const { language, setLanguage } = useLanguage();
+
+  return (
+    <div
+      className="inline-flex items-center rounded-full p-0.5 text-xs font-semibold"
+      style={{
+        background: C.surface,
+        border: `1px solid ${C.border}`,
+      }}
+    >
+      <button
+        type="button"
+        onClick={() => setLanguage("vi")}
+        className="rounded-full px-2.5 py-1 transition-all"
+        style={{
+          background: language === "vi" ? C.primary : "transparent",
+          color: language === "vi" ? C.surface : C.muted,
+        }}
+      >
+        🇻🇳 VI
+      </button>
+      <button
+        type="button"
+        onClick={() => setLanguage("en")}
+        className="rounded-full px-2.5 py-1 transition-all"
+        style={{
+          background: language === "en" ? C.primary : "transparent",
+          color: language === "en" ? C.surface : C.muted,
+        }}
+      >
+        🇬🇧 EN
+      </button>
+    </div>
+  );
+}
+
 export function Navbar() {
   const pathname = usePathname();
   const { isAuthenticated, isLoading } = useAuth();
+  const { t } = useLanguage();
+
+  const navLinks = [
+    { label: t("nav.home"), href: "/" },
+    { label: t("nav.tickets"), href: "/tickets" },
+    { label: t("nav.collections"), href: "#collections" },
+    { label: t("nav.museums"), href: "#museums" },
+    { label: t("nav.about"), href: "#about" },
+  ];
 
   return (
     <nav
@@ -305,7 +354,7 @@ export function Navbar() {
       </Link>
 
       <div className="hidden items-center gap-0.5 md:flex">
-        {NAV_LINKS.map((link) => {
+        {navLinks.map((link) => {
           const active = pathname === link.href;
           return (
             <Link
@@ -330,13 +379,16 @@ export function Navbar() {
         })}
       </div>
 
-      {isLoading ? (
-        <AuthSkeleton />
-      ) : isAuthenticated ? (
-        <UserMenu />
-      ) : (
-        <GuestAuthActions />
-      )}
+      <div className="flex items-center gap-3">
+        <LanguageSwitcher />
+        {isLoading ? (
+          <AuthSkeleton />
+        ) : isAuthenticated ? (
+          <UserMenu />
+        ) : (
+          <GuestAuthActions />
+        )}
+      </div>
     </nav>
   );
 }

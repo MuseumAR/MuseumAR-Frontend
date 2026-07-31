@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Navbar } from "@/components/shared/navbar";
 import { useAuth } from "@/context/auth-context";
+import { useLanguage } from "@/context/language-context";
 import { formatVnd } from "@/lib/format";
 import { getDisplayError } from "@/lib/validation";
 import {
@@ -52,6 +53,7 @@ type PendingOrder = {
 export function TicketShop() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { t, language } = useLanguage();
   const [types, setTypes] = useState<TicketTypeDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
@@ -88,14 +90,14 @@ export function TicketShop() {
     }, 3000);
 
     return () => clearInterval(intervalId);
-  }, [pendingOrder, router]);
+  }, [pendingOrder, router, t]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       setLoading(true);
       try {
-        const list = await listPublicTicketTypes();
+        const list = await listPublicTicketTypes(language);
         if (cancelled) return;
         setTypes(list);
         setQuantities(
@@ -103,7 +105,7 @@ export function TicketShop() {
         );
       } catch (err) {
         if (!cancelled) {
-          setError(getDisplayError(err, "Không thể tải danh sách vé."));
+          setError(getDisplayError(err, t("tickets.error_load")));
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -112,7 +114,7 @@ export function TicketShop() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [language, t]);
 
   function setQty(id: number, next: number) {
     setQuantities((prev) => ({
@@ -156,7 +158,7 @@ export function TicketShop() {
       });
     } catch (err) {
       setError(
-        getDisplayError(err, "Không thể khởi tạo đơn hàng vé. Vui lòng thử lại."),
+        getDisplayError(err, t("tickets.error_init")),
       );
     } finally {
       setBuyingId(null);
@@ -172,14 +174,14 @@ export function TicketShop() {
     try {
       // Confirm payment on backend
       await confirmTicketPayment(pendingOrder.orderCode);
-      setSuccess(`Thanh toán thành công đơn hàng #${pendingOrder.orderCode}!`);
+      setSuccess(t("tickets.payment_success", { code: pendingOrder.orderCode }));
       setPendingOrder(null);
       router.push("/tickets/mine?purchased=1");
     } catch (err) {
       setModalError(
         getDisplayError(
           err,
-          "Xác nhận thanh toán thất bại hoặc chưa nhận được tiền. Vui lòng kiểm tra lại!",
+          t("tickets.error_confirm"),
         ),
       );
     } finally {
@@ -195,11 +197,11 @@ export function TicketShop() {
 
     try {
       await cancelTicketOrder(pendingOrder.orderCode);
-      setError(`Đã hủy đơn hàng #${pendingOrder.orderCode}.`);
+      setError(t("tickets.order_cancelled", { code: pendingOrder.orderCode }));
       setPendingOrder(null);
     } catch (err) {
       setModalError(
-        getDisplayError(err, "Hủy đơn hàng thất bại. Vui lòng thử lại."),
+        getDisplayError(err, t("tickets.error_cancel")),
       );
     } finally {
       setCancelling(false);
@@ -216,16 +218,16 @@ export function TicketShop() {
             className="mb-2 text-xs font-medium uppercase tracking-[0.2em]"
             style={{ color: C.primary }}
           >
-            Tickets
+            {t("tickets.tagline")}
           </p>
           <h1
             className="text-3xl font-semibold tracking-tight sm:text-4xl"
             style={{ color: C.text }}
           >
-            Mua vé tham quan
+            {t("tickets.title")}
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-relaxed" style={{ color: C.muted }}>
-            Chọn loại vé và số lượng để mua vé trực tuyến dễ dàng và nhanh chóng.
+            {t("tickets.subtitle")}
           </p>
           <div className="mt-5">
             <Link
@@ -238,7 +240,7 @@ export function TicketShop() {
               }}
             >
               <Ticket className="h-4 w-4" style={{ color: C.primary }} />
-              Vé của tôi
+              {t("tickets.my_tickets_btn")}
             </Link>
           </div>
         </header>
@@ -277,14 +279,14 @@ export function TicketShop() {
             style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.muted }}
           >
             <Loader2 className="h-4 w-4 animate-spin" />
-            Đang tải loại vé…
+            {t("tickets.loading_types")}
           </div>
         ) : types.length === 0 ? (
           <div
             className="rounded-3xl px-8 py-16 text-center text-sm"
             style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.muted }}
           >
-            Hiện chưa có loại vé nào đang mở bán.
+            {t("tickets.no_types")}
           </div>
         ) : (
           <ul className="space-y-4">
@@ -325,7 +327,7 @@ export function TicketShop() {
                     >
                       <button
                         type="button"
-                        aria-label="Giảm số lượng"
+                        aria-label={t("tickets.decrease")}
                         className="flex h-10 w-10 items-center justify-center rounded-full transition-opacity hover:opacity-70"
                         style={{ color: C.text }}
                         onClick={() => setQty(ticket.id, qty - 1)}
@@ -341,7 +343,7 @@ export function TicketShop() {
                       </span>
                       <button
                         type="button"
-                        aria-label="Tăng số lượng"
+                        aria-label={t("tickets.increase")}
                         className="flex h-10 w-10 items-center justify-center rounded-full transition-opacity hover:opacity-70"
                         style={{ color: C.text }}
                         onClick={() => setQty(ticket.id, qty + 1)}
@@ -365,12 +367,12 @@ export function TicketShop() {
                       {busy ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          Đang tạo đơn…
+                          {t("tickets.creating_order")}
                         </>
                       ) : isAuthenticated ? (
-                        "Mua vé"
+                        t("tickets.buy")
                       ) : (
-                        "Đăng nhập để mua"
+                        t("tickets.login_to_buy")
                       )}
                     </button>
                   </div>
@@ -396,10 +398,13 @@ export function TicketShop() {
             <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: C.border }}>
               <div>
                 <h3 className="text-lg font-bold" style={{ color: C.text }}>
-                  Thanh toán đơn hàng
+                  {t("tickets.modal_title")}
                 </h3>
                 <p className="text-xs" style={{ color: C.mutedLight }}>
-                  Mã đơn: <span className="font-mono font-semibold" style={{ color: C.secondary }}>{pendingOrder.orderCode}</span>
+                  {t("tickets.order_code")}{" "}
+                  <span className="font-mono font-semibold" style={{ color: C.secondary }}>
+                    {pendingOrder.orderCode}
+                  </span>
                 </p>
               </div>
               <button
@@ -419,15 +424,15 @@ export function TicketShop() {
               style={{ background: "rgba(200,155,60,0.08)", border: `1px solid ${C.border}` }}
             >
               <div className="flex justify-between">
-                <span style={{ color: C.muted }}>Loại vé:</span>
+                <span style={{ color: C.muted }}>{t("tickets.ticket_type")}</span>
                 <span className="font-semibold" style={{ color: C.text }}>{pendingOrder.ticketType.name}</span>
               </div>
               <div className="flex justify-between">
-                <span style={{ color: C.muted }}>Số lượng:</span>
-                <span className="font-semibold" style={{ color: C.text }}>{pendingOrder.quantity} vé</span>
+                <span style={{ color: C.muted }}>{t("tickets.quantity")}</span>
+                <span className="font-semibold" style={{ color: C.text }}>{pendingOrder.quantity} {t("tickets.tickets_count")}</span>
               </div>
               <div className="flex justify-between border-t pt-2 mt-2" style={{ borderColor: C.border }}>
-                <span className="font-medium" style={{ color: C.text }}>Tổng thanh toán:</span>
+                <span className="font-medium" style={{ color: C.text }}>{t("tickets.total_payment")}</span>
                 <span className="text-lg font-bold" style={{ color: C.secondary }}>
                   {formatVnd(pendingOrder.amount)}
                 </span>
@@ -437,7 +442,7 @@ export function TicketShop() {
             {/* QR Code section */}
             <div className="flex flex-col items-center justify-center p-4 rounded-2xl border text-center space-y-3" style={{ borderColor: C.border, background: C.bg }}>
               <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider" style={{ color: C.primary }}>
-                <QrCode className="h-4 w-4" /> Mã QR Thanh toán VietQR / PayOS
+                <QrCode className="h-4 w-4" /> {t("tickets.qr_header")}
               </div>
 
               {/* QR Image */}
@@ -459,7 +464,7 @@ export function TicketShop() {
                   return (
                     <img
                       src={qrImageSrc}
-                      alt="Mã QR thanh toán VietQR / PayOS"
+                      alt={t("tickets.qr_alt")}
                       className="w-48 h-48 object-contain mx-auto"
                     />
                   );
@@ -467,7 +472,7 @@ export function TicketShop() {
               </div>
 
               <p className="text-xs max-w-xs" style={{ color: C.muted }}>
-                Mở ứng dụng Ngân hàng / ví điện tử để quét mã QR thanh toán hoặc bấm nút PayOS bên dưới.
+                {t("tickets.qr_instruction")}
               </p>
 
               {pendingOrder.checkoutUrl && (
@@ -478,7 +483,7 @@ export function TicketShop() {
                   className="inline-flex items-center gap-2 text-xs font-medium underline transition-opacity hover:opacity-80"
                   style={{ color: C.secondary }}
                 >
-                  Mở trang thanh toán PayOS <ExternalLink className="h-3.5 w-3.5" />
+                  {t("tickets.open_payos")} <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               )}
             </div>
@@ -512,12 +517,12 @@ export function TicketShop() {
                 {confirming ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Đang kiểm tra thanh toán…
+                    {t("tickets.checking_payment")}
                   </>
                 ) : (
                   <>
                     <ShieldCheck className="h-4 w-4" />
-                    Xác nhận đã thanh toán
+                    {t("tickets.confirm_paid")}
                   </>
                 )}
               </button>
@@ -532,10 +537,10 @@ export function TicketShop() {
                 {cancelling ? (
                   <>
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    Đang hủy đơn…
+                    {t("tickets.cancelling_order")}
                   </>
                 ) : (
-                  "Đóng / Hủy đơn"
+                  t("tickets.cancel_order")
                 )}
               </button>
             </div>

@@ -18,9 +18,9 @@ import {
 } from "./ticket-mock.store";
 
 /** Fetch active ticket types from backend API (with demo fallback if empty) */
-export async function listPublicTicketTypes(): Promise<TicketTypeDto[]> {
+export async function listPublicTicketTypes(lang?: string): Promise<TicketTypeDto[]> {
   try {
-    const list = await getPublicTicketTypesApi();
+    const list = await getPublicTicketTypesApi(lang);
     return list && list.length > 0 ? list : DEMO_TICKET_TYPES;
   } catch (err) {
     console.warn("Failed to fetch public ticket types from API, using fallback:", err);
