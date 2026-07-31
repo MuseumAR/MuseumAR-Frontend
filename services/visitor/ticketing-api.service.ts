@@ -35,3 +35,7 @@ export function mockConfirmPayment(orderCode: string) {
   const params = new URLSearchParams({ orderCode });
   return apiGet<unknown>(`/api/ticketing/mock-confirm?${params.toString()}`);
 }
+
+export function checkPaymentStatus(orderCode: string): Promise<{ isPaid?: boolean; status?: string }> {
+  return apiGet<{ isPaid?: boolean; status?: string }>(`/api/payment/check-status/${encodeURIComponent(orderCode)}`);
+}
