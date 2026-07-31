@@ -40,8 +40,14 @@ async function ensureFreshToken(): Promise<string | null> {
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const { method = "GET", body, accessToken, headers = {}, _retried } = options;
 
+  const currentLang =
+    typeof window !== "undefined"
+      ? localStorage.getItem("app_lang") || "vi"
+      : "vi";
+
   const requestHeaders: Record<string, string> = {
     Accept: "application/json; charset=utf-8",
+    "Accept-Language": currentLang,
     ...headers,
   };
 

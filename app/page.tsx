@@ -5,6 +5,7 @@ import { motion, useInView } from "framer-motion";
 import { BookOpen, Compass, Landmark, ArrowRight, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { Navbar } from "@/components/shared/navbar";
+import { useLanguage } from "@/context/language-context";
 
 // ── Tokens ───────────────────────────────────────────────────────────────────
 
@@ -129,10 +130,72 @@ function fadeUp(delay = 0) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
+  const { t } = useLanguage();
   const featuresRef = useRef(null);
   const statsRef = useRef(null);
   const featuresInView = useInView(featuresRef, { once: true, margin: "-60px" });
   const statsInView = useInView(statsRef, { once: true, margin: "-60px" });
+
+  const exhibitCards = [
+    {
+      id: 1,
+      x: "6%",
+      y: "42%",
+      catalog: "CAT · №0247",
+      name: t("hero.ex1_name"),
+      period: "3000 BC · Cairo",
+      status: t("hero.ex1_status"),
+      delay: 1.1,
+    },
+    {
+      id: 2,
+      x: "70%",
+      y: "22%",
+      catalog: "CAT · №0391",
+      name: t("hero.ex2_name"),
+      period: "480 BC · Athens",
+      status: t("hero.ex2_status"),
+      delay: 1.3,
+    },
+    {
+      id: 3,
+      x: "74%",
+      y: "64%",
+      catalog: "CAT · №0158",
+      name: t("hero.ex3_name"),
+      period: "200 AD · Rome",
+      status: t("hero.ex3_status"),
+      delay: 1.5,
+    },
+  ];
+
+  const features = [
+    {
+      roman: "I",
+      icon: Landmark,
+      title: t("feat1.title"),
+      description: t("feat1.desc"),
+    },
+    {
+      roman: "II",
+      icon: BookOpen,
+      title: t("feat2.title"),
+      description: t("feat2.desc"),
+    },
+    {
+      roman: "III",
+      icon: Compass,
+      title: t("feat3.title"),
+      description: t("feat3.desc"),
+    },
+  ];
+
+  const stats = [
+    { value: "10,000+", label: t("stat1.label") },
+    { value: "500+", label: t("stat2.label") },
+    { value: "50+", label: t("stat3.label") },
+    { value: "95%", label: t("stat4.label") },
+  ];
 
   return (
     <div style={{ background: C.bg, color: C.text }}>
@@ -187,7 +250,7 @@ export default function LandingPage() {
         <div className="absolute bottom-6 right-6 z-10 h-10 w-10 border-b border-r" style={{ borderColor: "rgba(200,155,60,0.50)" }} />
 
         {/* Floating exhibit label cards */}
-        {EXHIBIT_LABELS.map((ex) => (
+        {exhibitCards.map((ex) => (
           <motion.div
             key={ex.id}
             initial={{ opacity: 0, y: 10 }}
@@ -254,7 +317,7 @@ export default function LandingPage() {
               className="text-xs tracking-[0.22em]"
               style={{ color: "rgba(245,230,200,0.85)", fontWeight: 500 }}
             >
-              AUGMENTED REALITY · MUSEUM PLATFORM
+              {t("hero.badge")}
             </span>
           </motion.div>
 
@@ -264,9 +327,9 @@ export default function LandingPage() {
             className="text-6xl font-bold leading-[1.05] tracking-tight text-white md:text-7xl lg:text-[5.5rem]"
             style={{ fontFamily: "var(--font-be-vietnam), system-ui, sans-serif" }}
           >
-            Experience History
+            {t("hero.title_part1")}
             <br />
-            <span style={{ color: C.primary }}>Beyond Reality</span>
+            <span style={{ color: C.primary }}>{t("hero.title_part2")}</span>
           </motion.h1>
 
           {/* Ornamental divider */}
@@ -284,8 +347,7 @@ export default function LandingPage() {
             className="mx-auto mt-6 max-w-lg text-base leading-relaxed"
             style={{ color: "rgba(245,230,200,0.72)" }}
           >
-            Explore historical artifacts and cultural heritage through immersive
-            Augmented Reality experiences that connect the past to the present.
+            {t("hero.desc")}
           </motion.p>
 
           {/* CTAs */}
@@ -301,7 +363,7 @@ export default function LandingPage() {
                   fontFamily: "inherit",
                 }}
               >
-                Buy Tickets
+                {t("hero.buy_tickets")}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </motion.div>
@@ -324,7 +386,7 @@ export default function LandingPage() {
                 }}
               >
                 <BookOpen className="h-4 w-4" />
-                View Collection
+                {t("hero.view_collection")}
               </Link>
             </motion.div>
           </motion.div>
@@ -382,7 +444,7 @@ export default function LandingPage() {
               className="mb-3 text-xs font-medium tracking-[0.3em] uppercase"
               style={{ color: C.primary }}
             >
-              Platform Capabilities
+              {t("features.tagline")}
             </p>
             <h2
               className="text-4xl font-bold leading-snug md:text-5xl"
@@ -391,15 +453,15 @@ export default function LandingPage() {
                 color: C.text,
               }}
             >
-              Where History
+              {t("features.title_part1")}
               <br />
-              <span style={{ color: C.accent }}>Comes Alive</span>
+              <span style={{ color: C.accent }}>{t("features.title_part2")}</span>
             </h2>
           </motion.div>
 
           {/* Feature cards */}
           <div className="grid gap-6 md:grid-cols-3">
-            {FEATURES.map((feat, i) => {
+            {features.map((feat, i) => {
               const Icon = feat.icon;
               return (
                 <motion.div
@@ -465,7 +527,7 @@ export default function LandingPage() {
                     className="mt-6 flex items-center gap-1.5 text-xs font-medium transition-all"
                     style={{ color: C.primary }}
                   >
-                    Explore
+                    {t("feat.explore")}
                     <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                   </div>
                 </motion.div>
@@ -500,7 +562,7 @@ export default function LandingPage() {
               className="mb-2 text-xs tracking-[0.3em] uppercase"
               style={{ color: "rgba(200,155,60,0.70)" }}
             >
-              By The Numbers
+              {t("stats.tagline")}
             </p>
             <h2
               className="text-3xl font-bold"
@@ -509,18 +571,18 @@ export default function LandingPage() {
                 color: "#FFF8E7",
               }}
             >
-              A Living Archive of History
+              {t("stats.title")}
             </h2>
           </motion.div>
 
           {/* Stats grid */}
           <div className="grid grid-cols-2 gap-y-10 md:grid-cols-4">
-            {STATS.map((stat, i) => (
+            {stats.map((stat) => (
               <motion.div
                 key={stat.label}
                 initial={{ opacity: 0, y: 16 }}
                 animate={statsInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.5, delay: i * 0.1 }}
+                transition={{ duration: 0.5 }}
                 className="text-center"
               >
                 <p
@@ -570,7 +632,7 @@ export default function LandingPage() {
             className="mb-3 text-xs font-medium tracking-[0.3em] uppercase"
             style={{ color: C.primary }}
           >
-            Begin Your Journey
+            {t("cta.tagline")}
           </p>
           <h3
             className="text-3xl font-bold leading-snug"
@@ -579,13 +641,12 @@ export default function LandingPage() {
               color: C.text,
             }}
           >
-            Ready to explore
+            {t("cta.title_part1")}
             <br />
-            the ancient world?
+            {t("cta.title_part2")}
           </h3>
           <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed" style={{ color: C.muted }}>
-            Join thousands of visitors experiencing history and cultural heritage
-            through immersive augmented reality.
+            {t("cta.desc")}
           </p>
 
           <OrnamentalRule className="mx-auto mt-7 max-w-xs" />
@@ -601,7 +662,7 @@ export default function LandingPage() {
                   boxShadow: "0 4px 20px rgba(166,124,45,0.35)",
                 }}
               >
-                Buy Tickets
+                {t("hero.buy_tickets")}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </motion.div>
@@ -621,7 +682,7 @@ export default function LandingPage() {
                 (e.currentTarget as HTMLElement).style.borderColor = C.border;
               }}
             >
-              Sign In
+              {t("cta.signin")}
             </Link>
           </div>
         </motion.div>
@@ -630,7 +691,7 @@ export default function LandingPage() {
         <div className="mx-auto mt-16 max-w-6xl">
           <OrnamentalRule className="mb-6" />
           <p className="text-center text-xs tracking-widest uppercase" style={{ color: C.mutedLight }}>
-            © 2026 MuseumAR · Augmented Reality Museum Platform
+            {t("footer.copyright")}
           </p>
         </div>
       </section>

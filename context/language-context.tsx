@@ -1,0 +1,253 @@
+"use client";
+
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+
+export type Language = "vi" | "en";
+
+type LanguageContextType = {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: string, params?: Record<string, string | number>) => string;
+};
+
+const UI_DICTIONARY: Record<Language, Record<string, string>> = {
+  vi: {
+    "nav.home": "Trang chủ",
+    "nav.tickets": "Vé tham quan",
+    "nav.collections": "Bộ sưu tập",
+    "nav.museums": "Bảo tàng",
+    "nav.about": "Giới thiệu",
+    "nav.login": "Đăng nhập",
+    "nav.register": "Đăng ký",
+    "nav.dashboard": "Bảng điều khiển",
+    "nav.my_tickets": "Vé của tôi",
+    "nav.change_password": "Đổi mật khẩu",
+    "nav.logout": "Đăng xuất",
+
+    "hero.badge": "THỰC TẾ ẢO TĂNG CƯỜNG · NỀN TẢNG BẢO TÀNG",
+    "hero.title_part1": "Trải nghiệm Lịch sử",
+    "hero.title_part2": "Vượt ngoài Thực tại",
+    "hero.desc": "Khám phá hiện vật lịch sử và di sản văn hóa qua trải nghiệm Thực tế ảo tăng cường sống động, kết nối quá khứ đến hiện tại.",
+    "hero.buy_tickets": "Mua vé tham quan",
+    "hero.view_collection": "Xem bộ sưu tập",
+    "hero.ex1_name": "Quan tài Ai Cập cổ đại",
+    "hero.ex1_status": "Có mô hình AR",
+    "hero.ex2_name": "Đầu cột Ionic",
+    "hero.ex2_status": "Quét 3D hoàn tất",
+    "hero.ex3_name": "Tranh khảm La Mã",
+    "hero.ex3_status": "Đã phục dựng",
+
+    "features.tagline": "TÍNH NĂNG NỀN TẢNG",
+    "features.title_part1": "Nơi Lịch sử",
+    "features.title_part2": "Sống lại",
+    "feat1.title": "Tour Thực tế ảo Tương tác",
+    "feat1.desc": "Tham quan các di tích cổ được phục dựng với lớp phủ AR thời gian thực hiển thị bối cảnh lịch sử từng lớp.",
+    "feat2.title": "Trực quan hóa Hiện vật 3D",
+    "feat2.desc": "Quan sát các hiện vật vô giá từ mọi góc độ với mô hình 3D chân thực từ lưu trữ bảo tàng.",
+    "feat3.title": "Phục dựng Lịch sử",
+    "feat3.desc": "Trải nghiệm các nền văn minh và danh thắng cổ được phục dựng lại nguyên bản qua công nghệ AR.",
+    "feat.explore": "Khám phá",
+
+    "stats.tagline": "CON SỐ NỔI BẬT",
+    "stats.title": "Kho lưu trữ Lịch sử Sống động",
+    "stat1.label": "Lượt khách hàng năm",
+    "stat2.label": "Hiện vật lưu trữ",
+    "stat3.label": "Bảo tàng đối tác",
+    "stat4.label": "Mức độ hài lòng",
+
+    "cta.tagline": "BẮT ĐẦU HÀNH TRÌNH",
+    "cta.title_part1": "Sẵn sàng khám phá",
+    "cta.title_part2": "thế giới cổ đại?",
+    "cta.desc": "Hàng ngàn du khách đang trải nghiệm lịch sử và di sản văn hóa qua thực tế ảo tăng cường.",
+    "cta.signin": "Đăng nhập",
+    "footer.copyright": "© 2026 MuseumAR · Nền tảng Bảo tàng Thực tế ảo Tăng cường",
+
+    "tickets.tagline": "Vé tham quan",
+    "tickets.title": "Mua vé tham quan",
+    "tickets.subtitle": "Chọn loại vé và số lượng để mua vé trực tuyến dễ dàng và nhanh chóng.",
+    "tickets.my_tickets_btn": "Vé của tôi",
+    "tickets.buy": "Mua vé",
+    "tickets.login_to_buy": "Đăng nhập để mua",
+    "tickets.creating_order": "Đang tạo đơn…",
+    "tickets.loading_types": "Đang tải loại vé…",
+    "tickets.no_types": "Hiện chưa có loại vé nào đang mở bán.",
+    "tickets.modal_title": "Thanh toán đơn hàng",
+    "tickets.order_code": "Mã đơn:",
+    "tickets.ticket_type": "Loại vé:",
+    "tickets.quantity": "Số lượng:",
+    "tickets.tickets_count": "vé",
+    "tickets.total_payment": "Tổng thanh toán:",
+    "tickets.qr_header": "Mã QR Thanh toán VietQR / PayOS",
+    "tickets.qr_instruction": "Mở ứng dụng Ngân hàng / ví điện tử để quét mã QR thanh toán hoặc bấm nút PayOS bên dưới.",
+    "tickets.open_payos": "Mở trang thanh toán PayOS",
+    "tickets.confirm_paid": "Xác nhận đã thanh toán",
+    "tickets.checking_payment": "Đang kiểm tra thanh toán…",
+    "tickets.cancel_order": "Đóng / Hủy đơn",
+    "tickets.cancelling_order": "Đang hủy đơn…",
+
+    "tickets.error_load": "Không thể tải danh sách vé.",
+    "tickets.error_init": "Không thể khởi tạo đơn hàng vé. Vui lòng thử lại.",
+    "tickets.payment_success": "Thanh toán thành công đơn hàng #{code}!",
+    "tickets.error_confirm": "Xác nhận thanh toán thất bại hoặc chưa nhận được tiền. Vui lòng kiểm tra lại!",
+    "tickets.order_cancelled": "Đã hủy đơn hàng #{code}.",
+    "tickets.error_cancel": "Hủy đơn hàng thất bại. Vui lòng thử lại.",
+    "tickets.decrease": "Giảm số lượng",
+    "tickets.increase": "Tăng số lượng",
+    "tickets.qr_alt": "Mã QR thanh toán VietQR / PayOS",
+
+    "mytickets.back_to_shop": "Quay lại mua vé",
+    "mytickets.title": "Vé của tôi",
+    "mytickets.subtitle": "Danh sách các vé tham quan bạn đã đặt thành công.",
+    "mytickets.success_alert": "✓ Mua vé thành công! Đơn hàng và vé của bạn đã được ghi nhận trên hệ thống.",
+    "mytickets.loading": "Đang tải vé…",
+    "mytickets.no_tickets": "Bạn chưa có vé nào.",
+    "mytickets.buy_now": "Mua vé ngay",
+    "mytickets.col_code": "Mã vé",
+    "mytickets.col_type": "Loại vé",
+    "mytickets.col_date": "Ngày mua",
+    "mytickets.col_valid": "Hiệu lực",
+    "mytickets.col_status": "Trạng thái",
+    "mytickets.view_details": "Chi tiết",
+  },
+  en: {
+    "nav.home": "Home",
+    "nav.tickets": "Tickets",
+    "nav.collections": "Collections",
+    "nav.museums": "Museums",
+    "nav.about": "About",
+    "nav.login": "Login",
+    "nav.register": "Register",
+    "nav.dashboard": "Dashboard",
+    "nav.my_tickets": "My Tickets",
+    "nav.change_password": "Change Password",
+    "nav.logout": "Log out",
+
+    "hero.badge": "AUGMENTED REALITY · MUSEUM PLATFORM",
+    "hero.title_part1": "Experience History",
+    "hero.title_part2": "Beyond Reality",
+    "hero.desc": "Explore historical artifacts and cultural heritage through immersive Augmented Reality experiences that connect the past to the present.",
+    "hero.buy_tickets": "Buy Tickets",
+    "hero.view_collection": "View Collection",
+    "hero.ex1_name": "Egyptian Sarcophagus",
+    "hero.ex1_status": "AR Model Available",
+    "hero.ex2_name": "Ionic Capital",
+    "hero.ex2_status": "3D Scan Complete",
+    "hero.ex3_name": "Roman Mosaic",
+    "hero.ex3_status": "Reconstructed",
+
+    "features.tagline": "PLATFORM CAPABILITIES",
+    "features.title_part1": "Where History",
+    "features.title_part2": "Comes Alive",
+    "feat1.title": "Interactive AR Tours",
+    "feat1.desc": "Walk through reconstructed ancient sites with real-time AR overlays that reveal historical context layer by layer.",
+    "feat2.title": "3D Artifact Visualization",
+    "feat2.desc": "Examine priceless artifacts from every angle with photorealistic 3D models sourced from museum archives worldwide.",
+    "feat3.title": "Historical Reconstruction",
+    "feat3.desc": "Experience lost civilizations and ancient landmarks digitally restored to their original grandeur through AR technology.",
+    "feat.explore": "Explore",
+
+    "stats.tagline": "BY THE NUMBERS",
+    "stats.title": "A Living Archive of History",
+    "stat1.label": "Annual Visitors",
+    "stat2.label": "Archived Artifacts",
+    "stat3.label": "Partner Museums",
+    "stat4.label": "Visitor Satisfaction",
+
+    "cta.tagline": "BEGIN YOUR JOURNEY",
+    "cta.title_part1": "Ready to explore",
+    "cta.title_part2": "the ancient world?",
+    "cta.desc": "Join thousands of visitors experiencing history and cultural heritage through immersive augmented reality.",
+    "cta.signin": "Sign In",
+    "footer.copyright": "© 2026 MuseumAR · Augmented Reality Museum Platform",
+
+    "tickets.tagline": "Tickets",
+    "tickets.title": "Buy Museum Tickets",
+    "tickets.subtitle": "Select ticket type and quantity to purchase online easily and quickly.",
+    "tickets.my_tickets_btn": "My Tickets",
+    "tickets.buy": "Buy Ticket",
+    "tickets.login_to_buy": "Login to Buy",
+    "tickets.creating_order": "Creating order…",
+    "tickets.loading_types": "Loading ticket types…",
+    "tickets.no_types": "No ticket types available for sale at the moment.",
+    "tickets.modal_title": "Order Payment",
+    "tickets.order_code": "Order Code:",
+    "tickets.ticket_type": "Ticket Type:",
+    "tickets.quantity": "Quantity:",
+    "tickets.tickets_count": "tickets",
+    "tickets.total_payment": "Total Payment:",
+    "tickets.qr_header": "Payment QR Code VietQR / PayOS",
+    "tickets.qr_instruction": "Open your Mobile Banking app / e-wallet to scan QR code or click PayOS button below.",
+    "tickets.open_payos": "Open PayOS payment page",
+    "tickets.confirm_paid": "Confirm Payment",
+    "tickets.checking_payment": "Checking payment…",
+    "tickets.cancel_order": "Close / Cancel Order",
+    "tickets.cancelling_order": "Cancelling order…",
+
+    "tickets.error_load": "Failed to load ticket types.",
+    "tickets.error_init": "Could not create ticket order. Please try again.",
+    "tickets.payment_success": "Payment successful for order #{code}!",
+    "tickets.error_confirm": "Payment confirmation failed or payment not received. Please check again!",
+    "tickets.order_cancelled": "Order #{code} has been cancelled.",
+    "tickets.error_cancel": "Failed to cancel order. Please try again.",
+    "tickets.decrease": "Decrease quantity",
+    "tickets.increase": "Increase quantity",
+    "tickets.qr_alt": "VietQR / PayOS Payment QR Code",
+
+    "mytickets.back_to_shop": "Back to tickets",
+    "mytickets.title": "My Tickets",
+    "mytickets.subtitle": "List of tickets you have successfully purchased.",
+    "mytickets.success_alert": "✓ Ticket purchased successfully! Your order and tickets have been recorded.",
+    "mytickets.loading": "Loading tickets…",
+    "mytickets.no_tickets": "You have no tickets yet.",
+    "mytickets.buy_now": "Buy ticket now",
+    "mytickets.col_code": "Ticket Code",
+    "mytickets.col_type": "Ticket Type",
+    "mytickets.col_date": "Purchase Date",
+    "mytickets.col_valid": "Valid Until",
+    "mytickets.col_status": "Status",
+    "mytickets.view_details": "Details",
+  },
+};
+
+const LanguageContext = createContext<LanguageContextType>({
+  language: "vi",
+  setLanguage: () => {},
+  t: (key) => key,
+});
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [language, setLanguageState] = useState<Language>("vi");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("app_lang") as Language;
+    if (saved === "vi" || saved === "en") {
+      setLanguageState(saved);
+    }
+  }, []);
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem("app_lang", lang);
+    window.dispatchEvent(new Event("languageChange"));
+  };
+
+  const t = (key: string, params?: Record<string, string | number>): string => {
+    let str = UI_DICTIONARY[language]?.[key] ?? UI_DICTIONARY["vi"]?.[key] ?? key;
+    if (params) {
+      Object.entries(params).forEach(([pKey, pVal]) => {
+        str = str.replace(new RegExp(`\\{${pKey}\\}`, "g"), String(pVal));
+      });
+    }
+    return str;
+  };
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+export function useLanguage() {
+  return useContext(LanguageContext);
+}

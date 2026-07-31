@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Loader2, Ticket } from "lucide-react";
 import { Navbar } from "@/components/shared/navbar";
 import { useAuth } from "@/context/auth-context";
+import { useLanguage } from "@/context/language-context";
 import { formatDateTimeVi } from "@/lib/format";
 import { listMyTickets } from "@/services/visitor/ticketing.service";
 import type { TicketDto } from "@/types/api";
@@ -25,6 +26,7 @@ export function MyTicketsPanel() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { t } = useLanguage();
   const [tickets, setTickets] = useState<TicketDto[]>([]);
   const [loading, setLoading] = useState(true);
   const purchased = searchParams.get("purchased") === "1";
@@ -65,7 +67,7 @@ export function MyTicketsPanel() {
             style={{ color: C.muted }}
           >
             <ArrowLeft className="h-4 w-4" />
-            Quay lại mua vé
+            {t("mytickets.back_to_shop")}
           </Link>
           <p
             className="mb-2 text-xs font-medium uppercase tracking-[0.2em]"
@@ -77,10 +79,10 @@ export function MyTicketsPanel() {
             className="text-3xl font-semibold tracking-tight sm:text-4xl"
             style={{ color: C.text }}
           >
-            Vé của tôi
+            {t("mytickets.title")}
           </h1>
           <p className="mt-3 text-sm" style={{ color: C.muted }}>
-            Danh sách các vé tham quan bạn đã đặt thành công.
+            {t("mytickets.subtitle")}
           </p>
         </header>
 
@@ -93,7 +95,7 @@ export function MyTicketsPanel() {
               color: "#2F5D3A",
             }}
           >
-            ✓ Mua vé thành công! Đơn hàng và vé của bạn đã được ghi nhận trên hệ thống.
+            {t("mytickets.success_alert")}
           </div>
         )}
 
@@ -107,7 +109,7 @@ export function MyTicketsPanel() {
             }}
           >
             <Loader2 className="h-4 w-4 animate-spin" />
-            Đang tải vé…
+            {t("mytickets.loading")}
           </div>
         ) : tickets.length === 0 ? (
           <div
@@ -119,7 +121,7 @@ export function MyTicketsPanel() {
               style={{ color: C.primary }}
             />
             <p className="text-sm" style={{ color: C.muted }}>
-              Bạn chưa có vé nào.
+              {t("mytickets.no_tickets")}
             </p>
             <Link
               href="/tickets"
@@ -129,7 +131,7 @@ export function MyTicketsPanel() {
                 color: C.surface,
               }}
             >
-              Mua vé ngay
+              {t("mytickets.buy_now")}
             </Link>
           </div>
         ) : (
@@ -146,17 +148,22 @@ export function MyTicketsPanel() {
                       background: "rgba(245,230,200,0.45)",
                     }}
                   >
-                    {["Mã vé", "Loại vé", "Ngày mua", "Hiệu lực", "Trạng thái", ""].map(
-                      (label) => (
-                        <th
-                          key={label || "actions"}
-                          className="px-5 py-4 font-medium"
-                          style={{ color: C.mutedLight }}
-                        >
-                          {label}
-                        </th>
-                      ),
-                    )}
+                    {[
+                      t("mytickets.col_code"),
+                      t("mytickets.col_type"),
+                      t("mytickets.col_date"),
+                      t("mytickets.col_valid"),
+                      t("mytickets.col_status"),
+                      "",
+                    ].map((label, idx) => (
+                      <th
+                        key={label || idx}
+                        className="px-5 py-4 font-medium"
+                        style={{ color: C.mutedLight }}
+                      >
+                        {label}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -199,7 +206,7 @@ export function MyTicketsPanel() {
                           className="text-sm font-medium transition-opacity hover:opacity-80"
                           style={{ color: C.secondary }}
                         >
-                          Chi tiết
+                          {t("mytickets.view_details")}
                         </Link>
                       </td>
                     </tr>

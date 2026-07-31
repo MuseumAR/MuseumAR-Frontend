@@ -11,8 +11,9 @@ import type {
   TicketTypeDto,
 } from "@/types/api";
 
-export function getPublicTicketTypes(): Promise<TicketTypeDto[]> {
-  return apiGet<unknown[]>("/api/ticketing/types").then((data) =>
+export function getPublicTicketTypes(lang?: string): Promise<TicketTypeDto[]> {
+  const query = lang ? `?lang=${encodeURIComponent(lang)}` : "";
+  return apiGet<unknown[]>(`/api/ticketing/types${query}`).then((data) =>
     (Array.isArray(data) ? data : []).map(normalizeTicketTypeDto),
   );
 }
