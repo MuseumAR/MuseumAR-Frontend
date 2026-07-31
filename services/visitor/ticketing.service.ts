@@ -5,6 +5,7 @@ import type {
   TicketTypeDto,
 } from "@/types/api";
 import {
+  cancelPayment as cancelPaymentApi,
   createOrder as createOrderApi,
   getMyTickets as getMyTicketsApi,
   getPublicTicketTypes as getPublicTicketTypesApi,
@@ -48,9 +49,14 @@ export async function confirmTicketPayment(orderCode: string): Promise<void> {
   await mockConfirmPaymentApi(orderCode);
 }
 
+export async function cancelTicketOrder(orderCode: string): Promise<void> {
+  await cancelPaymentApi(orderCode);
+}
+
 export {
   createOrderApi as createOrder,
   getMyTicketsApi as getMyTickets,
   getPublicTicketTypesApi as getPublicTicketTypes,
   mockConfirmPaymentApi as mockConfirmPayment,
+  cancelPaymentApi as cancelTicketOrderApi,
 };

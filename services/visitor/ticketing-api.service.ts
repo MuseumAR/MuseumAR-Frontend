@@ -36,6 +36,10 @@ export function mockConfirmPayment(orderCode: string) {
   return apiGet<unknown>(`/api/ticketing/mock-confirm?${params.toString()}`);
 }
 
-export function checkPaymentStatus(orderCode: string): Promise<{ isPaid?: boolean; status?: string }> {
-  return apiGet<{ isPaid?: boolean; status?: string }>(`/api/payment/check-status/${encodeURIComponent(orderCode)}`);
+export function checkPaymentStatus(orderCode: string): Promise<{ isPaid?: boolean; isCancelled?: boolean; status?: string }> {
+  return apiGet<{ isPaid?: boolean; isCancelled?: boolean; status?: string }>(`/api/payment/check-status/${encodeURIComponent(orderCode)}`);
+}
+
+export function cancelPayment(orderCode: string): Promise<unknown> {
+  return apiPostAuth<unknown>(`/api/payment/cancel/${encodeURIComponent(orderCode)}`, {});
 }

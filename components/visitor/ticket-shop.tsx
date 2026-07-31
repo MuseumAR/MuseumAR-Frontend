@@ -19,6 +19,7 @@ import { useAuth } from "@/context/auth-context";
 import { formatVnd } from "@/lib/format";
 import { getDisplayError } from "@/lib/validation";
 import {
+  cancelTicketOrder,
   confirmTicketPayment,
   listPublicTicketTypes,
   placeTicketOrder,
@@ -61,6 +62,7 @@ export function TicketShop() {
   // Active payment modal state
   const [pendingOrder, setPendingOrder] = useState<PendingOrder | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
 
   // Auto-polling payment status every 3 seconds while payment modal is open
@@ -75,6 +77,10 @@ export function TicketShop() {
           setSuccess(`Thanh toán thành công đơn hàng #${pendingOrder.orderCode}!`);
           setPendingOrder(null);
           router.push("/tickets/mine?purchased=1");
+        } else if (res?.isCancelled) {
+          clearInterval(intervalId);
+          setError(`Đơn hàng #${pendingOrder.orderCode} đã bị hủy.`);
+          setPendingOrder(null);
         }
       } catch {
         // Silently ignore polling errors during auto-check
@@ -178,6 +184,25 @@ export function TicketShop() {
       );
     } finally {
       setConfirming(false);
+    }
+  }
+
+  async function handleCancelOrder() {
+    if (!pendingOrder) return;
+
+    setCancelling(true);
+    setModalError(null);
+
+    try {
+      await cancelTicketOrder(pendingOrder.orderCode);
+      setError(`Đã hủy đơn hàng #${pendingOrder.orderCode}.`);
+      setPendingOrder(null);
+    } catch (err) {
+      setModalError(
+        getDisplayError(err, "Hủy đơn hàng thất bại. Vui lòng thử lại."),
+      );
+    } finally {
+      setCancelling(false);
     }
   }
 
@@ -360,7 +385,7 @@ export function TicketShop() {
       {pendingOrder && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          onClick={() => setPendingOrder(null)}
+          onClick={handleCancelOrder}
         >
           <div
             className="relative w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto"
@@ -379,8 +404,9 @@ export function TicketShop() {
               </div>
               <button
                 type="button"
-                onClick={() => setPendingOrder(null)}
-                className="rounded-full p-2 hover:bg-[rgba(200,155,60,0.15)] transition-colors"
+                onClick={handleCancelOrder}
+                disabled={cancelling || confirming}
+                className="rounded-full p-2 hover:bg-[rgba(200,155,60,0.15)] transition-colors disabled:opacity-50"
                 style={{ color: C.muted }}
               >
                 <X className="h-4 w-4" />
@@ -476,7 +502,7 @@ export function TicketShop() {
               <button
                 type="button"
                 onClick={handleConfirmPayment}
-                disabled={confirming}
+                disabled={confirming || cancelling}
                 className="w-full inline-flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
                 style={{
                   background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
@@ -498,12 +524,19 @@ export function TicketShop() {
 
               <button
                 type="button"
-                onClick={() => setPendingOrder(null)}
-                disabled={confirming}
-                className="w-full rounded-xl py-2.5 text-xs font-medium border transition-colors hover:bg-stone-100"
+                onClick={handleCancelOrder}
+                disabled={confirming || cancelling}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-medium border transition-colors hover:bg-stone-100 disabled:opacity-50"
                 style={{ borderColor: C.border, color: C.muted }}
               >
-                Đóng / Hủy đơn
+                {cancelling ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Đang hủy đơn…
+                  </>
+                ) : (
+                  "Đóng / Hủy đơn"
+                )}
               </button>
             </div>
           </div>
