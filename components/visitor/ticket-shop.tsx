@@ -23,6 +23,7 @@ import {
   listPublicTicketTypes,
   placeTicketOrder,
 } from "@/services/visitor/ticketing.service";
+import { checkPaymentStatus } from "@/services/visitor/ticketing-api.service";
 import type { CreateOrderResponseDto, TicketTypeDto } from "@/types/api";
 
 const C = {
@@ -61,6 +62,27 @@ export function TicketShop() {
   const [pendingOrder, setPendingOrder] = useState<PendingOrder | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+
+  // Auto-polling payment status every 3 seconds while payment modal is open
+  useEffect(() => {
+    if (!pendingOrder) return;
+
+    const intervalId = setInterval(async () => {
+      try {
+        const res = await checkPaymentStatus(pendingOrder.orderCode);
+        if (res?.isPaid) {
+          clearInterval(intervalId);
+          setSuccess(`Thanh toán thành công đơn hàng #${pendingOrder.orderCode}!`);
+          setPendingOrder(null);
+          router.push("/tickets/mine?purchased=1");
+        }
+      } catch {
+        // Silently ignore polling errors during auto-check
+      }
+    }, 3000);
+
+    return () => clearInterval(intervalId);
+  }, [pendingOrder, router]);
 
   useEffect(() => {
     let cancelled = false;
@@ -394,17 +416,28 @@ export function TicketShop() {
 
               {/* QR Image */}
               <div className="p-3 bg-white rounded-2xl shadow-sm border border-stone-200">
-                <img
-                  src={
-                    pendingOrder.qrCode && pendingOrder.qrCode.startsWith("http")
+                {(() => {
+                  const qrCodeData =
+                    pendingOrder.qrCode ||
+                    pendingOrder.checkoutUrl ||
+                    pendingOrder.orderCode;
+                  const qrImageSrc =
+                    pendingOrder.qrCode &&
+                    (pendingOrder.qrCode.startsWith("http") ||
+                      pendingOrder.qrCode.startsWith("data:image"))
                       ? pendingOrder.qrCode
-                      : `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
-                          pendingOrder.checkoutUrl || pendingOrder.orderCode,
-                        )}`
-                  }
-                  alt="QR Code thanh toán"
-                  className="w-48 h-48 object-contain mx-auto"
-                />
+                      : `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
+                          qrCodeData,
+                        )}`;
+
+                  return (
+                    <img
+                      src={qrImageSrc}
+                      alt="Mã QR thanh toán VietQR / PayOS"
+                      className="w-48 h-48 object-contain mx-auto"
+                    />
+                  );
+                })()}
               </div>
 
               <p className="text-xs max-w-xs" style={{ color: C.muted }}>
