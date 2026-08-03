@@ -272,38 +272,96 @@ function UserMenu() {
   );
 }
 
-function LanguageSwitcher() {
+function LanguageBubble() {
   const { language, setLanguage } = useLanguage();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [open]);
+
+  const options = [
+    { code: "vi" as const, label: "VI", name: "Tiếng Việt" },
+    { code: "en" as const, label: "EN", name: "English" },
+  ];
 
   return (
-    <div
-      className="inline-flex items-center rounded-full p-0.5 text-xs font-semibold"
-      style={{
-        background: C.surface,
-        border: `1px solid ${C.border}`,
-      }}
-    >
+    <div ref={ref} className="fixed bottom-5 right-5 z-[60] flex flex-col items-end gap-2">
+      {open && (
+        <div
+          className="flex flex-col overflow-hidden rounded-2xl text-sm shadow-lg"
+          style={{
+            background: C.surface,
+            border: `1px solid ${C.border}`,
+            boxShadow: "0 8px 28px rgba(43,29,14,0.18)",
+            minWidth: 148,
+          }}
+        >
+          {options.map((opt) => {
+            const active = language === opt.code;
+            return (
+              <button
+                key={opt.code}
+                type="button"
+                onClick={() => {
+                  setLanguage(opt.code);
+                  setOpen(false);
+                }}
+                className="flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
+                style={{
+                  background: active ? "rgba(200,155,60,0.14)" : "transparent",
+                  color: active ? C.text : C.muted,
+                  fontWeight: active ? 600 : 500,
+                }}
+                onMouseEnter={(e) => {
+                  if (!active) {
+                    (e.currentTarget as HTMLElement).style.background = "rgba(200,155,60,0.08)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) {
+                    (e.currentTarget as HTMLElement).style.background = "transparent";
+                  }
+                }}
+              >
+                <span
+                  className="flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold"
+                  style={{
+                    background: active ? C.primary : "rgba(200,155,60,0.12)",
+                    color: active ? C.surface : C.muted,
+                  }}
+                >
+                  {opt.label}
+                </span>
+                {opt.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <button
         type="button"
-        onClick={() => setLanguage("vi")}
-        className="rounded-full px-2.5 py-1 transition-all"
+        aria-label="Change language"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold transition-transform hover:scale-105 active:scale-95"
         style={{
-          background: language === "vi" ? C.primary : "transparent",
-          color: language === "vi" ? C.surface : C.muted,
+          background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
+          color: C.surface,
+          boxShadow: "0 6px 20px rgba(166,124,45,0.40)",
+          border: `1px solid rgba(255,248,231,0.35)`,
         }}
       >
-        🇻🇳 VI
-      </button>
-      <button
-        type="button"
-        onClick={() => setLanguage("en")}
-        className="rounded-full px-2.5 py-1 transition-all"
-        style={{
-          background: language === "en" ? C.primary : "transparent",
-          color: language === "en" ? C.surface : C.muted,
-        }}
-      >
-        🇬🇧 EN
+        {language === "vi" ? "VI" : "EN"}
       </button>
     </div>
   );
@@ -323,72 +381,74 @@ export function Navbar() {
   ];
 
   return (
-    <nav
-      className="fixed inset-x-0 top-0 z-50 flex items-center justify-between px-4 py-4 sm:px-8"
-      style={{
-        background: C.bg,
-        borderBottom: `1px solid ${C.border}`,
-        backdropFilter: "blur(16px)",
-        boxShadow: "0 2px 24px rgba(43,29,14,0.10)",
-      }}
-    >
-      <Link
-        href="/"
-        className="flex items-center gap-3"
-        style={{ fontFamily: "var(--font-be-vietnam), system-ui, sans-serif" }}
+    <>
+      <nav
+        className="fixed inset-x-0 top-0 z-50 flex items-center justify-between px-4 py-4 sm:px-8"
+        style={{
+          background: C.bg,
+          borderBottom: `1px solid ${C.border}`,
+          backdropFilter: "blur(16px)",
+          boxShadow: "0 2px 24px rgba(43,29,14,0.10)",
+        }}
       >
-        <div
-          className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold"
-          style={{
-            background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
-            color: C.surface,
-            boxShadow: "0 2px 8px rgba(166,124,45,0.35)",
-            letterSpacing: "0.05em",
-          }}
+        <Link
+          href="/"
+          className="flex items-center gap-3"
+          style={{ fontFamily: "var(--font-be-vietnam), system-ui, sans-serif" }}
         >
-          M
+          <div
+            className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold"
+            style={{
+              background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
+              color: C.surface,
+              boxShadow: "0 2px 8px rgba(166,124,45,0.35)",
+              letterSpacing: "0.05em",
+            }}
+          >
+            M
+          </div>
+          <span className="text-base font-semibold tracking-wide" style={{ color: C.text }}>
+            Museum<span style={{ color: C.primary }}>AR</span>
+          </span>
+        </Link>
+
+        <div className="hidden items-center gap-0.5 md:flex">
+          {navLinks.map((link) => {
+            const active = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="rounded-full px-4 py-1.5 text-sm transition-all duration-200"
+                style={{
+                  color: active ? C.text : C.muted,
+                  background: active ? "rgba(200,155,60,0.12)" : "transparent",
+                  fontWeight: active ? 500 : 400,
+                }}
+                onMouseEnter={(e) => {
+                  if (!active) (e.currentTarget as HTMLElement).style.color = C.text;
+                }}
+                onMouseLeave={(e) => {
+                  if (!active) (e.currentTarget as HTMLElement).style.color = C.muted;
+                }}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </div>
-        <span className="text-base font-semibold tracking-wide" style={{ color: C.text }}>
-          Museum<span style={{ color: C.primary }}>AR</span>
-        </span>
-      </Link>
 
-      <div className="hidden items-center gap-0.5 md:flex">
-        {navLinks.map((link) => {
-          const active = pathname === link.href;
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="rounded-full px-4 py-1.5 text-sm transition-all duration-200"
-              style={{
-                color: active ? C.text : C.muted,
-                background: active ? "rgba(200,155,60,0.12)" : "transparent",
-                fontWeight: active ? 500 : 400,
-              }}
-              onMouseEnter={(e) => {
-                if (!active) (e.currentTarget as HTMLElement).style.color = C.text;
-              }}
-              onMouseLeave={(e) => {
-                if (!active) (e.currentTarget as HTMLElement).style.color = C.muted;
-              }}
-            >
-              {link.label}
-            </Link>
-          );
-        })}
-      </div>
-
-      <div className="flex items-center gap-3">
-        <LanguageSwitcher />
-        {isLoading ? (
-          <AuthSkeleton />
-        ) : isAuthenticated ? (
-          <UserMenu />
-        ) : (
-          <GuestAuthActions />
-        )}
-      </div>
-    </nav>
+        <div className="flex items-center gap-3">
+          {isLoading ? (
+            <AuthSkeleton />
+          ) : isAuthenticated ? (
+            <UserMenu />
+          ) : (
+            <GuestAuthActions />
+          )}
+        </div>
+      </nav>
+      <LanguageBubble />
+    </>
   );
 }
