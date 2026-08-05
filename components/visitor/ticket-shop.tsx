@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
+  Clock,
   ExternalLink,
   Loader2,
   Minus,
@@ -22,11 +23,12 @@ import { getDisplayError } from "@/lib/validation";
 import {
   cancelTicketOrder,
   confirmTicketPayment,
+  getPendingOrder,
   listPublicTicketTypes,
   placeTicketOrder,
 } from "@/services/visitor/ticketing.service";
 import { checkPaymentStatus } from "@/services/visitor/ticketing-api.service";
-import type { CreateOrderResponseDto, TicketTypeDto } from "@/types/api";
+import type { CreateOrderResponseDto, PendingOrderDto, TicketTypeDto } from "@/types/api";
 
 const C = {
   bg: "#F5E6C8",
@@ -42,13 +44,21 @@ const C = {
 const MAX_QTY = 10;
 
 type PendingOrder = {
-  ticketType: TicketTypeDto;
+  ticketType?: TicketTypeDto;
+  ticketTypeName?: string;
   quantity: number;
   orderCode: string;
   checkoutUrl?: string | null;
   qrCode?: string | null;
   amount: number;
 };
+
+function formatTimer(secs: number) {
+  if (secs <= 0) return "00:00";
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+}
 
 export function TicketShop() {
   const router = useRouter();
@@ -61,15 +71,71 @@ export function TicketShop() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  // Active payment modal state
+  // Active payment modal state (Shopee retention flow)
   const [pendingOrder, setPendingOrder] = useState<PendingOrder | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [remainingSeconds, setRemainingSeconds] = useState<number>(0);
   const [confirming, setConfirming] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
 
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load active pending order on mount
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    (async () => {
+      try {
+        const pending: PendingOrderDto | null = await getPendingOrder();
+        if (pending && pending.remainingSeconds > 0) {
+          setPendingOrder({
+            ticketTypeName: pending.ticketTypeName,
+            quantity: pending.quantity,
+            orderCode: pending.orderCode,
+            checkoutUrl: pending.checkoutUrl,
+            qrCode: pending.qrCode,
+            amount: pending.totalAmount,
+          });
+          setRemainingSeconds(pending.remainingSeconds);
+          setIsModalOpen(true);
+        }
+      } catch {
+        // Silently ignore if no pending order
+      }
+    })();
+  }, [isAuthenticated]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    if (pendingOrder && remainingSeconds > 0) {
+      timerRef.current = setInterval(() => {
+        setRemainingSeconds((prev) => {
+          if (prev <= 1) {
+            if (timerRef.current) clearInterval(timerRef.current);
+            if (pendingOrder?.orderCode) {
+              cancelTicketOrder(pendingOrder.orderCode).catch(() => {});
+            }
+            setPendingOrder(null);
+            setIsModalOpen(false);
+            setError("Đơn hàng của bạn đã quá thời gian chờ (15 phút) và bị tự động hủy.");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [pendingOrder, remainingSeconds]);
+
   // Auto-polling payment status every 3 seconds while payment modal is open
   useEffect(() => {
-    if (!pendingOrder) return;
+    if (!pendingOrder || !isModalOpen) return;
 
     const intervalId = setInterval(async () => {
       try {
@@ -78,11 +144,13 @@ export function TicketShop() {
           clearInterval(intervalId);
           setSuccess(`Thanh toán thành công đơn hàng #${pendingOrder.orderCode}!`);
           setPendingOrder(null);
+          setIsModalOpen(false);
           router.push("/tickets/mine?purchased=1");
         } else if (res?.isCancelled) {
           clearInterval(intervalId);
           setError(`Đơn hàng #${pendingOrder.orderCode} đã bị hủy.`);
           setPendingOrder(null);
+          setIsModalOpen(false);
         }
       } catch {
         // Silently ignore polling errors during auto-check
@@ -90,7 +158,7 @@ export function TicketShop() {
     }, 3000);
 
     return () => clearInterval(intervalId);
-  }, [pendingOrder, router, t]);
+  }, [pendingOrder, isModalOpen, router, t]);
 
   useEffect(() => {
     let cancelled = false;
@@ -139,7 +207,7 @@ export function TicketShop() {
     setBuyingId(ticketType.id);
 
     try {
-      // 1. Send request to backend API POST /api/ticketing/create-order
+      // Send request to backend API POST /api/ticketing/create-order
       const res: CreateOrderResponseDto = await placeTicketOrder({
         ticketTypeId: ticketType.id,
         quantity,
@@ -147,15 +215,18 @@ export function TicketShop() {
 
       const totalAmount = res.amount ?? ticketType.price * quantity;
 
-      // 2. Open payment modal with order details & QR link
+      // Open payment modal with order details & QR link
       setPendingOrder({
         ticketType,
+        ticketTypeName: ticketType.name,
         quantity,
         orderCode: res.orderCode,
         checkoutUrl: res.checkoutUrl,
         qrCode: res.qrCode,
         amount: totalAmount,
       });
+      setRemainingSeconds(900); // 15 minutes
+      setIsModalOpen(true);
     } catch (err) {
       setError(
         getDisplayError(err, t("tickets.error_init")),
@@ -176,6 +247,7 @@ export function TicketShop() {
       await confirmTicketPayment(pendingOrder.orderCode);
       setSuccess(t("tickets.payment_success", { code: pendingOrder.orderCode }));
       setPendingOrder(null);
+      setIsModalOpen(false);
       router.push("/tickets/mine?purchased=1");
     } catch (err) {
       setModalError(
@@ -189,6 +261,7 @@ export function TicketShop() {
     }
   }
 
+  // EXPLICIT CANCEL ORDER FUNCTION (Only when user explicitly clicks "Hủy đơn hàng này")
   async function handleCancelOrder() {
     if (!pendingOrder) return;
 
@@ -199,6 +272,7 @@ export function TicketShop() {
       await cancelTicketOrder(pendingOrder.orderCode);
       setError(t("tickets.order_cancelled", { code: pendingOrder.orderCode }));
       setPendingOrder(null);
+      setIsModalOpen(false);
     } catch (err) {
       setModalError(
         getDisplayError(err, t("tickets.error_cancel")),
@@ -244,6 +318,39 @@ export function TicketShop() {
             </Link>
           </div>
         </header>
+
+        {/* SHOPEE-STYLE PENDING ORDER BANNER */}
+        {pendingOrder && remainingSeconds > 0 && !isModalOpen && (
+          <div
+            className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl p-4 shadow-sm border"
+            style={{ background: "#FFFBEB", borderColor: "#FCD34D" }}
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-700 shrink-0">
+                <Clock className="h-5 w-5 animate-pulse" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-amber-900">
+                  Bạn có 1 đơn hàng chờ thanh toán (#{pendingOrder.orderCode})
+                </p>
+                <p className="text-xs text-amber-700 mt-0.5">
+                  Thời gian còn lại:{" "}
+                  <span className="font-mono font-bold text-amber-800">
+                    {formatTimer(remainingSeconds)}
+                  </span>
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-xs font-bold text-white transition-opacity hover:opacity-90 shadow-sm shrink-0"
+              style={{ background: "#D97706" }}
+            >
+              Tiếp tục thanh toán
+            </button>
+          </div>
+        )}
 
         {error && (
           <div
@@ -384,10 +491,10 @@ export function TicketShop() {
       </main>
 
       {/* ═══ PAYMENT MODAL ═══ */}
-      {pendingOrder && (
+      {pendingOrder && isModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          onClick={handleCancelOrder}
+          onClick={() => setIsModalOpen(false)}
         >
           <div
             className="relative w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto"
@@ -407,9 +514,10 @@ export function TicketShop() {
                   </span>
                 </p>
               </div>
+              {/* CLOSING MODAL ONLY HIDES MODAL (DOES NOT CANCEL ORDER) */}
               <button
                 type="button"
-                onClick={handleCancelOrder}
+                onClick={() => setIsModalOpen(false)}
                 disabled={cancelling || confirming}
                 className="rounded-full p-2 hover:bg-[rgba(200,155,60,0.15)] transition-colors disabled:opacity-50"
                 style={{ color: C.muted }}
@@ -418,6 +526,17 @@ export function TicketShop() {
               </button>
             </div>
 
+            {/* Countdown Warning Banner inside Modal */}
+            {remainingSeconds > 0 && (
+              <div className="flex items-center gap-2.5 rounded-xl p-3 text-xs bg-amber-50 border border-amber-200 text-amber-900">
+                <Clock className="h-4 w-4 text-amber-600 shrink-0" />
+                <span>
+                  Đơn hàng giữ trong{" "}
+                  <strong className="font-mono text-amber-800 font-bold">{formatTimer(remainingSeconds)}</strong>. Đóng cửa sổ này sẽ không hủy đơn hàng.
+                </span>
+              </div>
+            )}
+
             {/* Order summary */}
             <div
               className="rounded-2xl p-4 space-y-2 text-sm"
@@ -425,7 +544,7 @@ export function TicketShop() {
             >
               <div className="flex justify-between">
                 <span style={{ color: C.muted }}>{t("tickets.ticket_type")}</span>
-                <span className="font-semibold" style={{ color: C.text }}>{pendingOrder.ticketType.name}</span>
+                <span className="font-semibold" style={{ color: C.text }}>{pendingOrder.ticketType?.name || pendingOrder.ticketTypeName}</span>
               </div>
               <div className="flex justify-between">
                 <span style={{ color: C.muted }}>{t("tickets.quantity")}</span>
@@ -527,6 +646,7 @@ export function TicketShop() {
                 )}
               </button>
 
+              {/* Explicit cancel order button inside modal */}
               <button
                 type="button"
                 onClick={handleCancelOrder}
@@ -550,3 +670,4 @@ export function TicketShop() {
     </div>
   );
 }
+

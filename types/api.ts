@@ -379,6 +379,19 @@ export type CreateOrderResponseDto = {
   amount?: number | null;
 };
 
+export type PendingOrderDto = {
+  orderCode: string;
+  ticketTypeId: number;
+  ticketTypeName: string;
+  quantity: number;
+  totalAmount: number;
+  checkoutUrl?: string | null;
+  qrCode?: string | null;
+  createdAt: string;
+  expiresAt: string;
+  remainingSeconds: number;
+};
+
 export type TicketDto = {
   id: number;
   ticketCode: string;
