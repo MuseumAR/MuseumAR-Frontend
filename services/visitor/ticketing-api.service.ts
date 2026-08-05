@@ -7,6 +7,7 @@ import {
 import type {
   CreateOrderRequestDto,
   CreateOrderResponseDto,
+  PendingOrderDto,
   TicketDto,
   TicketTypeDto,
 } from "@/types/api";
@@ -44,3 +45,8 @@ export function checkPaymentStatus(orderCode: string): Promise<{ isPaid?: boolea
 export function cancelPayment(orderCode: string): Promise<unknown> {
   return apiPostAuth<unknown>(`/api/payment/cancel/${encodeURIComponent(orderCode)}`, {});
 }
+
+export function getPendingOrder(): Promise<PendingOrderDto | null> {
+  return apiGetAuth<PendingOrderDto | null>("/api/ticketing/pending-order");
+}
+

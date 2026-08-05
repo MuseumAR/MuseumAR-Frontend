@@ -8,6 +8,7 @@ import {
   cancelPayment as cancelPaymentApi,
   createOrder as createOrderApi,
   getMyTickets as getMyTicketsApi,
+  getPendingOrder,
   getPublicTicketTypes as getPublicTicketTypesApi,
   mockConfirmPayment as mockConfirmPaymentApi,
 } from "./ticketing-api.service";
@@ -59,4 +60,6 @@ export {
   getPublicTicketTypesApi as getPublicTicketTypes,
   mockConfirmPaymentApi as mockConfirmPayment,
   cancelPaymentApi as cancelTicketOrderApi,
+  getPendingOrder,
 };
+
