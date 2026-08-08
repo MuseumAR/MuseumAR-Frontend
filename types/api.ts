@@ -246,9 +246,13 @@ export type OfflinePackageDto = {
   museumId: number;
   versionId: number;
   packageUrl?: string | null;
+  packageSizeBytes?: number | null;
   checksum?: string | null;
   status?: string | null;
+  exhibitCount?: number | null;
   arassetCount?: number | null;
+  imageCount?: number | null;
+  audioCount?: number | null;
   createdAt: string;
 };
 

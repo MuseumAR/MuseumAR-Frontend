@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { ARTIFACT_LABELS } from "@/lib/field-labels";
 import { getDisplayError } from "@/lib/validation";
 import type { ActiveInactive, Artifact } from "@/types";
+import type { ExhibitArassetDto } from "@/types/api";
 import { deleteExhibit } from "@/services/content-manager/exhibit.service";
+import { getArAssets } from "@/services/content-manager/content-api.service";
 
 interface Props {
   artifact: Artifact;
@@ -19,9 +21,18 @@ export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" 
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [arAssets, setArAssets] = useState<ExhibitArassetDto[]>([]);
 
   const exhibitId =
     artifact.exhibitId ?? Number(artifact.id.replace(/^EX-/i, ""));
+
+  useEffect(() => {
+    if (exhibitId && !Number.isNaN(exhibitId) && exhibitId > 0) {
+      getArAssets(exhibitId)
+        .then((assets: ExhibitArassetDto[]) => setArAssets(assets || []))
+        .catch(() => setArAssets([]));
+    }
+  }, [exhibitId]);
 
   async function handleDelete() {
     if (!exhibitId || Number.isNaN(exhibitId)) {
@@ -58,34 +69,27 @@ export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" 
         style={{ background: T.surface, border: `1px solid ${T.border}` }}
       >
         <div className="flex gap-8">
-          <div
-            className="h-64 w-56 shrink-0 overflow-hidden rounded-2xl"
-            style={{ border: `1px solid ${T.border}`, background: "rgba(200,155,69,0.08)" }}
-          >
-            {artifact.image ? (
-              <img src={artifact.image} alt={artifact.name} className="h-full w-full object-cover" />
-            ) : (
-              <div
-                className="flex h-full w-full items-center justify-center"
-                style={{ color: T.mutedLight }}
-              >
-                No image
-              </div>
-            )}
-          </div>
+          {artifact.image && (
+            <img
+              src={artifact.image}
+              alt={artifact.name}
+              className="h-48 w-48 rounded-2xl object-cover shrink-0"
+              style={{ border: `1px solid ${T.border}` }}
+            />
+          )}
 
-          <div className="flex flex-1 flex-col gap-3">
-            <div className="flex items-start justify-between">
-              <h2
-                className="text-xl font-semibold"
-                style={{ fontFamily: cinzel, color: T.primaryDark }}
-              >
-                {artifact.name}
-              </h2>
+          <div className="flex-1 space-y-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <h2 className="text-2xl font-bold" style={{ fontFamily: cinzel, color: T.primaryDark }}>
+                  {artifact.name}
+                </h2>
+                <p className="text-xs font-mono mt-1" style={{ color: T.mutedLight }}>
+                  Code: {artifact.id} {exhibitId ? `(DB ID: #${exhibitId})` : ""}
+                </p>
+              </div>
               <StatusBadge status={artifact.status} />
             </div>
-
-            <p className="text-sm" style={{ color: T.muted }}>ID: {artifact.id}</p>
 
             <dl className="space-y-2 text-sm">
               <InfoRow label={ARTIFACT_LABELS.category!} value={artifact.category} />
@@ -110,33 +114,62 @@ export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" 
               </div>
             )}
 
-            {(artifact.arOverlayUrl || artifact.arMarkerUrl) && (
+            {(arAssets.length > 0 || artifact.arOverlayUrl || artifact.arMarkerUrl) && (
               <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(79,125,74,0.04)", border: `1px solid ${T.border}` }}>
                 <p className="mb-3 text-sm font-semibold flex items-center gap-2" style={{ color: T.success }}>
-                  <span>🕶️</span> AR Assets Details
+                  <span>🕶️</span> AR Assets Details ({arAssets.length > 0 ? arAssets.length : (artifact.arOverlayUrl ? 1 : 0)})
                 </p>
                 <div className="flex flex-wrap gap-4 text-xs">
-                  {artifact.arOverlayUrl && (
-                    <div className="flex flex-col gap-1.5 rounded-xl p-3 border" style={{ background: T.bg, borderColor: T.border }}>
-                      <span className="font-semibold" style={{ color: T.muted }}>Overlay Model/Image</span>
-                      {artifact.arOverlayUrl.match(/\.(png|jpg|jpeg|webp)$/i) ? (
-                        <a href={artifact.arOverlayUrl} target="_blank" rel="noreferrer" className="block h-20 w-20 overflow-hidden rounded-lg border">
-                          <img src={artifact.arOverlayUrl} alt="AR Overlay Preview" className="h-full w-full object-cover" />
-                        </a>
-                      ) : (
-                        <a href={artifact.arOverlayUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-emerald-700 hover:underline">
-                          📎 Download 3D Model (.glb)
-                        </a>
+                  {arAssets.length > 0 ? (
+                    arAssets.map((asset) => {
+                      const url = asset.assetUrl || "";
+                      const typeName = asset.assetType || "Asset";
+                      return (
+                        <div key={asset.id} className="flex flex-col gap-1.5 rounded-xl p-3 border min-w-[140px]" style={{ background: T.bg, borderColor: T.border }}>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-semibold text-emerald-800 uppercase text-[10px] bg-emerald-100/60 px-2 py-0.5 rounded">{typeName}</span>
+                            <span className="text-[10px]" style={{ color: T.mutedLight }}>#{asset.id}</span>
+                          </div>
+                          {url.match(/\.(png|jpg|jpeg|webp)$/i) ? (
+                            <a href={url} target="_blank" rel="noreferrer" className="block h-20 w-20 overflow-hidden rounded-lg border my-0.5">
+                              <img src={url} alt={typeName} className="h-full w-full object-cover" />
+                            </a>
+                          ) : (
+                            <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-emerald-700 hover:underline my-1.5">
+                              📎 Download File ({typeName})
+                            </a>
+                          )}
+                          {asset.description && (
+                            <p className="text-[10px] max-w-[160px] truncate" style={{ color: T.muted }}>{asset.description}</p>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <>
+                      {artifact.arOverlayUrl && (
+                        <div className="flex flex-col gap-1.5 rounded-xl p-3 border" style={{ background: T.bg, borderColor: T.border }}>
+                          <span className="font-semibold" style={{ color: T.muted }}>Overlay Model/Image</span>
+                          {artifact.arOverlayUrl.match(/\.(png|jpg|jpeg|webp)$/i) ? (
+                            <a href={artifact.arOverlayUrl} target="_blank" rel="noreferrer" className="block h-20 w-20 overflow-hidden rounded-lg border">
+                              <img src={artifact.arOverlayUrl} alt="AR Overlay Preview" className="h-full w-full object-cover" />
+                            </a>
+                          ) : (
+                            <a href={artifact.arOverlayUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-emerald-700 hover:underline">
+                              📎 Download 3D Model (.glb)
+                            </a>
+                          )}
+                        </div>
                       )}
-                    </div>
-                  )}
-                  {artifact.arMarkerUrl && (
-                    <div className="flex flex-col gap-1.5 rounded-xl p-3 border" style={{ background: T.bg, borderColor: T.border }}>
-                      <span className="font-semibold" style={{ color: T.muted }}>Marker Target Image</span>
-                      <a href={artifact.arMarkerUrl} target="_blank" rel="noreferrer" className="block h-20 w-20 overflow-hidden rounded-lg border">
-                        <img src={artifact.arMarkerUrl} alt="AR Marker Target" className="h-full w-full object-cover" />
-                      </a>
-                    </div>
+                      {artifact.arMarkerUrl && (
+                        <div className="flex flex-col gap-1.5 rounded-xl p-3 border" style={{ background: T.bg, borderColor: T.border }}>
+                          <span className="font-semibold" style={{ color: T.muted }}>Marker Target Image</span>
+                          <a href={artifact.arMarkerUrl} target="_blank" rel="noreferrer" className="block h-20 w-20 overflow-hidden rounded-lg border">
+                            <img src={artifact.arMarkerUrl} alt="AR Marker Target" className="h-full w-full object-cover" />
+                          </a>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

@@ -41,6 +41,7 @@ import {
   updateRouteEntry,
 } from "@/services/content-manager/maps-routes.service";
 import { createRoom, deleteRoom } from "@/services/content-manager/room.service";
+import { updateMuseumMap, deleteMuseumMap } from "@/services/content-manager/content-api.service";
 import { NavigationGraphEditor } from "@/components/content-manager/navigation-graph-editor";
 import type {
   AgeGroupDto,
@@ -953,6 +954,67 @@ export function MapsRoutesPanel({
   const [routeError, setRouteError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<"map" | "route" | "room" | null>(null);
 
+  // Map edit state
+  const [editingMap, setEditingMap] = useState<MuseumMapDto | null>(null);
+  const [editMapName, setEditMapName] = useState("");
+  const [editMapFloor, setEditMapFloor] = useState("1");
+  const [editMapFile, setEditMapFile] = useState<File | null>(null);
+  const [editMapPreview, setEditMapPreview] = useState<string | null>(null);
+  const editMapFileRef = useRef<HTMLInputElement>(null);
+  const [deletingMapId, setDeletingMapId] = useState<number | null>(null);
+
+  function openEditMapModal(map: MuseumMapDto) {
+    setEditingMap(map);
+    setEditMapName(getMapDisplayName(map));
+    setEditMapFloor(map.floorNumber != null ? String(map.floorNumber) : "1");
+    setEditMapFile(null);
+    setEditMapPreview(map.mapImageUrl || null);
+    setMapError(null);
+  }
+
+  async function handleUpdateMap(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editingMap) return;
+    if (!editMapName.trim()) {
+      setMapError("Map name is required.");
+      return;
+    }
+    setSubmitting("map");
+    setMapError(null);
+    try {
+      const formData = new FormData();
+      formData.append("MapType", editMapName.trim());
+      formData.append("FloorNumber", editMapFloor);
+      if (editMapFile) {
+        formData.append("MapImage", editMapFile);
+      }
+      await updateMuseumMap(editingMap.id, formData);
+      setEditingMap(null);
+      setEditMapFile(null);
+      setEditMapPreview(null);
+      router.refresh();
+    } catch (err) {
+      setMapError(getDisplayError(err, "Unable to update map."));
+    } finally {
+      setSubmitting(null);
+    }
+  }
+
+  async function handleDeleteMap(id: number) {
+    if (!confirm("Xác nhận xóa sơ đồ này?")) return;
+    setDeletingMapId(id);
+    setMapError(null);
+    try {
+      await deleteMuseumMap(id);
+      if (selectedMap?.id === id) setSelectedMap(null);
+      router.refresh();
+    } catch (err) {
+      setMapError(getDisplayError(err, "Unable to delete map."));
+    } finally {
+      setDeletingMapId(null);
+    }
+  }
+
   function toggleRouteExhibit(id: number) {
     setSelectedExhibitIds((prev) =>
       prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
@@ -1324,6 +1386,26 @@ export function MapsRoutesPanel({
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2 shrink-0">
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openEditMapModal(item)}
+                          className="rounded-lg p-1.5 text-xs font-medium hover:bg-[rgba(200,155,69,0.1)] transition-colors"
+                          style={{ color: T.primaryDark }}
+                          title="Sửa sơ đồ"
+                        >
+                          <Edit3 className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMap(item.id)}
+                          disabled={deletingMapId === item.id}
+                          className="rounded-lg p-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-50"
+                          title="Xóa sơ đồ"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                       {item.mapImageUrl ? (
                         <button
                           type="button"
@@ -1335,18 +1417,6 @@ export function MapsRoutesPanel({
                           Detail
                         </button>
                       ) : null}
-                      {item.mapImageUrl ? (
-                        <a
-                          href={item.mapImageUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs font-medium"
-                          style={{ color: T.mutedLight }}
-                        >
-                          Open
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      ) : null}
                     </div>
                   </div>
                 </article>
@@ -1354,6 +1424,128 @@ export function MapsRoutesPanel({
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* ═══ EDIT MAP MODAL ═══ */}
+      {editingMap && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => setEditingMap(null)}
+        >
+          <form
+            onSubmit={handleUpdateMap}
+            className="relative w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-4"
+            style={{ background: T.surface, border: `1px solid ${T.border}` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: T.border }}>
+              <h3 className="text-lg font-bold" style={{ fontFamily: cinzel, color: T.primaryDark }}>
+                Chỉnh sửa Sơ đồ #{editingMap.id}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingMap(null)}
+                className="rounded-full p-1.5 hover:bg-neutral-100 text-neutral-400"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium" style={{ color: T.muted }}>
+                Tên / Loại sơ đồ *
+              </label>
+              <input
+                type="text"
+                required
+                value={editMapName}
+                onChange={(e) => setEditMapName(e.target.value)}
+                placeholder="VD: Sơ đồ Tầng 1"
+                className="w-full rounded-xl px-4 py-2 text-sm outline-none"
+                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium" style={{ color: T.muted }}>
+                Số tầng (Floor Number) *
+              </label>
+              <input
+                type="number"
+                required
+                value={editMapFloor}
+                onChange={(e) => setEditMapFloor(e.target.value)}
+                className="w-full rounded-xl px-4 py-2 text-sm outline-none"
+                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium" style={{ color: T.muted }}>
+                Thay ảnh Sơ đồ mới (Không bắt buộc)
+              </label>
+              <div className="flex items-center gap-3">
+                {editMapPreview && (
+                  <img
+                    src={editMapPreview}
+                    alt="Preview"
+                    className="h-16 w-16 object-cover rounded-xl border"
+                    style={{ borderColor: T.border }}
+                  />
+                )}
+                <button
+                  type="button"
+                  onClick={() => editMapFileRef.current?.click()}
+                  className="rounded-xl px-4 py-2 text-xs font-semibold border flex items-center gap-1.5"
+                  style={{ borderColor: T.border, background: T.bg, color: T.text }}
+                >
+                  <Upload className="h-3.5 w-3.5" /> Chọn ảnh mới…
+                </button>
+                <input
+                  ref={editMapFileRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) {
+                      setEditMapFile(f);
+                      setEditMapPreview(URL.createObjectURL(f));
+                    }
+                  }}
+                />
+              </div>
+              {editMapFile && (
+                <p className="text-[11px] text-emerald-700 font-medium">Đã chọn: {editMapFile.name}</p>
+              )}
+            </div>
+
+            {mapError && (
+              <p className="text-xs font-medium" style={{ color: "#8B2E2E" }}>
+                {mapError}
+              </p>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2 border-t" style={{ borderColor: T.border }}>
+              <button
+                type="button"
+                onClick={() => setEditingMap(null)}
+                className="rounded-xl px-4 py-2 text-xs font-medium"
+                style={{ border: `1px solid ${T.border}`, color: T.muted }}
+              >
+                Hủy
+              </button>
+              <button
+                type="submit"
+                disabled={submitting === "map"}
+                className="rounded-xl px-5 py-2 text-xs font-medium text-white disabled:opacity-50"
+                style={{ background: T.primary }}
+              >
+                {submitting === "map" ? "Đang lưu…" : "Lưu thay đổi"}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
