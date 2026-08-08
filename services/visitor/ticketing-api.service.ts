@@ -11,6 +11,7 @@ import type {
   TicketDetailDto,
   TicketDto,
   TicketTypeDto,
+  ValidateTicketResponseDto,
 } from "@/types/api";
 
 export function getPublicTicketTypes(lang?: string): Promise<TicketTypeDto[]> {
@@ -53,5 +54,13 @@ export function cancelPayment(orderCode: string): Promise<unknown> {
 
 export function getPendingOrder(): Promise<PendingOrderDto | null> {
   return apiGetAuth<PendingOrderDto | null>("/api/ticketing/pending-order");
+}
+
+export function validateTicket(ticketCode: string): Promise<ValidateTicketResponseDto> {
+  return apiGet<ValidateTicketResponseDto>(`/api/ticketing/validate/${encodeURIComponent(ticketCode)}`);
+}
+
+export function checkInTicket(ticketCode: string): Promise<ValidateTicketResponseDto> {
+  return apiPostAuth<ValidateTicketResponseDto>("/api/ticketing/check-in", { ticketCode });
 }
 

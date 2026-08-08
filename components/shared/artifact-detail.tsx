@@ -141,6 +141,40 @@ export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" 
                 </div>
               </div>
             )}
+
+            {/* QR Code Section */}
+            {artifact.qrCodeData && (
+              <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(200,155,69,0.06)", border: `1px solid ${T.border}` }}>
+                <p className="mb-3 text-sm font-semibold flex items-center gap-2" style={{ color: T.primaryDark }}>
+                  <span>📷</span> Mã QR Code Hiện vật (Dành cho Khách quét)
+                </p>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 text-xs">
+                  {artifact.qrCodeImageUrl && (
+                    <a href={artifact.qrCodeImageUrl} target="_blank" rel="noreferrer" className="block h-28 w-28 shrink-0 overflow-hidden rounded-xl border p-1" style={{ background: "#FFFFFF", borderColor: T.border }}>
+                      <img src={artifact.qrCodeImageUrl} alt="Artifact QR Code" className="h-full w-full object-contain" />
+                    </a>
+                  )}
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-mono font-semibold" style={{ color: T.text }}>
+                      Mã dữ liệu QR: <span className="bg-amber-100/60 px-2 py-0.5 rounded text-amber-900">{artifact.qrCodeData}</span>
+                    </p>
+                    <p className="text-xs" style={{ color: T.muted }}>
+                      Khách hàng sử dụng ứng dụng di động để quét mã này để nghe thuyết minh & xem AR 3D.
+                    </p>
+                    {artifact.qrCodeImageUrl && (
+                      <a
+                        href={artifact.qrCodeImageUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 font-semibold hover:underline text-amber-800"
+                      >
+                        ⬇ Mở / Tải ảnh QR Code (300x300)
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

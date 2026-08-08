@@ -439,6 +439,21 @@ export type TicketDetailDto = {
   qrCodeImageUrl?: string | null;
 };
 
+export type ValidateTicketResponseDto = {
+  ticketId: number;
+  ticketCode: string;
+  status: string;
+  isValid: boolean;
+  message: string;
+  ticketTypeName: string;
+  price: number;
+  visitorName: string;
+  visitorEmail?: string | null;
+  purchaseDate: string;
+  validDate?: string | null;
+  usedAt?: string | null;
+};
+
 /**
  * Proposed enrichment for GET /api/ticketing/types (list or GET /types/{id})
  */
@@ -716,5 +731,30 @@ export type NavigationRouteResponseDto = {
   totalDistance: number;
   pathWaypoints: WaypointDto[];
   instructions: NavigationInstructionDto[];
+};
+
+export type ArAssetScanDto = {
+  assetId: number;
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
+};
+
+export type ExhibitScanResultDto = {
+  exhibitId: number;
+  exhibitCode: string;
+  qrcodeData: string;
+  title: string;
+  description: string;
+  audioUrl?: string | null;
+  languageCode: string;
+  categoryName?: string | null;
+  roomName?: string | null;
+  thumbnailUrl?: string | null;
+  aroverlayUrl?: string | null;
+  armarkerUrl?: string | null;
+  images: string[];
+  arAssets: ArAssetScanDto[];
 };
 

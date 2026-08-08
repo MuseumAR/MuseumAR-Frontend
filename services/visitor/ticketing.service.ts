@@ -7,12 +7,14 @@ import type {
 } from "@/types/api";
 import {
   cancelPayment as cancelPaymentApi,
+  checkInTicket as checkInTicketApi,
   createOrder as createOrderApi,
   getMyTickets as getMyTicketsApi,
   getPendingOrder,
   getPublicTicketTypes as getPublicTicketTypesApi,
   getTicketDetail as getTicketDetailApi,
   mockConfirmPayment as mockConfirmPaymentApi,
+  validateTicket as validateTicketApi,
 } from "./ticketing-api.service";
 import {
   DEMO_TICKET_TYPES,
@@ -74,5 +76,7 @@ export {
   mockConfirmPaymentApi as mockConfirmPayment,
   cancelPaymentApi as cancelTicketOrderApi,
   getPendingOrder,
+  validateTicketApi as validateTicket,
+  checkInTicketApi as checkInTicket,
 };
 
