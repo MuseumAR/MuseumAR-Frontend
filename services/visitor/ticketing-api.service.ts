@@ -8,6 +8,7 @@ import type {
   CreateOrderRequestDto,
   CreateOrderResponseDto,
   PendingOrderDto,
+  TicketDetailDto,
   TicketDto,
   TicketTypeDto,
 } from "@/types/api";
@@ -31,6 +32,10 @@ export function getMyTickets(): Promise<TicketDto[]> {
   return apiGetAuth<unknown[]>("/api/ticketing/my-tickets").then((data) =>
     (Array.isArray(data) ? data : []).map(normalizeTicketDto),
   );
+}
+
+export function getTicketDetail(id: number): Promise<TicketDetailDto> {
+  return apiGetAuth<TicketDetailDto>(`/api/ticketing/my-tickets/${id}`);
 }
 
 export function mockConfirmPayment(orderCode: string) {

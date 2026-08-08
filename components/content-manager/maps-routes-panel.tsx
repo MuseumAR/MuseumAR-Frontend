@@ -41,6 +41,7 @@ import {
   updateRouteEntry,
 } from "@/services/content-manager/maps-routes.service";
 import { createRoom, deleteRoom } from "@/services/content-manager/room.service";
+import { NavigationGraphEditor } from "@/components/content-manager/navigation-graph-editor";
 import type {
   AgeGroupDto,
   ExhibitDto,
@@ -51,7 +52,7 @@ import type {
   TourRouteStopDto,
 } from "@/types/api";
 
-type Tab = "maps" | "rooms" | "routes";
+type Tab = "maps" | "rooms" | "routes" | "graph";
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    MAP HELPERS (unchanged)
@@ -1144,7 +1145,13 @@ export function MapsRoutesPanel({
         {tabBtn("maps", "Museum maps", maps.length, MapPin)}
         {tabBtn("rooms", "Phòng trưng bày", rooms.length, Compass)}
         {tabBtn("routes", "Tour routes", routes.length, Route)}
+        {tabBtn("graph", "Navigation Graph Editor", 1, Navigation)}
       </div>
+
+      {/* ═══ GRAPH TAB ═══ */}
+      {tab === "graph" && (
+        <NavigationGraphEditor museumId={museumId} maps={maps} rooms={rooms} />
+      )}
 
       {/* ═══ MAPS TAB ═══ */}
       {tab === "maps" && (
