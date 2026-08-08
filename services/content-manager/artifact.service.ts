@@ -38,6 +38,8 @@ function formatLocation(exhibit: ExhibitDto): string {
 
 function mapExhibitToArtifact(exhibit: ExhibitDto): Artifact {
   const translation = getPrimaryTranslation(exhibit);
+  const defaultQrData = exhibit.qrCodeData ?? `MUSEUM_EX_${exhibit.id}_${exhibit.exhibitCode || `EX${exhibit.id}`}`;
+  const defaultQrImage = exhibit.qrCodeImageUrl ?? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(defaultQrData)}`;
 
   return {
     id: exhibit.exhibitCode ?? `EX-${exhibit.id}`,
@@ -51,6 +53,8 @@ function mapExhibitToArtifact(exhibit: ExhibitDto): Artifact {
     era: exhibit.exhibitMetadata?.era ?? "—",
     location: formatLocation(exhibit),
     qrLinked: exhibit.qrCodeData ? "Active" : "Inactive",
+    qrCodeData: defaultQrData,
+    qrCodeImageUrl: defaultQrImage,
     arModelStatus: exhibit.arOverlayUrl ? "Active" : "Inactive",
     audio: translation?.audioUrl ? "Active" : "Inactive",
     audioUrl: translation?.audioUrl ?? null,
@@ -60,21 +64,37 @@ function mapExhibitToArtifact(exhibit: ExhibitDto): Artifact {
 }
 
 export async function getArtifactById(id: string): Promise<Artifact | null> {
-  const numericId = Number(id.replace(/^EX-/i, ""));
-  if (!Number.isNaN(numericId)) {
+  const cleanIdStr = id.replace(/^EX-/i, "").trim();
+  const numericId = Number(cleanIdStr);
+
+  if (!Number.isNaN(numericId) && numericId > 0) {
     try {
       const exhibit = await fetchExhibitById(numericId);
-      return mapExhibitToArtifact(exhibit);
+      if (exhibit && (String(exhibit.id) === cleanIdStr || exhibit.exhibitCode === id)) {
+        return mapExhibitToArtifact(exhibit);
+      }
     } catch {
-      return null;
+      // Fallthrough to searching all exhibits list if ID fetch fails
     }
   }
 
   return safeFetch(async () => {
     const exhibits = await getExhibits();
-    const exhibit = exhibits.find(
-      (item) => item.exhibitCode === id || String(item.id) === id,
-    );
+    const targetIdLower = id.toLowerCase();
+    const targetCleanLower = cleanIdStr.toLowerCase();
+
+    const exhibit = exhibits.find((item) => {
+      const itemCodeLower = (item.exhibitCode || "").toLowerCase();
+      const defaultCodeLower = `ex-${item.id}`.toLowerCase();
+
+      return (
+        itemCodeLower === targetIdLower ||
+        defaultCodeLower === targetIdLower ||
+        itemCodeLower === `ex-${targetCleanLower}` ||
+        String(item.id) === targetCleanLower ||
+        String(item.id) === targetIdLower
+      );
+    });
     return exhibit ? mapExhibitToArtifact(exhibit) : null;
   }, null);
 }

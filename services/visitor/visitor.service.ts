@@ -45,3 +45,9 @@ export function getVisitedExhibits() {
 export function trackVisitedExhibit(payload: CreateVisitedExhibitDto) {
   return apiPostAuth<VisitedExhibitDto>("/api/visitor/visited-exhibits", payload);
 }
+
+export function scanExhibitQr(qrData: string, lang = "vi", visitorId?: number): Promise<import("@/types/api").ExhibitScanResultDto> {
+  const params = new URLSearchParams({ qrData, lang });
+  if (visitorId) params.append("visitorId", visitorId.toString());
+  return apiGet<import("@/types/api").ExhibitScanResultDto>(`/api/content/exhibits/scan-qr?${params.toString()}`);
+}

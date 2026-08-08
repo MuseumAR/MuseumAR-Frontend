@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, QrCode } from "lucide-react";
+import { CheckCircle2, ArrowLeft, Loader2, QrCode, ShieldCheck } from "lucide-react";
 import { Navbar } from "@/components/shared/navbar";
 import { useAuth } from "@/context/auth-context";
 import { formatDateTimeVi, formatVnd } from "@/lib/format";
-import { getTicketDetail } from "@/services/visitor/ticketing.service";
+import { checkInTicket, getTicketDetail } from "@/services/visitor/ticketing.service";
 import type { TicketDetailDto } from "@/types/api";
 
 const C = {
@@ -40,6 +40,9 @@ export function TicketDetailPanel() {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [detail, setDetail] = useState<TicketDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
+  const [checkInLoading, setCheckInLoading] = useState(false);
+  const [checkInSuccess, setCheckInSuccess] = useState(false);
+  const [checkInError, setCheckInError] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -71,6 +74,31 @@ export function TicketDetailPanel() {
       cancelled = true;
     };
   }, [authLoading, isAuthenticated, params.id, router]);
+
+  const handleSelfCheckIn = async () => {
+    if (!detail || !detail.ticketCode) return;
+
+    setCheckInLoading(true);
+    setCheckInError(null);
+    try {
+      const res = await checkInTicket(detail.ticketCode);
+      if (res && res.isValid) {
+        setDetail((prev) => (prev ? { ...prev, status: "Used" } : null));
+        setCheckInSuccess(true);
+      } else {
+        setCheckInError(res.message || "Check-in không thành công.");
+      }
+    } catch (err: unknown) {
+      console.error("Failed to self check-in:", err);
+      const errMsg = err instanceof Error ? err.message : "Check-in thất bại. Vui lòng thử lại.";
+      setCheckInError(errMsg);
+    } finally {
+      setCheckInLoading(false);
+    }
+  };
+
+  const isPaidOrActive = detail?.status === "Paid" || detail?.status === "Active";
+  const isUsed = detail?.status === "Used";
 
   return (
     <div className="min-h-screen" style={{ background: C.bg }}>
@@ -135,15 +163,115 @@ export function TicketDetailPanel() {
                 {detail.ticketCode}
               </p>
               <span
-                className="mt-3 inline-flex rounded-full px-2.5 py-1 text-xs font-medium"
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
+                style={{
+                  background: isUsed
+                    ? "rgba(200,140,40,0.15)"
+                    : isPaidOrActive
+                    ? "rgba(60,120,80,0.15)"
+                    : "rgba(180,60,60,0.15)",
+                  color: isUsed
+                    ? "#A67C2D"
+                    : isPaidOrActive
+                    ? "#2F5D3A"
+                    : "#8B2626",
+                }}
+              >
+                {isUsed ? (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Đã Check-in vào cổng (Used)
+                  </>
+                ) : isPaidOrActive ? (
+                  <>
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Đã thanh toán (Sẵn sàng vào cổng)
+                  </>
+                ) : (
+                  detail.status
+                )}
+              </span>
+            </header>
+
+            {/* Check-in Banner / Notifications */}
+            {checkInSuccess && (
+              <div
+                className="flex items-start gap-3 rounded-2xl p-4 text-sm font-medium"
                 style={{
                   background: "rgba(60,120,80,0.12)",
+                  border: "1px solid rgba(60,120,80,0.3)",
                   color: "#2F5D3A",
                 }}
               >
-                {detail.status}
-              </span>
-            </header>
+                <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
+                <div>
+                  <strong>Check-in thành công!</strong> Vé của bạn đã chuyển sang trạng thái <em>Đã sử dụng</em>. Vui lòng xuất trình màn hình này cho nhân viên bảo tàng để vào cổng.
+                </div>
+              </div>
+            )}
+
+            {checkInError && (
+              <div
+                className="flex items-start gap-3 rounded-2xl p-4 text-sm font-medium"
+                style={{
+                  background: "rgba(180,60,60,0.12)",
+                  border: "1px solid rgba(180,60,60,0.3)",
+                  color: "#8B2626",
+                }}
+              >
+                <div>{checkInError}</div>
+              </div>
+            )}
+
+            {/* Self Check-in Button */}
+            {isPaidOrActive && (
+              <div
+                className="rounded-2xl p-5 text-center"
+                style={{
+                  background: C.bg,
+                  border: `1px solid ${C.border}`,
+                }}
+              >
+                <p className="text-sm font-medium mb-3" style={{ color: C.text }}>
+                  📍 Bạn đã tới cửa bảo tàng? Hãy bấm nút bên dưới để tự Check-in vào cổng.
+                </p>
+                <button
+                  onClick={handleSelfCheckIn}
+                  disabled={checkInLoading}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-8 py-3.5 text-sm font-bold transition-transform active:scale-[0.99] disabled:opacity-50"
+                  style={{
+                    background: `linear-gradient(135deg, #3C7850 0%, #2F5D3A 100%)`,
+                    color: "#FFF8E7",
+                    boxShadow: "0 4px 14px rgba(60,120,80,0.3)",
+                  }}
+                >
+                  {checkInLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Đang xử lý Check-in...
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="h-4 w-4" />
+                      TỰ CHECK-IN VÀO CỔNG NGAY
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {isUsed && !checkInSuccess && (
+              <div
+                className="rounded-2xl p-4 text-center text-xs font-medium"
+                style={{
+                  background: "rgba(200,155,60,0.10)",
+                  border: `1px solid ${C.border}`,
+                  color: C.muted,
+                }}
+              >
+                ✓ Vé này đã được check-in vào cổng. Vui lòng đưa màn hình này cho nhân viên bảo tàng nếu cần xác nhận.
+              </div>
+            )}
 
             <section>
               <h2 className="mb-3 text-sm font-semibold" style={{ color: C.text }}>
@@ -246,7 +374,7 @@ export function TicketDetailPanel() {
               style={{ borderColor: C.border }}
             >
               <h2 className="mb-3 text-sm font-semibold" style={{ color: C.text }}>
-                Check-in QR
+                Mã QR Vé
               </h2>
               <div
                 className="flex flex-col items-start gap-3 rounded-2xl p-4 sm:flex-row sm:items-center"
@@ -266,13 +394,10 @@ export function TicketDetailPanel() {
                 </div>
                 <div>
                   <p className="text-sm font-medium" style={{ color: C.text }}>
-                    qrCodeData
+                    Mã Check-in QR
                   </p>
                   <p className="mt-1 font-mono text-xs break-all" style={{ color: C.muted }}>
                     {detail.qrCodeData || "—"}
-                  </p>
-                  <p className="mt-2 text-xs" style={{ color: C.mutedLight }}>
-                    BE nên trả thêm qrCodeImageUrl (URL ảnh QR) nếu có.
                   </p>
                 </div>
               </div>

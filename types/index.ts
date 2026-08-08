@@ -59,6 +59,8 @@ export type Artifact = {
   audioUrl?: string | null;
   arOverlayUrl?: string | null;
   arMarkerUrl?: string | null;
+  qrCodeData?: string | null;
+  qrCodeImageUrl?: string | null;
   image: string | null;
   description: string;
 };
