@@ -1,6 +1,7 @@
 import type {
   CreateOrderRequestDto,
   CreateOrderResponseDto,
+  TicketDetailDto,
   TicketDto,
   TicketTypeDto,
 } from "@/types/api";
@@ -10,10 +11,12 @@ import {
   getMyTickets as getMyTicketsApi,
   getPendingOrder,
   getPublicTicketTypes as getPublicTicketTypesApi,
+  getTicketDetail as getTicketDetailApi,
   mockConfirmPayment as mockConfirmPaymentApi,
 } from "./ticketing-api.service";
 import {
   DEMO_TICKET_TYPES,
+  getMockTicketDetail,
   mockPurchaseTickets,
   readMockTickets,
 } from "./ticket-mock.store";
@@ -36,6 +39,16 @@ export async function listMyTickets(): Promise<TicketDto[]> {
   } catch (err) {
     console.warn("Failed to fetch tickets from backend API:", err);
     return [];
+  }
+}
+
+/** Fetch user's single ticket detail from backend API (with mock fallback) */
+export async function getTicketDetail(id: number): Promise<TicketDetailDto | null> {
+  try {
+    return await getTicketDetailApi(id);
+  } catch (err) {
+    console.warn("Failed to fetch ticket detail from backend API, trying fallback:", err);
+    return getMockTicketDetail(id);
   }
 }
 

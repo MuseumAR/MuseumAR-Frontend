@@ -633,3 +633,88 @@ export type CreateTagDto = {
   tagName: string;
   sortOrder: number;
 };
+
+// ─── Navigation Graph ───────────────────────────────────────────────────────
+
+export type WaypointDto = {
+  id: string;
+  museumId: number;
+  floorNumber: number;
+  locationX: number;
+  locationY: number;
+  waypointType: "DOOR" | "HALLWAY" | "STAIR" | "ELEVATOR" | "LOBBY" | string;
+  roomId?: number | null;
+  code?: string | null;
+  name?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type CreateWaypointDto = {
+  id?: string;
+  mapId: number;
+  museumId?: number;
+  floorNumber: number;
+  locationX: number;
+  locationY: number;
+  waypointType: string;
+  roomId?: number | null;
+  code?: string | null;
+  name?: string | null;
+};
+
+export type UpdateWaypointDto = {
+  floorNumber: number;
+  locationX: number;
+  locationY: number;
+  waypointType: string;
+  roomId?: number | null;
+  code?: string | null;
+  name?: string | null;
+};
+
+export type WaypointEdgeDto = {
+  id: number;
+  museumId?: number;
+  fromWaypointId: string;
+  toWaypointId: string;
+  distance: number;
+  edgeType: "WALK" | "STAIR" | "ELEVATOR" | string;
+  isBidirectional: boolean;
+  createdAt?: string;
+};
+
+export type CreateWaypointEdgeDto = {
+  museumId?: number;
+  fromWaypointId: string;
+  toWaypointId: string;
+  distance: number;
+  edgeType: string;
+  isBidirectional: boolean;
+};
+
+export type NavigationGraphDto = {
+  museumId: number;
+  waypoints: WaypointDto[];
+  edges: WaypointEdgeDto[];
+};
+
+export type NavigationInstructionDto = {
+  stepIndex: number;
+  instruction: string;
+  action: string;
+  distance: number;
+  floorNumber: number;
+  waypointId: number;
+};
+
+export type NavigationRouteResponseDto = {
+  fromRoomId: number;
+  fromRoomName: string;
+  toRoomId: number;
+  toRoomName: string;
+  totalDistance: number;
+  pathWaypoints: WaypointDto[];
+  instructions: NavigationInstructionDto[];
+};
+
