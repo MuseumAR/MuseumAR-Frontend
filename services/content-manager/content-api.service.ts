@@ -4,6 +4,7 @@ import {
   apiPostAuth,
   apiPostFormAuth,
   apiPutAuth,
+  apiPutFormAuth,
 } from "@/services/api-client";
 import { normalizeExhibitDto, normalizeMuseumMapDto, normalizeTourRouteDto } from "@/lib/normalize-dto";
 import type {
@@ -169,6 +170,14 @@ export function uploadMuseumMap(
   return apiPostFormAuth<MuseumMapDto>("/api/content/maps", formData);
 }
 
+export function updateMuseumMap(id: number, formData: FormData) {
+  return apiPutFormAuth<MuseumMapDto>(`/api/content/maps/${id}`, formData);
+}
+
+export function deleteMuseumMap(id: number) {
+  return apiDeleteAuth<null>(`/api/content/maps/${id}`);
+}
+
 export function getTourRoutes() {
   return apiGet<unknown[]>("/api/content/routes").then((data) =>
     (Array.isArray(data) ? data : []).map(normalizeTourRouteDto),
@@ -283,4 +292,18 @@ export function assignExhibitTags(exhibitId: number, tagIds: number[]) {
 
 export function removeExhibitTag(exhibitId: number, tagId: number) {
   return apiDeleteAuth<null>(`/api/content/exhibits/${exhibitId}/tags/${tagId}`);
+}
+
+export function getExhibitsByExhibition(exhibitionId: number) {
+  return apiGet<unknown[]>(`/api/content/exhibitions/${exhibitionId}/exhibits`).then((data) =>
+    (Array.isArray(data) ? data : []).map(normalizeExhibitDto),
+  );
+}
+
+export function assignExhibitsToExhibition(exhibitionId: number, exhibitIds: number[]) {
+  return apiPostAuth<unknown>(`/api/content/exhibitions/${exhibitionId}/exhibits`, exhibitIds);
+}
+
+export function removeExhibitFromExhibition(exhibitionId: number, exhibitId: number) {
+  return apiDeleteAuth<null>(`/api/content/exhibitions/${exhibitionId}/exhibits/${exhibitId}`);
 }

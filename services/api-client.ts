@@ -179,6 +179,20 @@ export function apiPostFormAuth<T>(
   });
 }
 
+export function apiPutFormAuth<T>(
+  path: string,
+  formData: FormData,
+  accessToken?: string | null,
+) {
+  const token = withAuth(accessToken);
+  if (!token) throw new AppError("Not authenticated", 401);
+  return request<T>(path, {
+    method: "PUT",
+    body: formData,
+    accessToken: token,
+  });
+}
+
 export function apiPostForm<T>(path: string, formData: FormData) {
   return request<T>(path, { method: "POST", body: formData });
 }
