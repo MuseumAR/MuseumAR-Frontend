@@ -81,7 +81,7 @@ export function ExhibitionPanel({
           try {
             const newTheme = await createThemeEntry({ themeName: trimmedTheme });
             finalThemeId = newTheme.id;
-          } catch (err) {
+          } catch {
             setError("Failed to create new theme.");
             setIsSubmitting(false);
             return;

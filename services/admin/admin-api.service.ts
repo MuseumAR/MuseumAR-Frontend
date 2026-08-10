@@ -3,10 +3,8 @@ import { normalizeMuseumDto, normalizeTicketTypeDto } from "@/lib/normalize-dto"
 import type {
   CreateTicketTypeDto,
   CreateUserDto,
-  MuseumDto,
   PagedAuditLogsDto,
   SystemConfigDto,
-  TicketTypeDto,
   UpdateMuseumProfileDto,
   UpdateSystemConfigDto,
   UpdateUserDto,
@@ -30,7 +28,8 @@ export function getTicketTypes(accessToken?: string | null) {
 }
 
 export function createTicketType(payload: CreateTicketTypeDto) {
-  return apiPostAuth<unknown>("/api/admin/ticket-types", payload).then(
+  // Admin controller only lists ticket types — create is MuseumManager API
+  return apiPostAuth<unknown>("/api/MuseumManager/ticket-types", payload).then(
     normalizeTicketTypeDto,
   );
 }

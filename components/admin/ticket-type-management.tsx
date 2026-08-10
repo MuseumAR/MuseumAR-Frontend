@@ -13,11 +13,10 @@ function formatPrice(price: number) {
 
 export function TicketTypeManagementPanel({
   ticketTypes,
-  museumId,
   museumName,
 }: {
   ticketTypes: TicketTypeDto[];
-  museumId: number | null;
+  museumId?: number | null;
   museumName?: string | null;
 }) {
   return (

@@ -111,6 +111,11 @@ export type RoomDto = {
   roomName: string;
   floorNumber: number;
   description?: string | null;
+  /** Navigation graph link — waypoint gắn phòng */
+  waypointId?: string | null;
+  doorWaypointId?: number | null;
+  centerX?: number | null;
+  centerY?: number | null;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -122,6 +127,10 @@ export type CreateRoomDto = {
   roomName: string;
   floorNumber?: number;
   description?: string | null;
+  waypointId?: string | null;
+  doorWaypointId?: number | null;
+  centerX?: number | null;
+  centerY?: number | null;
 };
 
 export type UpdateRoomDto = {
@@ -130,6 +139,10 @@ export type UpdateRoomDto = {
   roomName?: string;
   floorNumber?: number;
   description?: string | null;
+  waypointId?: string | null;
+  doorWaypointId?: number | null;
+  centerX?: number | null;
+  centerY?: number | null;
 };
 
 // ─── Exhibit ──────────────────────────────────────────────────────────────────
@@ -246,9 +259,13 @@ export type OfflinePackageDto = {
   museumId: number;
   versionId: number;
   packageUrl?: string | null;
+  packageSizeBytes?: number | null;
   checksum?: string | null;
   status?: string | null;
+  exhibitCount?: number | null;
   arassetCount?: number | null;
+  imageCount?: number | null;
+  audioCount?: number | null;
   createdAt: string;
 };
 
@@ -259,11 +276,10 @@ export type MuseumMapDto = {
   museumId: number;
   mapImageUrl: string;
   /**
-   * BE maps entity MapName → MapType on the DTO.
-   * Seeded maps often put the display name here (e.g. "Bản đồ Tầng trệt").
+   * BE may put display name into MapType for older rows;
+   * prefer mapName when present.
    */
   mapType: string;
-  /** Not on current BE MuseumMapDto — optional if payload expands */
   floorNumber?: number;
   mapName?: string | null;
 };
@@ -271,6 +287,18 @@ export type MuseumMapDto = {
 export type CreateMuseumMapDto = {
   museumId: number;
   mapType: string;
+  mapName: string;
+  floorNumber: number;
+};
+
+/** PUT /api/Content/maps/{id} — multipart form (BE UpdateMuseumMapDto) */
+export type UpdateMuseumMapDto = {
+  /** Sent as form field MapType. Note: current BE writes this into MapName. */
+  mapType?: string;
+  /** Display name workaround — also sent as MapType when mapType omitted. */
+  mapName?: string;
+  floorNumber?: number;
+  mapImage?: File | null;
 };
 
 // ─── Tour route ───────────────────────────────────────────────────────────────
@@ -343,13 +371,130 @@ export type CreateTourRouteStopDto = {
   estimatedMinutes?: number | null;
 };
 
+// ─── Navigation graph (waypoints / edges) ─────────────────────────────────────
+
+export type WaypointType =
+  | "HALLWAY"
+  | "ROOM"
+  | "DOOR"
+  | "STAIRS"
+  | "ELEVATOR"
+  | "ENTRANCE"
+  | "EXIT"
+  | string;
+
+export type WaypointDto = {
+  id: string;
+  museumId: number;
+  /** BE entity currently has no MapId column — may be 0; graph-by-map filters by floor */
+  mapId: number;
+  floorNumber: number;
+  locationX: number;
+  locationY: number;
+  waypointType: WaypointType;
+  roomId?: number | null;
+  code?: string | null;
+  name?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type CreateWaypointDto = {
+  id?: string;
+  museumId: number;
+  mapId: number;
+  floorNumber?: number;
+  locationX: number;
+  locationY: number;
+  waypointType?: WaypointType;
+  roomId?: number | null;
+  code?: string | null;
+  name?: string | null;
+};
+
+export type UpdateWaypointDto = {
+  floorNumber: number;
+  locationX: number;
+  locationY: number;
+  waypointType: WaypointType;
+  roomId?: number | null;
+  code?: string | null;
+  name?: string | null;
+};
+
+export type WaypointEdgeDto = {
+  id: number;
+  museumId: number;
+  fromWaypointId: string;
+  toWaypointId: string;
+  distance: number;
+  edgeType: string;
+  isBidirectional: boolean;
+  createdAt?: string;
+};
+
+export type CreateWaypointEdgeDto = {
+  museumId: number;
+  fromWaypointId: string;
+  toWaypointId: string;
+  distance: number;
+  edgeType?: string;
+  isBidirectional?: boolean;
+};
+
+export type NavigationGraphDto = {
+  museumId: number;
+  waypoints: WaypointDto[];
+  edges: WaypointEdgeDto[];
+};
+
+export type NavigationInstructionDto = {
+  stepIndex: number;
+  instruction: string;
+  action: string;
+  distance: number;
+  floorNumber: number;
+  waypointId: string;
+};
+
+export type NavigationRouteResponseDto = {
+  fromRoomId: number;
+  fromRoomName: string;
+  toRoomId: number;
+  toRoomName: string;
+  totalDistance: number;
+  pathWaypoints: WaypointDto[];
+  instructions: NavigationInstructionDto[];
+};
+
+export type ValidateTicketResponseDto = {
+  ticketId: number;
+  ticketCode: string;
+  status: string;
+  isValid: boolean;
+  message: string;
+  ticketTypeName: string;
+  price: number;
+  visitorName: string;
+  visitorEmail?: string | null;
+  purchaseDate: string;
+  validDate?: string | null;
+  usedAt?: string | null;
+};
+
+export type CheckInRequestDto = {
+  ticketCode: string;
+};
+
 // ─── Ticketing ────────────────────────────────────────────────────────────────
 
 export type TicketTypeDto = {
   id: number;
   name: string;
+  nameEn?: string | null;
   price: number;
   description?: string | null;
+  descriptionEn?: string | null;
   museumId: number;
   exhibitionId?: number | null;
   status: string;
@@ -361,9 +506,12 @@ export type CreateTicketTypeDto = {
   museumId: number;
   exhibitionId?: number | null;
   name: string;
+  nameEn?: string | null;
   price: number;
   description?: string | null;
+  descriptionEn?: string | null;
   isActive?: boolean;
+  status?: string;
 };
 
 export type CreateOrderRequestDto = {
@@ -402,8 +550,7 @@ export type TicketDto = {
 };
 
 /**
- * Proposed BE contract — GET /api/ticketing/my-tickets/{id}
- * (not implemented on BE yet; FE uses mock detail for UX / handoff)
+ * GET /api/ticketing/my-tickets/{id}
  */
 export type TicketDetailDto = {
   id: number;
@@ -440,13 +587,15 @@ export type TicketDetailDto = {
 };
 
 /**
- * Proposed enrichment for GET /api/ticketing/types (list or GET /types/{id})
+ * GET /api/ticketing/types detail shape (when BE expands nested museum/exhibition)
  */
 export type TicketTypeDetailDto = {
   id: number;
   name: string;
+  nameEn?: string | null;
   price: number;
   description?: string | null;
+  descriptionEn?: string | null;
   isActive: boolean;
   museum: {
     id: number;
@@ -458,6 +607,32 @@ export type TicketTypeDetailDto = {
     id: number;
     name: string;
   } | null;
+};
+
+/** GET /api/content/exhibits/scan-qr */
+export type ArAssetScanDto = {
+  assetId: number;
+  assetType: string;
+  assetUrl: string;
+  fileSizeBytes?: number | null;
+  description?: string | null;
+};
+
+export type ExhibitScanResultDto = {
+  exhibitId: number;
+  exhibitCode: string;
+  qrCodeData: string;
+  title: string;
+  description: string;
+  audioUrl?: string | null;
+  languageCode: string;
+  categoryName?: string | null;
+  roomName?: string | null;
+  thumbnailUrl?: string | null;
+  arOverlayUrl?: string | null;
+  arMarkerUrl?: string | null;
+  images: string[];
+  arAssets: ArAssetScanDto[];
 };
 
 // ─── Visitor ──────────────────────────────────────────────────────────────────

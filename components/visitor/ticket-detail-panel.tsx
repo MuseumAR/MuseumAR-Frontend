@@ -7,6 +7,7 @@ import { ArrowLeft, Loader2, QrCode } from "lucide-react";
 import { Navbar } from "@/components/shared/navbar";
 import { useAuth } from "@/context/auth-context";
 import { formatDateTimeVi, formatVnd } from "@/lib/format";
+import { getMyTicketDetail } from "@/services/visitor/ticketing-api.service";
 import { getMockTicketDetail } from "@/services/visitor/ticket-mock.store";
 import type { TicketDetailDto } from "@/types/api";
 
@@ -38,8 +39,10 @@ export function TicketDetailPanel() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const ticketId = Number(params.id);
+  const isValidId = Number.isFinite(ticketId);
   const [detail, setDetail] = useState<TicketDetailDto | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(isValidId);
 
   useEffect(() => {
     if (authLoading) return;
@@ -49,11 +52,27 @@ export function TicketDetailPanel() {
       );
       return;
     }
+    if (!isValidId) return;
 
-    const id = Number(params.id);
-    setDetail(Number.isFinite(id) ? getMockTicketDetail(id) : null);
-    setLoading(false);
-  }, [authLoading, isAuthenticated, params.id, router]);
+    let cancelled = false;
+    void (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      setLoading(true);
+      try {
+        const data = await getMyTicketDetail(ticketId);
+        if (!cancelled) setDetail(data);
+      } catch {
+        if (!cancelled) setDetail(getMockTicketDetail(ticketId));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, isAuthenticated, isValidId, ticketId, params.id, router]);
 
   return (
     <div className="min-h-screen" style={{ background: C.bg }}>
@@ -106,7 +125,7 @@ export function TicketDetailPanel() {
                 className="text-xs font-medium uppercase tracking-[0.2em]"
                 style={{ color: C.primary }}
               >
-                Ticket detail · proposed API
+                Ticket detail
               </p>
               <h1
                 className="mt-2 text-2xl font-semibold tracking-tight"
@@ -127,18 +146,6 @@ export function TicketDetailPanel() {
                 {detail.status}
               </span>
             </header>
-
-            <div
-              className="rounded-2xl px-4 py-3 text-xs leading-relaxed"
-              style={{
-                background: "rgba(200,155,60,0.10)",
-                border: `1px solid ${C.border}`,
-                color: C.muted,
-              }}
-            >
-              Mock UI — shape này là contract đề xuất cho BE:{" "}
-              <code className="font-mono">GET /api/ticketing/my-tickets/{"{id}"}</code>
-            </div>
 
             <section>
               <h2 className="mb-3 text-sm font-semibold" style={{ color: C.text }}>

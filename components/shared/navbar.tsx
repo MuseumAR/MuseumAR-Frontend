@@ -19,14 +19,6 @@ const C = {
   surface: "#FFF8E7",
 };
 
-const NAV_LINKS = [
-  { label: "Home", href: "/" },
-  { label: "Tickets", href: "/tickets" },
-  { label: "Collections", href: "#collections" },
-  { label: "Museums", href: "#museums" },
-  { label: "About", href: "#about" },
-];
-
 function AuthSkeleton() {
   return (
     <div className="flex items-center gap-2">

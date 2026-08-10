@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#E8D9B8" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="800" fill="#F7F0E0"/>
+  <rect width="1200" height="800" fill="url(#grid)"/>
+  <rect x="60" y="60" width="1080" height="680" rx="8" fill="#FFF8EC" stroke="#C89B45" stroke-width="3"/>
+  <rect x="100" y="120" width="280" height="220" fill="#F0E4C8" stroke="#A67C2D" stroke-width="2"/>
+  <rect x="420" y="120" width="360" height="220" fill="#F0E4C8" stroke="#A67C2D" stroke-width="2"/>
+  <rect x="820" y="120" width="280" height="220" fill="#F0E4C8" stroke="#A67C2D" stroke-width="2"/>
+  <rect x="100" y="400" width="480" height="280" fill="#F0E4C8" stroke="#A67C2D" stroke-width="2"/>
+  <rect x="620" y="400" width="480" height="280" fill="#F0E4C8" stroke="#A67C2D" stroke-width="2"/>
+  <path d="M380 230 H420 M780 230 H820 M340 340 V400 M860 340 V400 M580 400 V340" stroke="#C89B45" stroke-width="10" stroke-linecap="square"/>
+  <text x="600" y="50" text-anchor="middle" font-family="Georgia, serif" font-size="28" fill="#7A5A28">Tang tret — Ground floor</text>
+  <text x="240" y="240" text-anchor="middle" font-family="Georgia, serif" font-size="20" fill="#8B6914">P101</text>
+  <text x="600" y="240" text-anchor="middle" font-family="Georgia, serif" font-size="20" fill="#8B6914">Hall</text>
+  <text x="960" y="240" text-anchor="middle" font-family="Georgia, serif" font-size="20" fill="#8B6914">P102</text>
+  <text x="340" y="550" text-anchor="middle" font-family="Georgia, serif" font-size="20" fill="#8B6914">P103</text>
+  <text x="860" y="550" text-anchor="middle" font-family="Georgia, serif" font-size="20" fill="#8B6914">P104</text>
+</svg>

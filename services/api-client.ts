@@ -3,6 +3,7 @@ import {
   getAccessToken,
 } from "@/services/auth/auth.storage";
 import { refreshAccessToken } from "@/services/auth/refresh-token";
+import { repairDisplayText, repairJsonStrings } from "@/lib/repair-text";
 import { AppError } from "@/lib/validation";
 import type { ApiResponse } from "@/types/api";
 
@@ -89,14 +90,16 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     (json as ApiResponse<T> & { StatusCode?: number }).statusCode ??
     (json as ApiResponse<T> & { StatusCode?: number }).StatusCode ??
     res.status;
-  const message =
+  const message = repairDisplayText(
     (json as ApiResponse<T> & { Message?: string }).message ??
-    (json as ApiResponse<T> & { Message?: string }).Message ??
-    res.statusText ??
-    "Request failed";
-  const data =
+      (json as ApiResponse<T> & { Message?: string }).Message ??
+      res.statusText ??
+      "Request failed",
+  );
+  const data = repairJsonStrings(
     (json as ApiResponse<T> & { Data?: T }).data ??
-    (json as ApiResponse<T> & { Data?: T }).Data;
+      (json as ApiResponse<T> & { Data?: T }).Data,
+  );
 
   if (statusCode !== 200) {
     const isUnauthorized = statusCode === 401 || res.status === 401;
@@ -174,6 +177,20 @@ export function apiPostFormAuth<T>(
   if (!token) throw new AppError("Not authenticated", 401);
   return request<T>(path, {
     method: "POST",
+    body: formData,
+    accessToken: token,
+  });
+}
+
+export function apiPutFormAuth<T>(
+  path: string,
+  formData: FormData,
+  accessToken?: string | null,
+) {
+  const token = withAuth(accessToken);
+  if (!token) throw new AppError("Not authenticated", 401);
+  return request<T>(path, {
+    method: "PUT",
     body: formData,
     accessToken: token,
   });

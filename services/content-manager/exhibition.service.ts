@@ -1,9 +1,11 @@
 import { safeFetch } from "@/lib/fetch-safe";
-import type { CreateExhibitionDto, ExhibitionDto } from "@/types/api";
+import type { CreateExhibitionDto, ExhibitionDto, ExhibitDto } from "@/types/api";
 import {
+  assignExhibitsToExhibition,
   createExhibition,
-  getExhibitionById as fetchExhibitionById,
+  getExhibitionExhibits,
   getExhibitions as fetchExhibitions,
+  removeExhibitFromExhibition,
   uploadExhibitionImage,
   updateExhibition,
   deleteExhibition,
@@ -19,13 +21,10 @@ export async function getExhibitionById(
   const id = Number(exhibitionId);
   if (Number.isNaN(id)) return null;
 
+  // BE has no GET /exhibitions/{id} — resolve from list
   return safeFetch(async () => {
-    try {
-      return await fetchExhibitionById(id);
-    } catch {
-      const list = await fetchExhibitions();
-      return list.find((item) => item.id === id) ?? null;
-    }
+    const list = await fetchExhibitions();
+    return list.find((item) => item.id === id) ?? null;
   }, null);
 }
 
@@ -33,4 +32,31 @@ export async function createExhibitionEntry(payload: CreateExhibitionDto) {
   return createExhibition(payload);
 }
 
-export { uploadExhibitionImage, updateExhibition, deleteExhibition };
+export async function getExhibitionExhibitList(
+  exhibitionId: number,
+): Promise<ExhibitDto[]> {
+  return safeFetch(() => getExhibitionExhibits(exhibitionId), []);
+}
+
+export async function assignExhibitsToExhibitionEntry(
+  exhibitionId: number,
+  exhibitIds: number[],
+) {
+  return assignExhibitsToExhibition(exhibitionId, exhibitIds);
+}
+
+export async function removeExhibitFromExhibitionEntry(
+  exhibitionId: number,
+  exhibitId: number,
+) {
+  return removeExhibitFromExhibition(exhibitionId, exhibitId);
+}
+
+export {
+  uploadExhibitionImage,
+  updateExhibition,
+  deleteExhibition,
+  getExhibitionExhibits,
+  assignExhibitsToExhibition,
+  removeExhibitFromExhibition,
+};

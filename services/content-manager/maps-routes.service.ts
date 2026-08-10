@@ -4,46 +4,27 @@ import type {
   CreateTourRouteStopDto,
   MuseumMapDto,
   TourRouteDto,
+  UpdateMuseumMapDto,
   UpdateTourRouteDto,
 } from "@/types/api";
 import {
   addStopToRoute,
   createTourRoute,
+  deleteMuseumMap,
   deleteTourRoute,
   getMuseumMaps,
   getTourRouteById,
   getTourRoutes,
+  getTourRoutesByExhibition,
   removeStopFromRoute,
   reorderRouteStops,
+  updateMuseumMap,
   updateTourRoute,
   uploadMuseumMap,
 } from "./content-api.service";
 
-function asRecord(value: unknown): Record<string, unknown> {
-  return value && typeof value === "object" ? (value as Record<string, unknown>) : {};
-}
-
-function normalizeMap(raw: unknown): MuseumMapDto {
-  const o = asRecord(raw);
-  return {
-    id: Number(o.id ?? o.Id ?? 0),
-    museumId: Number(o.museumId ?? o.MuseumId ?? 0),
-    mapImageUrl: String(o.mapImageUrl ?? o.MapImageUrl ?? ""),
-    // BE maps entity MapName → DTO MapType
-    mapType: String(o.mapType ?? o.MapType ?? "floor"),
-    floorNumber:
-      o.floorNumber != null || o.FloorNumber != null
-        ? Number(o.floorNumber ?? o.FloorNumber)
-        : undefined,
-    mapName: (o.mapName ?? o.MapName) as string | null | undefined,
-  };
-}
-
 export async function getMapList(): Promise<MuseumMapDto[]> {
-  return safeFetch(async () => {
-    const data = await getMuseumMaps();
-    return (Array.isArray(data) ? data : []).map(normalizeMap);
-  }, []);
+  return safeFetch(() => getMuseumMaps(), []);
 }
 
 export async function getRouteList(): Promise<TourRouteDto[]> {
@@ -54,6 +35,12 @@ export async function getRouteDetail(id: number): Promise<TourRouteDto | null> {
   return safeFetch(() => getTourRouteById(id), null);
 }
 
+export async function getRoutesByExhibition(
+  exhibitionId: number,
+): Promise<TourRouteDto[]> {
+  return safeFetch(() => getTourRoutesByExhibition(exhibitionId), []);
+}
+
 export async function createMapWithImage(
   museumId: number,
   file: File,
@@ -62,6 +49,14 @@ export async function createMapWithImage(
   floorNumber: number,
 ) {
   return uploadMuseumMap(museumId, file, mapType, mapName, floorNumber);
+}
+
+export async function updateMapEntry(id: number, payload: UpdateMuseumMapDto) {
+  return updateMuseumMap(id, payload);
+}
+
+export async function deleteMapEntry(id: number) {
+  return deleteMuseumMap(id);
 }
 
 export async function createRouteEntry(payload: CreateTourRouteDto) {
@@ -87,4 +82,10 @@ export async function removeRouteStop(routeId: number, exhibitId: number) {
 export async function reorderStops(routeId: number, exhibitIds: number[]) {
   return reorderRouteStops(routeId, exhibitIds);
 }
+
+export {
+  updateMuseumMap,
+  deleteMuseumMap,
+  getTourRoutesByExhibition,
+};
 

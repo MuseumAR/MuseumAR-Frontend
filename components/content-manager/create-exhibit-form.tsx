@@ -113,7 +113,10 @@ export function CreateExhibitForm({
         ],
       });
 
-      const exhibitId = typeof res === "object" && res && "id" in res ? (res as any).id : (res as unknown as number);
+      const exhibitId =
+        typeof res === "object" && res && "id" in res
+          ? Number((res as { id: number | string }).id)
+          : Number(res);
 
       if (imageFile) await uploadExhibitImage(exhibitId, imageFile, title);
       if (audioFile) await uploadExhibitAudio(exhibitId, languageCode, audioFile);

@@ -90,7 +90,7 @@ export function OfflinePackagesPanel({
           <table className="w-full text-left text-sm">
             <thead>
               <tr style={{ borderBottom: `1px solid ${T.border}`, background: "rgba(245,230,200,0.35)" }}>
-                {["ID", "Version ID", "Status", "AR assets", "Created"].map((h) => (
+                {["ID", "Version", "Status", "Exhibits", "AR", "Images", "Audio", "Size", "Created"].map((h) => (
                   <th key={h} className="px-5 py-4 font-medium" style={{ color: T.mutedLight }}>{h}</th>
                 ))}
               </tr>
@@ -101,7 +101,15 @@ export function OfflinePackagesPanel({
                   <td className="px-5 py-4" style={{ color: T.text }}>{pkg.id}</td>
                   <td className="px-5 py-4" style={{ color: T.muted }}>{pkg.versionId}</td>
                   <td className="px-5 py-4" style={{ color: T.muted }}>{pkg.status ?? "—"}</td>
+                  <td className="px-5 py-4" style={{ color: T.muted }}>{pkg.exhibitCount ?? "—"}</td>
                   <td className="px-5 py-4" style={{ color: T.muted }}>{pkg.arassetCount ?? "—"}</td>
+                  <td className="px-5 py-4" style={{ color: T.muted }}>{pkg.imageCount ?? "—"}</td>
+                  <td className="px-5 py-4" style={{ color: T.muted }}>{pkg.audioCount ?? "—"}</td>
+                  <td className="px-5 py-4" style={{ color: T.muted }}>
+                    {pkg.packageSizeBytes != null
+                      ? `${Math.round(pkg.packageSizeBytes / 1024)} KB`
+                      : "—"}
+                  </td>
                   <td className="px-5 py-4" style={{ color: T.muted }}>{pkg.createdAt?.slice(0, 10) ?? "—"}</td>
                 </tr>
               ))}

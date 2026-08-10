@@ -1,6 +1,6 @@
 import { apiGetAuth, apiPostAuth, apiPutAuth } from "@/services/api-client";
 import { normalizeTicketTypeDto } from "@/lib/normalize-dto";
-import type { CreateTicketTypeDto, TicketTypeDto } from "@/types/api";
+import type { CreateTicketTypeDto } from "@/types/api";
 
 export function getManagerTicketTypes(accessToken?: string | null) {
   return apiGetAuth<unknown[]>("/api/MuseumManager/ticket-types", accessToken).then((data) =>

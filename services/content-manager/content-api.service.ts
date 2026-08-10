@@ -4,8 +4,9 @@ import {
   apiPostAuth,
   apiPostFormAuth,
   apiPutAuth,
+  apiPutFormAuth,
 } from "@/services/api-client";
-import { normalizeExhibitDto, normalizeMuseumMapDto, normalizeTourRouteDto } from "@/lib/normalize-dto";
+import { normalizeExhibitDto, normalizeExhibitScanResultDto, normalizeMuseumMapDto, normalizeTourRouteDto } from "@/lib/normalize-dto";
 import type {
   AgeGroupDto,
   CategoryDto,
@@ -29,6 +30,7 @@ import type {
   TagGroupDto,
   ThemeDto,
   TourRouteDto,
+  UpdateMuseumMapDto,
   UpdateTourRouteDto,
 } from "@/types/api";
 
@@ -114,7 +116,41 @@ export function deleteArAsset(id: number) {
 }
 
 export function getOfflinePackages() {
-  return apiGet<OfflinePackageDto[]>("/api/content/packages");
+  return apiGet<unknown[]>("/api/content/packages").then((data) =>
+    (Array.isArray(data) ? data : []).map((raw) => {
+      const o =
+        raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+      return {
+        id: Number(o.id ?? o.Id ?? 0),
+        museumId: Number(o.museumId ?? o.MuseumId ?? 0),
+        versionId: Number(o.versionId ?? o.VersionId ?? 0),
+        packageUrl: (o.packageUrl ?? o.PackageUrl) as string | null | undefined,
+        packageSizeBytes:
+          o.packageSizeBytes != null || o.PackageSizeBytes != null
+            ? Number(o.packageSizeBytes ?? o.PackageSizeBytes)
+            : null,
+        checksum: (o.checksum ?? o.Checksum) as string | null | undefined,
+        status: (o.status ?? o.Status) as string | null | undefined,
+        exhibitCount:
+          o.exhibitCount != null || o.ExhibitCount != null
+            ? Number(o.exhibitCount ?? o.ExhibitCount)
+            : null,
+        arassetCount:
+          o.arassetCount != null || o.ArassetCount != null
+            ? Number(o.arassetCount ?? o.ArassetCount)
+            : null,
+        imageCount:
+          o.imageCount != null || o.ImageCount != null
+            ? Number(o.imageCount ?? o.ImageCount)
+            : null,
+        audioCount:
+          o.audioCount != null || o.AudioCount != null
+            ? Number(o.audioCount ?? o.AudioCount)
+            : null,
+        createdAt: String(o.createdAt ?? o.CreatedAt ?? ""),
+      } satisfies OfflinePackageDto;
+    }),
+  );
 }
 
 export function generateOfflinePackage(payload: CreateOfflinePackageDto) {
@@ -125,8 +161,23 @@ export function getExhibitions() {
   return apiGet<ExhibitionDto[]>("/api/content/exhibitions");
 }
 
-export function getExhibitionById(id: number) {
-  return apiGet<ExhibitionDto>(`/api/content/exhibitions/${id}`);
+/** BE has no GET /exhibitions/{id} — resolve from list */
+export async function getExhibitionById(id: number) {
+  const list = await getExhibitions();
+  return list.find((item) => item.id === id) ?? null;
+}
+
+export function scanExhibitQr(params: {
+  qrData: string;
+  lang?: string;
+  visitorId?: number;
+}) {
+  const query = new URLSearchParams({ qrData: params.qrData });
+  if (params.lang) query.set("lang", params.lang);
+  if (params.visitorId != null) query.set("visitorId", String(params.visitorId));
+  return apiGet<unknown>(`/api/content/exhibits/scan-qr?${query.toString()}`).then(
+    normalizeExhibitScanResultDto,
+  );
 }
 
 export function createExhibition(payload: CreateExhibitionDto) {
@@ -145,6 +196,31 @@ export function updateExhibition(id: number, payload: CreateExhibitionDto) {
 
 export function deleteExhibition(id: number) {
   return apiDeleteAuth<null>(`/api/content/exhibitions/${id}`);
+}
+
+export function getExhibitionExhibits(exhibitionId: number) {
+  return apiGet<unknown[]>(`/api/content/exhibitions/${exhibitionId}/exhibits`).then(
+    (data) => (Array.isArray(data) ? data : []).map(normalizeExhibitDto),
+  );
+}
+
+export function assignExhibitsToExhibition(
+  exhibitionId: number,
+  exhibitIds: number[],
+) {
+  return apiPostAuth<unknown>(
+    `/api/content/exhibitions/${exhibitionId}/exhibits`,
+    exhibitIds,
+  );
+}
+
+export function removeExhibitFromExhibition(
+  exhibitionId: number,
+  exhibitId: number,
+) {
+  return apiDeleteAuth<null>(
+    `/api/content/exhibitions/${exhibitionId}/exhibits/${exhibitId}`,
+  );
 }
 
 export function getMuseumMaps() {
@@ -169,9 +245,37 @@ export function uploadMuseumMap(
   return apiPostFormAuth<MuseumMapDto>("/api/content/maps", formData);
 }
 
+/**
+ * Update map (multipart).
+ * BE UpdateMuseumMapDto currently maps form "MapType" → entity.MapName (bug).
+ * We send display name as MapType so rename works until BE is fixed.
+ */
+export function updateMuseumMap(id: number, payload: UpdateMuseumMapDto) {
+  const formData = new FormData();
+  const nameOrType = payload.mapName?.trim() || payload.mapType?.trim();
+  if (nameOrType) formData.append("MapType", nameOrType);
+  if (payload.floorNumber != null) {
+    formData.append("FloorNumber", String(payload.floorNumber));
+  }
+  if (payload.mapImage) formData.append("MapImage", payload.mapImage);
+  return apiPutFormAuth<unknown>(`/api/content/maps/${id}`, formData).then(
+    normalizeMuseumMapDto,
+  );
+}
+
+export function deleteMuseumMap(id: number) {
+  return apiDeleteAuth<null>(`/api/content/maps/${id}`);
+}
+
 export function getTourRoutes() {
   return apiGet<unknown[]>("/api/content/routes").then((data) =>
     (Array.isArray(data) ? data : []).map(normalizeTourRouteDto),
+  );
+}
+
+export function getTourRoutesByExhibition(exhibitionId: number) {
+  return apiGet<unknown[]>(`/api/content/routes/exhibition/${exhibitionId}`).then(
+    (data) => (Array.isArray(data) ? data : []).map(normalizeTourRouteDto),
   );
 }
 

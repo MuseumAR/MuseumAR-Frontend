@@ -1,3 +1,6 @@
+import { repairDisplayText } from "@/lib/repair-text";
+import { resolveMapImageUrl } from "@/lib/resolve-media-url";
+
 /** Pick first defined value among alternate API keys (camelCase / PascalCase / acronym). */
 export function pickField<T = unknown>(
   raw: Record<string, unknown>,
@@ -21,7 +24,7 @@ function pickStr(
 ): string | null | undefined {
   const v = pickField<unknown>(raw, ...keys);
   if (v == null) return v as null | undefined;
-  return String(v);
+  return repairDisplayText(String(v));
 }
 
 function pickNum(
@@ -91,7 +94,7 @@ export function normalizeExhibitDto(raw: unknown): import("@/types/api").Exhibit
           id: pickNum(tr, "id", "Id") ?? null,
           exhibitId: Number(pickField(tr, "exhibitId", "ExhibitId") ?? 0),
           languageCode: String(pickField(tr, "languageCode", "LanguageCode") ?? "vi"),
-          title: String(pickField(tr, "title", "Title") ?? ""),
+          title: repairDisplayText(String(pickField(tr, "title", "Title") ?? "")),
           description: pickStr(tr, "description", "Description") ?? null,
           audioUrl: pickStr(tr, "audioUrl", "AudioUrl") ?? null,
           audioDuration: pickNum(tr, "audioDuration", "AudioDuration") ?? null,
@@ -106,7 +109,7 @@ export function normalizeMuseumDto(raw: unknown): import("@/types/api").MuseumDt
   const o = asRecord(raw);
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
-    name: String(pickField(o, "name", "Name") ?? ""),
+    name: repairDisplayText(String(pickField(o, "name", "Name") ?? "")),
     description: pickStr(o, "description", "Description") ?? null,
     address: pickStr(o, "address", "Address") ?? null,
     city: pickStr(o, "city", "City") ?? null,
@@ -162,7 +165,7 @@ export function normalizeTourRouteDto(
     const tr = asRecord(t);
     return {
       languageCode: String(pickField(tr, "languageCode", "LanguageCode") ?? "vi"),
-      routeName: String(pickField(tr, "routeName", "RouteName") ?? ""),
+      routeName: repairDisplayText(String(pickField(tr, "routeName", "RouteName") ?? "")),
       description: pickStr(tr, "description", "Description") ?? null,
     };
   });
@@ -200,9 +203,11 @@ export function normalizeTicketTypeDto(
   const o = asRecord(raw);
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
-    name: String(pickField(o, "name", "Name") ?? ""),
+    name: repairDisplayText(String(pickField(o, "name", "Name") ?? "")),
+    nameEn: pickStr(o, "nameEn", "NameEn") ?? null,
     price: Number(pickField(o, "price", "Price") ?? 0),
     description: pickStr(o, "description", "Description") ?? null,
+    descriptionEn: pickStr(o, "descriptionEn", "DescriptionEn") ?? null,
     museumId: Number(pickField(o, "museumId", "MuseumId") ?? 0),
     exhibitionId: pickNum(o, "exhibitionId", "ExhibitionId") ?? null,
     status: String(pickField(o, "status", "Status") ?? "Pending"),
@@ -216,8 +221,8 @@ export function normalizeTicketDto(
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
     ticketCode: String(pickField(o, "ticketCode", "TicketCode") ?? ""),
-    ticketTypeName: String(
-      pickField(o, "ticketTypeName", "TicketTypeName") ?? "",
+    ticketTypeName: repairDisplayText(
+      String(pickField(o, "ticketTypeName", "TicketTypeName") ?? ""),
     ),
     purchaseDate: String(pickField(o, "purchaseDate", "PurchaseDate") ?? ""),
     validDate: pickStr(o, "validDate", "ValidDate") ?? null,
@@ -244,9 +249,13 @@ export function normalizeRoomDto(raw: unknown): import("@/types/api").RoomDto {
     museumId: Number(pickField(o, "museumId", "MuseumId") ?? 0),
     mapId: pickNum(o, "mapId", "MapId") ?? null,
     roomCode: String(pickField(o, "roomCode", "RoomCode") ?? ""),
-    roomName: String(pickField(o, "roomName", "RoomName") ?? ""),
+    roomName: repairDisplayText(String(pickField(o, "roomName", "RoomName") ?? "")),
     floorNumber: Number(pickField(o, "floorNumber", "FloorNumber") ?? 1),
     description: pickStr(o, "description", "Description") ?? null,
+    waypointId: pickStr(o, "waypointId", "WaypointId") ?? null,
+    doorWaypointId: pickNum(o, "doorWaypointId", "DoorWaypointId") ?? null,
+    centerX: pickNum(o, "centerX", "CenterX") ?? null,
+    centerY: pickNum(o, "centerY", "CenterY") ?? null,
     createdAt: pickStr(o, "createdAt", "CreatedAt") ?? undefined,
     updatedAt: pickStr(o, "updatedAt", "UpdatedAt") ?? undefined,
   };
@@ -259,9 +268,74 @@ export function normalizeMuseumMapDto(
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
     museumId: Number(pickField(o, "museumId", "MuseumId") ?? 0),
-    mapImageUrl: pickStr(o, "mapImageUrl", "MapImageUrl") ?? "",
+    mapImageUrl: resolveMapImageUrl(
+      String(pickField(o, "mapImageUrl", "MapImageUrl") ?? ""),
+    ),
     mapType: pickStr(o, "mapType", "MapType") ?? "floor",
     floorNumber: pickNum(o, "floorNumber", "FloorNumber") ?? undefined,
     mapName: pickStr(o, "mapName", "MapName") ?? undefined,
+  };
+}
+
+export function normalizePendingOrderDto(
+  raw: unknown,
+): import("@/types/api").PendingOrderDto | null {
+  if (raw == null) return null;
+  const o = asRecord(raw);
+  if (!pickField(o, "orderCode", "OrderCode")) return null;
+  return {
+    orderCode: String(pickField(o, "orderCode", "OrderCode") ?? ""),
+    ticketTypeId: Number(pickField(o, "ticketTypeId", "TicketTypeId") ?? 0),
+    ticketTypeName: repairDisplayText(
+      String(pickField(o, "ticketTypeName", "TicketTypeName") ?? ""),
+    ),
+    quantity: Number(pickField(o, "quantity", "Quantity") ?? 0),
+    totalAmount: Number(pickField(o, "totalAmount", "TotalAmount") ?? 0),
+    checkoutUrl: pickStr(o, "checkoutUrl", "CheckoutUrl") ?? null,
+    qrCode: pickStr(o, "qrCode", "QrCode", "QRCode") ?? null,
+    createdAt: String(pickField(o, "createdAt", "CreatedAt") ?? ""),
+    expiresAt: String(pickField(o, "expiresAt", "ExpiresAt") ?? ""),
+    remainingSeconds: Number(pickField(o, "remainingSeconds", "RemainingSeconds") ?? 0),
+  };
+}
+
+export function normalizeExhibitScanResultDto(
+  raw: unknown,
+): import("@/types/api").ExhibitScanResultDto {
+  const o = asRecord(raw);
+  const imagesRaw = pickField<unknown[]>(o, "images", "Images") ?? [];
+  const assetsRaw = pickField<unknown[]>(o, "arAssets", "ArAssets", "ARAssets") ?? [];
+  return {
+    exhibitId: Number(pickField(o, "exhibitId", "ExhibitId") ?? 0),
+    exhibitCode: String(pickField(o, "exhibitCode", "ExhibitCode") ?? ""),
+    qrCodeData: String(
+      pickField(o, "qrCodeData", "QrcodeData", "QRCodeData", "qRcodeData") ?? "",
+    ),
+    title: repairDisplayText(String(pickField(o, "title", "Title") ?? "")),
+    description: repairDisplayText(
+      String(pickField(o, "description", "Description") ?? ""),
+    ),
+    audioUrl: pickStr(o, "audioUrl", "AudioUrl") ?? null,
+    languageCode: String(pickField(o, "languageCode", "LanguageCode") ?? "vi"),
+    categoryName: pickStr(o, "categoryName", "CategoryName") ?? null,
+    roomName: pickStr(o, "roomName", "RoomName") ?? null,
+    thumbnailUrl: pickStr(o, "thumbnailUrl", "ThumbnailUrl") ?? null,
+    arOverlayUrl:
+      pickStr(o, "arOverlayUrl", "AroverlayUrl", "AROverlayUrl", "aROverlayUrl") ??
+      null,
+    arMarkerUrl:
+      pickStr(o, "arMarkerUrl", "ArmarkerUrl", "ARMarkerUrl", "aRMarkerUrl") ??
+      null,
+    images: (Array.isArray(imagesRaw) ? imagesRaw : []).map((x) => String(x)),
+    arAssets: (Array.isArray(assetsRaw) ? assetsRaw : []).map((item) => {
+      const a = asRecord(item);
+      return {
+        assetId: Number(pickField(a, "assetId", "AssetId") ?? 0),
+        assetType: String(pickField(a, "assetType", "AssetType") ?? ""),
+        assetUrl: String(pickField(a, "assetUrl", "AssetUrl") ?? ""),
+        fileSizeBytes: pickNum(a, "fileSizeBytes", "FileSizeBytes") ?? null,
+        description: pickStr(a, "description", "Description") ?? null,
+      };
+    }),
   };
 }

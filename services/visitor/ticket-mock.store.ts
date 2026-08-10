@@ -154,7 +154,7 @@ export function mockPurchaseTickets(input: {
   return { orderCode, tickets: created };
 }
 
-/** Proposed TicketDetailDto shape — mock until GET /api/ticketing/my-tickets/{id} exists. */
+/** Fallback detail from local mock store when API is unavailable. */
 export function getMockTicketDetail(id: number): TicketDetailDto | null {
   const fromMap = readMockDetails()[String(id)];
   if (fromMap) return fromMap;

@@ -42,7 +42,6 @@ export function MyTicketsPanel() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      // UI mock store only — skips my-tickets API (same VisitorId bug).
       const list = await listMyTickets();
       if (!cancelled) {
         setTickets(list);

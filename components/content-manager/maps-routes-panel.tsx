@@ -3,21 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useRef, useState, useMemo } from "react";
 import {
-  ArrowDown,
-  ArrowLeft,
-  ArrowRight,
-  ArrowUp,
   Check,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ChevronUp,
   Clock,
   Compass,
   Edit3,
   ExternalLink,
-  Footprints,
-  GripVertical,
   Info,
   Map,
   MapPin,
@@ -32,12 +24,16 @@ import {
 } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
+import { resolveMapImageUrl } from "@/lib/resolve-media-url";
+import { NavigationPanel } from "@/components/content-manager/navigation-panel";
 import {
   addRouteStop,
   createMapWithImage,
   createRouteEntry,
+  deleteMapEntry,
   deleteRouteEntry,
   removeRouteStop,
+  updateMapEntry,
   updateRouteEntry,
 } from "@/services/content-manager/maps-routes.service";
 import { createRoom, deleteRoom } from "@/services/content-manager/room.service";
@@ -51,7 +47,7 @@ import type {
   TourRouteStopDto,
 } from "@/types/api";
 
-type Tab = "maps" | "rooms" | "routes";
+type Tab = "maps" | "rooms" | "routes" | "navigation";
 
 /* ═══════════════════════════════════════════════════════════════════════════════
    MAP HELPERS (unchanged)
@@ -90,9 +86,10 @@ function MapTypeBadge({ kind }: { kind: "overview" | "floor" }) {
 }
 
 function MapPreview({ url, title }: { url: string; title: string }) {
-  const [failed, setFailed] = useState(!url);
+  const resolved = resolveMapImageUrl(url);
+  const [failed, setFailed] = useState(!resolved);
 
-  if (!url || failed) {
+  if (!resolved || failed) {
     return (
       <div
         className="flex h-36 flex-col items-center justify-center gap-2 rounded-2xl px-4 text-center"
@@ -115,7 +112,7 @@ function MapPreview({ url, title }: { url: string; title: string }) {
       style={{ border: `1px solid ${T.border}`, background: T.bg }}
     >
       <img
-        src={url}
+        src={resolved}
         alt={title}
         className="h-full w-full object-cover"
         onError={() => setFailed(true)}
@@ -386,7 +383,6 @@ function RouteDetailModal({
     route.estimatedDurationMinutes?.toString() ?? "",
   );
   const [editStatus, setEditStatus] = useState(route.status);
-  const router = useRouter();
 
   // Exhibits not already in stops
   const usedExhibitIds = new Set(route.stops.map((s) => s.exhibitId));
@@ -951,6 +947,12 @@ export function MapsRoutesPanel({
   const [mapError, setMapError] = useState<string | null>(null);
   const [routeError, setRouteError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<"map" | "route" | "room" | null>(null);
+  const [editingMap, setEditingMap] = useState(false);
+  const [editMapName, setEditMapName] = useState("");
+  const [editFloorNumber, setEditFloorNumber] = useState("0");
+  const [editMapFile, setEditMapFile] = useState<File | null>(null);
+  const [editMapError, setEditMapError] = useState<string | null>(null);
+  const [mapActionBusy, setMapActionBusy] = useState(false);
 
   function toggleRouteExhibit(id: number) {
     setSelectedExhibitIds((prev) =>
@@ -1135,7 +1137,8 @@ export function MapsRoutesPanel({
           </p>
           <p>
             <strong>Museum maps</strong> — floor or area layout images.{" "}
-            <strong>Tour routes</strong> — suggested visit paths with stops, descriptions, and estimated duration.
+            <strong>Tour routes</strong> — suggested visit paths with stops, descriptions, and estimated duration.{" "}
+            <strong>Chỉ đường</strong> — waypoint graph (edges) để mobile tính đường phòng → phòng.
           </p>
         </div>
       </div>
@@ -1144,6 +1147,7 @@ export function MapsRoutesPanel({
         {tabBtn("maps", "Museum maps", maps.length, MapPin)}
         {tabBtn("rooms", "Phòng trưng bày", rooms.length, Compass)}
         {tabBtn("routes", "Tour routes", routes.length, Route)}
+        {tabBtn("navigation", "Chỉ đường", 0, Navigation)}
       </div>
 
       {/* ═══ MAPS TAB ═══ */}
@@ -1330,7 +1334,7 @@ export function MapsRoutesPanel({
                       ) : null}
                       {item.mapImageUrl ? (
                         <a
-                          href={item.mapImageUrl}
+                          href={resolveMapImageUrl(item.mapImageUrl)}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-xs font-medium"
@@ -1888,11 +1892,21 @@ export function MapsRoutesPanel({
         </div>
       )}
 
+      {/* ═══ NAVIGATION TAB ═══ */}
+      {tab === "navigation" && (
+        <NavigationPanel maps={maps} rooms={rooms} museumId={museumId} />
+      )}
+
       {/* ═══ MAP DETAIL MODAL ═══ */}
       {selectedMap && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          onClick={() => setSelectedMap(null)}
+          onClick={() => {
+            setSelectedMap(null);
+            setEditingMap(false);
+            setEditMapError(null);
+            setEditMapFile(null);
+          }}
         >
           <div 
             className="relative max-w-4xl w-full rounded-3xl p-6 shadow-2xl flex flex-col md:flex-row gap-6 max-h-[90vh] overflow-y-auto"
@@ -1901,7 +1915,12 @@ export function MapsRoutesPanel({
           >
             <button 
               type="button"
-              onClick={() => setSelectedMap(null)}
+              onClick={() => {
+                setSelectedMap(null);
+                setEditingMap(false);
+                setEditMapError(null);
+                setEditMapFile(null);
+              }}
               className="absolute top-4 right-4 rounded-full p-2 text-sm font-semibold hover:bg-[rgba(200,155,69,0.15)] transition-colors"
               style={{ color: T.muted }}
             >
@@ -1910,58 +1929,191 @@ export function MapsRoutesPanel({
 
             <div className="flex-1 flex items-center justify-center bg-black/5 rounded-2xl overflow-hidden min-h-[300px] md:max-h-[70vh]">
               <img 
-                src={selectedMap.mapImageUrl} 
+                src={resolveMapImageUrl(selectedMap.mapImageUrl)} 
                 alt={getMapDisplayName(selectedMap)} 
                 className="max-h-full max-w-full object-contain"
                 style={{ maxHeight: "70vh", maxWidth: "100%", objectFit: "contain" }}
               />
             </div>
 
-            <div className="w-full md:w-80 flex flex-col justify-between">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-xl font-bold" style={{ fontFamily: cinzel, color: T.primaryDark }}>
-                    {getMapDisplayName(selectedMap)}
+            <div className="w-full md:w-80 flex flex-col justify-between gap-4">
+              {editingMap ? (
+                <div className="space-y-3">
+                  <h3 className="text-lg font-bold" style={{ fontFamily: cinzel, color: T.primaryDark }}>
+                    Sửa bản đồ
                   </h3>
-                  <p className="text-xs" style={{ color: T.mutedLight }}>Map ID: {selectedMap.id}</p>
-                </div>
-
-                <div className="space-y-2 border-t pt-4 text-sm" style={{ borderColor: T.border, color: T.muted }}>
-                  <div className="flex justify-between">
-                    <span>Floor</span>
-                    <span className="font-semibold" style={{ color: T.text }}>
-                      {selectedMap.floorNumber === 0 ? "Ground floor (0)" : selectedMap.floorNumber ?? "N/A"}
-                    </span>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs" style={{ color: T.muted }}>Tên hiển thị</label>
+                    <input
+                      value={editMapName}
+                      onChange={(e) => setEditMapName(e.target.value)}
+                      className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+                      style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                    />
                   </div>
-                  <div className="flex justify-between">
-                    <span>Type</span>
-                    <span className="font-semibold capitalize" style={{ color: T.text }}>
-                      {mapKind(selectedMap)}
-                    </span>
+                  <div className="space-y-1.5">
+                    <label className="block text-xs" style={{ color: T.muted }}>Tầng (FloorNumber)</label>
+                    <input
+                      type="number"
+                      value={editFloorNumber}
+                      onChange={(e) => setEditFloorNumber(e.target.value)}
+                      className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+                      style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                    />
                   </div>
-                  <div className="flex justify-between">
-                    <span>Image Link</span>
-                    <a 
-                      href={selectedMap.mapImageUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="underline truncate max-w-[150px] inline-block hover:text-black"
-                      style={{ color: T.primaryDark }}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs" style={{ color: T.muted }}>Đổi ảnh (tuỳ chọn)</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setEditMapFile(e.target.files?.[0] ?? null)}
+                      className="w-full text-xs"
+                      style={{ color: T.muted }}
+                    />
+                  </div>
+                  {editMapError && (
+                    <p className="text-xs" style={{ color: "#8B2E2E" }}>{editMapError}</p>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={mapActionBusy}
+                      onClick={() => {
+                        setEditingMap(false);
+                        setEditMapError(null);
+                        setEditMapFile(null);
+                      }}
+                      className="flex-1 rounded-xl py-2 text-sm disabled:opacity-50"
+                      style={{ border: `1px solid ${T.border}`, color: T.muted }}
                     >
-                      Open original
-                    </a>
+                      Huỷ
+                    </button>
+                    <button
+                      type="button"
+                      disabled={mapActionBusy}
+                      onClick={() => void (async () => {
+                        setMapActionBusy(true);
+                        setEditMapError(null);
+                        try {
+                          const floor = Number(editFloorNumber);
+                          await updateMapEntry(selectedMap.id, {
+                            mapName: editMapName.trim() || undefined,
+                            floorNumber: Number.isFinite(floor) ? floor : undefined,
+                            mapImage: editMapFile,
+                          });
+                          setEditingMap(false);
+                          setEditMapFile(null);
+                          setSelectedMap(null);
+                          router.refresh();
+                        } catch (err) {
+                          setEditMapError(getDisplayError(err, "Không thể cập nhật map."));
+                        } finally {
+                          setMapActionBusy(false);
+                        }
+                      })()}
+                      className="flex-1 rounded-xl py-2 text-sm font-medium disabled:opacity-50"
+                      style={{ background: T.primary, color: T.surface }}
+                    >
+                      {mapActionBusy ? "Đang lưu…" : "Lưu"}
+                    </button>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-xl font-bold" style={{ fontFamily: cinzel, color: T.primaryDark }}>
+                        {getMapDisplayName(selectedMap)}
+                      </h3>
+                      <p className="text-xs" style={{ color: T.mutedLight }}>Map ID: {selectedMap.id}</p>
+                    </div>
 
-              <button 
-                type="button"
-                onClick={() => setSelectedMap(null)}
-                className="mt-6 w-full rounded-xl py-2.5 text-sm font-medium"
-                style={{ background: T.primary, color: T.surface }}
-              >
-                Close Detail
-              </button>
+                    <div className="space-y-2 border-t pt-4 text-sm" style={{ borderColor: T.border, color: T.muted }}>
+                      <div className="flex justify-between">
+                        <span>Floor</span>
+                        <span className="font-semibold" style={{ color: T.text }}>
+                          {selectedMap.floorNumber === 0 ? "Ground floor (0)" : selectedMap.floorNumber ?? "N/A"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Type</span>
+                        <span className="font-semibold capitalize" style={{ color: T.text }}>
+                          {mapKind(selectedMap)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Image Link</span>
+                        <a 
+                          href={resolveMapImageUrl(selectedMap.mapImageUrl)} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="underline truncate max-w-[150px] inline-block hover:text-black"
+                          style={{ color: T.primaryDark }}
+                        >
+                          Open original
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditMapName(
+                          selectedMap.mapName?.trim() ||
+                            (selectedMap.mapType !== "floor" && selectedMap.mapType !== "overview"
+                              ? selectedMap.mapType
+                              : getMapDisplayName(selectedMap)),
+                        );
+                        setEditFloorNumber(String(selectedMap.floorNumber ?? 0));
+                        setEditMapFile(null);
+                        setEditMapError(null);
+                        setEditingMap(true);
+                      }}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium"
+                      style={{ border: `1px solid ${T.border}`, color: T.text }}
+                    >
+                      <Edit3 className="h-4 w-4" />
+                      Sửa map
+                    </button>
+                    <button
+                      type="button"
+                      disabled={mapActionBusy}
+                      onClick={() => void (async () => {
+                        if (!confirm(`Xóa map #${selectedMap.id}?`)) return;
+                        setMapActionBusy(true);
+                        try {
+                          await deleteMapEntry(selectedMap.id);
+                          setSelectedMap(null);
+                          router.refresh();
+                        } catch (err) {
+                          alert(getDisplayError(err, "Không thể xóa map."));
+                        } finally {
+                          setMapActionBusy(false);
+                        }
+                      })()}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-medium disabled:opacity-50"
+                      style={{
+                        background: "rgba(184,92,56,0.1)",
+                        color: "#8B3A22",
+                        border: "1px solid rgba(184,92,56,0.3)",
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Xóa map
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setSelectedMap(null)}
+                      className="w-full rounded-xl py-2.5 text-sm font-medium"
+                      style={{ background: T.primary, color: T.surface }}
+                    >
+                      Close Detail
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

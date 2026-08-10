@@ -7,15 +7,17 @@ import type {
 import {
   cancelPayment as cancelPaymentApi,
   createOrder as createOrderApi,
+  createPaymentLink as createPaymentLinkApi,
   getMyTickets as getMyTicketsApi,
   getPendingOrder,
   getPublicTicketTypes as getPublicTicketTypesApi,
   mockConfirmPayment as mockConfirmPaymentApi,
+  checkInTicket,
+  getMyTicketDetail,
+  validateTicket,
 } from "./ticketing-api.service";
 import {
   DEMO_TICKET_TYPES,
-  mockPurchaseTickets,
-  readMockTickets,
 } from "./ticket-mock.store";
 
 /** Fetch active ticket types from backend API (with demo fallback if empty) */
@@ -54,12 +56,21 @@ export async function cancelTicketOrder(orderCode: string): Promise<void> {
   await cancelPaymentApi(orderCode);
 }
 
+export async function refreshPaymentLink(
+  orderCode: string,
+): Promise<CreateOrderResponseDto> {
+  return createPaymentLinkApi(orderCode);
+}
+
 export {
   createOrderApi as createOrder,
   getMyTicketsApi as getMyTickets,
   getPublicTicketTypesApi as getPublicTicketTypes,
   mockConfirmPaymentApi as mockConfirmPayment,
   cancelPaymentApi as cancelTicketOrderApi,
+  createPaymentLinkApi as createPaymentLink,
   getPendingOrder,
+  validateTicket,
+  checkInTicket,
+  getMyTicketDetail,
 };
-

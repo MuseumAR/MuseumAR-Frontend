@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#E8D9B8" stroke-width="1"/>
+    </pattern>
+  </defs>
+  <rect width="1200" height="800" fill="#F3EADF"/>
+  <rect width="1200" height="800" fill="url(#grid)"/>
+  <rect x="60" y="60" width="1080" height="680" rx="8" fill="#FFF8EC" stroke="#C89B45" stroke-width="3"/>
+  <rect x="100" y="100" width="320" height="280" fill="#EDE0C4" stroke="#A67C2D" stroke-width="2"/>
+  <rect x="460" y="100" width="280" height="180" fill="#EDE0C4" stroke="#A67C2D" stroke-width="2"/>
+  <rect x="780" y="100" width="320" height="280" fill="#EDE0C4" stroke="#A67C2D" stroke-width="2"/>
+  <rect x="100" y="420" width="500" height="260" fill="#EDE0C4" stroke="#A67C2D" stroke-width="2"/>
+  <rect x="640" y="420" width="460" height="260" fill="#EDE0C4" stroke="#A67C2D" stroke-width="2"/>
+  <path d="M420 240 H460 M740 190 H780 M260 380 V420 M900 380 V420 M600 420 V280" stroke="#C89B45" stroke-width="10" stroke-linecap="square"/>
+  <text x="600" y="50" text-anchor="middle" font-family="Georgia, serif" font-size="28" fill="#7A5A28">Lau 1 — First floor</text>
+  <text x="260" y="250" text-anchor="middle" font-family="Georgia, serif" font-size="20" fill="#8B6914">P201</text>
+  <text x="600" y="200" text-anchor="middle" font-family="Georgia, serif" font-size="20" fill="#8B6914">Lobby</text>
+  <text x="940" y="250" text-anchor="middle" font-family="Georgia, serif" font-size="20" fill="#8B6914">P202</text>
+  <text x="350" y="560" text-anchor="middle" font-family="Georgia, serif" font-size="20" fill="#8B6914">P203</text>
+  <text x="870" y="560" text-anchor="middle" font-family="Georgia, serif" font-size="20" fill="#8B6914">P204</text>
+</svg>

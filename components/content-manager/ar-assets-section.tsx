@@ -62,7 +62,15 @@ export function ArAssetsSection({
   }, [exhibitId]);
 
   useEffect(() => {
-    void reload();
+    let cancelled = false;
+    void (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      await reload();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [reload]);
 
   async function handleDelete(id: number) {

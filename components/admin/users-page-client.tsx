@@ -28,7 +28,15 @@ export function UsersPageClient() {
   }, []);
 
   useEffect(() => {
-    void load();
+    let cancelled = false;
+    void (async () => {
+      await Promise.resolve();
+      if (cancelled) return;
+      await load();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [load]);
 
   if (loading && users.length === 0) {

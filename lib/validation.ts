@@ -1,4 +1,5 @@
 import type { ApiResponse } from "@/types/api";
+import { repairDisplayText } from "@/lib/repair-text";
 
 export type ValidationResult = {
   valid: boolean;
@@ -273,11 +274,15 @@ function parseApiResponse(text: string): ApiResponse | null {
 }
 
 export function mapApiMessage(message: string): string {
-  const trimmed = message.trim();
+  const trimmed = repairDisplayText(message.trim());
   if (!trimmed) return "Request failed";
 
   if (API_MESSAGE_MAP[trimmed]) {
     return API_MESSAGE_MAP[trimmed];
+  }
+
+  if (isTechnicalMessage(trimmed)) {
+    return "Request failed";
   }
 
   return trimmed;

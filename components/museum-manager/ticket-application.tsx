@@ -16,6 +16,7 @@ import {
   getFirstValidationError,
   validateCreateTicketType,
 } from "@/lib/validation";
+import { TicketCheckInPanel } from "@/components/museum-manager/ticket-check-in";
 
 export function TicketApplicationTable({
   tickets,
@@ -105,6 +106,8 @@ export function TicketApplicationTable({
 
   return (
     <div className="space-y-6 px-8 pb-10">
+      <TicketCheckInPanel />
+
       <div className="flex flex-wrap items-center justify-between gap-4">
         <p className="text-sm" style={{ fontFamily: cinzel, color: T.muted }}>
           <span className="font-semibold" style={{ color: T.text }}>
