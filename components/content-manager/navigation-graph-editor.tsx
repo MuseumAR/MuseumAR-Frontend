@@ -70,6 +70,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
   const [testToRoomId, setTestToRoomId] = useState<number | "">("");
   const [testResult, setTestResult] = useState<NavigationRouteResponseDto | null>(null);
   const [testingPath, setTestingPath] = useState(false);
+  const [activeStepIndex, setActiveStepIndex] = useState<number | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -87,6 +88,64 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     const currentWpIds = new Set(currentFloorWaypoints.map((w) => w.id));
     return edges.filter((e) => currentWpIds.has(e.fromWaypointId) || currentWpIds.has(e.toWaypointId));
   }, [edges, currentFloorWaypoints]);
+
+  const roomById = useMemo(() => {
+    const map = new Map<number, RoomDto>();
+    for (const room of rooms) map.set(room.id, room);
+    return map;
+  }, [rooms]);
+
+  const getRoomLabel = (wp: WaypointDto) => {
+    if (wp.roomId == null || wp.roomId === 0) {
+      if (wp.waypointType === "DOOR" || wp.waypointType === "ROOM") {
+        return wp.name?.trim() || "Phòng";
+      }
+      return null;
+    }
+    const room = roomById.get(wp.roomId);
+    if (room) {
+      return room.roomCode ? `${room.roomName} (${room.roomCode})` : room.roomName;
+    }
+    return wp.name?.trim() || `Phòng #${wp.roomId}`;
+  };
+
+  const pathWaypointIds = useMemo(() => {
+    if (!testResult?.pathWaypoints?.length) return new Set<string>();
+    return new Set(testResult.pathWaypoints.map((w) => String(w.id)));
+  }, [testResult]);
+
+  /** Consecutive path segments visible on the current floor (for polyline highlight). */
+  const highlightedPathSegments = useMemo(() => {
+    const path = testResult?.pathWaypoints;
+    if (!path?.length || !currentMap) return [];
+
+    const floor = currentMap.floorNumber ?? 1;
+    const segments: { from: WaypointDto; to: WaypointDto }[] = [];
+
+    for (let i = 1; i < path.length; i++) {
+      const from = path[i - 1];
+      const to = path[i];
+      if (from.floorNumber === floor && to.floorNumber === floor) {
+        segments.push({ from, to });
+      }
+    }
+    return segments;
+  }, [testResult, currentMap]);
+
+  const instructionsOnFloor = useMemo(() => {
+    if (!testResult?.instructions?.length || !currentMap) return [];
+    const floor = currentMap.floorNumber ?? 1;
+    return testResult.instructions.filter((inst) => inst.floorNumber === floor);
+  }, [testResult, currentMap]);
+
+  const resolveWaypoint = (waypointId: string | number) => {
+    const id = String(waypointId);
+    return (
+      testResult?.pathWaypoints?.find((w) => String(w.id) === id) ||
+      waypoints.find((w) => String(w.id) === id) ||
+      null
+    );
+  };
 
   useEffect(() => {
     setMapImgFailed(false);
@@ -207,9 +266,22 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     if (!testFromRoomId || !testToRoomId) return;
     setTestingPath(true);
     setTestResult(null);
+    setActiveStepIndex(null);
     try {
       const res = await navigateRoute(Number(testFromRoomId), Number(testToRoomId));
+      if (!res) {
+        setError("Không tìm thấy đường đi giữa hai phòng.");
+        return;
+      }
       setTestResult(res);
+      setActiveStepIndex(res.instructions[0]?.stepIndex ?? null);
+
+      // Jump to the floor of the first path waypoint so the highlight is visible
+      const firstFloor = res.pathWaypoints[0]?.floorNumber;
+      if (firstFloor != null) {
+        const mapForFloor = maps.find((m) => (m.floorNumber ?? 1) === firstFloor);
+        if (mapForFloor) setSelectedMapId(mapForFloor.id);
+      }
     } catch (err) {
       setError("Lỗi khi chạy thử đường dẫn.");
     } finally {
@@ -217,18 +289,37 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     }
   };
 
-  const getWpColor = (type: string) => {
+  const handleClearTest = () => {
+    setTestResult(null);
+    setActiveStepIndex(null);
+  };
+
+  const handleSelectStep = (stepIndex: number, floorNumber: number) => {
+    setActiveStepIndex(stepIndex);
+    const mapForFloor = maps.find((m) => (m.floorNumber ?? 1) === floorNumber);
+    if (mapForFloor && mapForFloor.id !== selectedMapId) {
+      setSelectedMapId(mapForFloor.id);
+    }
+  };
+
+  /** Phòng (DOOR / có roomId) vs hành lang — màu tách rõ trên bản đồ. */
+  const getWpColor = (wp: Pick<WaypointDto, "waypointType" | "roomId"> | string) => {
+    const type = typeof wp === "string" ? wp : wp.waypointType;
+    const roomId = typeof wp === "string" ? null : wp.roomId;
+    const isRoomPoint = type === "DOOR" || type === "ROOM" || (roomId != null && roomId !== 0);
+
+    if (isRoomPoint) return "#16A34A"; // xanh lá — điểm phòng
+
     switch (type) {
-      case "DOOR":
-        return "#10B981"; // green
       case "STAIR":
-        return "#F59E0B"; // orange
+        return "#EA580C"; // cam — cầu thang
       case "ELEVATOR":
-        return "#8B5CF6"; // purple
+        return "#7C3AED"; // tím — thang máy
       case "LOBBY":
-        return "#EC4899"; // pink
+        return "#DB2777"; // hồng — sảnh
+      case "HALLWAY":
       default:
-        return "#3B82F6"; // blue
+        return "#2563EB"; // xanh dương — hành lang
     }
   };
 
@@ -336,11 +427,11 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                   className="w-full rounded-xl px-3 py-1.5 text-xs font-medium border"
                   style={{ background: "white", borderColor: T.border }}
                 >
-                  <option value="HALLWAY">Hành lang (Blue)</option>
-                  <option value="DOOR">Cửa phòng (Green)</option>
-                  <option value="STAIR">Cầu thang (Orange)</option>
-                  <option value="ELEVATOR">Thang máy (Purple)</option>
-                  <option value="LOBBY">Sảnh (Pink)</option>
+                  <option value="HALLWAY">Hành lang (xanh dương)</option>
+                  <option value="DOOR">Cửa / Phòng (xanh lá)</option>
+                  <option value="STAIR">Cầu thang (cam)</option>
+                  <option value="ELEVATOR">Thang máy (tím)</option>
+                  <option value="LOBBY">Sảnh (hồng)</option>
                 </select>
 
                 {wpType === "DOOR" && (
@@ -433,18 +524,49 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
 
             {testResult && (
               <div className="pt-3 border-t space-y-2 text-xs" style={{ borderColor: T.border }}>
-                <div className="flex justify-between font-bold" style={{ color: T.text }}>
+                <div className="flex items-center justify-between font-bold" style={{ color: T.text }}>
                   <span>Khoảng cách: {testResult.totalDistance}m</span>
                   <span>{testResult.instructions.length} bước</span>
                 </div>
-                <div className="max-h-40 overflow-y-auto space-y-1 pr-1">
-                  {testResult.instructions.map((inst, idx) => (
-                    <div key={idx} className="flex items-start gap-1.5 p-1.5 rounded-lg bg-white/70">
-                      <span className="font-semibold text-amber-700">{inst.stepIndex}.</span>
-                      <span className="text-slate-700">{inst.instruction}</span>
-                    </div>
-                  ))}
+                <p className="text-[11px]" style={{ color: T.muted }}>
+                  Đường vàng trên bản đồ = tuyến đi. Click bước để nhảy tới vị trí chỉ đường.
+                </p>
+                <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+                  {testResult.instructions.map((inst, idx) => {
+                    const isActive = activeStepIndex === inst.stepIndex;
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => handleSelectStep(inst.stepIndex, inst.floorNumber)}
+                        className={`flex w-full items-start gap-1.5 rounded-lg p-1.5 text-left transition ${
+                          isActive
+                            ? "bg-amber-100 ring-1 ring-amber-400"
+                            : "bg-white/70 hover:bg-amber-50"
+                        }`}
+                      >
+                        <span className="font-semibold text-amber-700">{inst.stepIndex}.</span>
+                        <span className="text-slate-700">
+                          {inst.instruction}
+                          {inst.action ? (
+                            <span className="mt-0.5 block text-[10px] font-medium uppercase tracking-wide text-amber-600/80">
+                              {inst.action}
+                              {inst.distance > 0 ? ` · ${inst.distance}m` : ""}
+                            </span>
+                          ) : null}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
+                <button
+                  type="button"
+                  onClick={handleClearTest}
+                  className="w-full rounded-xl py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-white/80"
+                  style={{ border: `1px solid ${T.border}` }}
+                >
+                  Xóa đường thử
+                </button>
               </div>
             )}
           </div>
@@ -452,6 +574,30 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
 
         {/* Center / Right Canvas Display */}
         <div className="space-y-4 lg:col-span-3">
+          {/* Color legend */}
+          <div className="flex flex-wrap items-center gap-3 text-[11px] font-medium" style={{ color: T.muted }}>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#16A34A" }} />
+              Phòng / Cửa
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#2563EB" }} />
+              Hành lang
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#EA580C" }} />
+              Cầu thang
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#7C3AED" }} />
+              Thang máy
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#DB2777" }} />
+              Sảnh
+            </span>
+          </div>
+
           <div
             ref={containerRef}
             onClick={handleMapClick}
@@ -479,11 +625,14 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
 
             {/* SVG overlay for drawing Edges & Highlighted Path */}
             <svg className="absolute inset-0 h-full w-full pointer-events-none">
-              {/* Draw Edges */}
+              {/* Base graph edges */}
               {currentFloorEdges.map((edge) => {
                 const w1 = waypoints.find((w) => w.id === edge.fromWaypointId);
                 const w2 = waypoints.find((w) => w.id === edge.toWaypointId);
                 if (!w1 || !w2) return null;
+
+                const onPath =
+                  pathWaypointIds.has(String(w1.id)) && pathWaypointIds.has(String(w2.id));
 
                 return (
                   <line
@@ -492,18 +641,57 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                     y1={`${w1.locationY}%`}
                     x2={`${w2.locationX}%`}
                     y2={`${w2.locationY}%`}
-                    stroke="#94A3B8"
+                    stroke={onPath && testResult ? "#CBD5E1" : "#94A3B8"}
                     strokeWidth="3"
                     strokeDasharray={edge.edgeType === "STAIR" ? "6,6" : "none"}
+                    opacity={testResult && !onPath ? 0.35 : 1}
                   />
                 );
               })}
+
+              {/* Highlighted A* path */}
+              {highlightedPathSegments.map(({ from, to }, idx) => (
+                <g key={`path-${from.id}-${to.id}-${idx}`}>
+                  <line
+                    x1={`${from.locationX}%`}
+                    y1={`${from.locationY}%`}
+                    x2={`${to.locationX}%`}
+                    y2={`${to.locationY}%`}
+                    stroke="#F59E0B"
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    opacity={0.35}
+                  />
+                  <line
+                    x1={`${from.locationX}%`}
+                    y1={`${from.locationY}%`}
+                    x2={`${to.locationX}%`}
+                    y2={`${to.locationY}%`}
+                    stroke="#D97706"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                  />
+                </g>
+              ))}
             </svg>
 
             {/* Waypoint Dots */}
             {currentFloorWaypoints.map((wp) => {
               const isSelected = wp.id === selectedWpId;
               const isEdgeStart = wp.id === edgeStartWpId;
+              const onPath = pathWaypointIds.has(String(wp.id));
+              const isPathStart =
+                testResult?.pathWaypoints[0] &&
+                String(testResult.pathWaypoints[0].id) === String(wp.id);
+              const isPathEnd =
+                testResult?.pathWaypoints.length &&
+                String(testResult.pathWaypoints[testResult.pathWaypoints.length - 1].id) ===
+                  String(wp.id);
+              const roomLabel = getRoomLabel(wp);
+              const isRoomPoint =
+                wp.waypointType === "DOOR" ||
+                wp.waypointType === "ROOM" ||
+                (wp.roomId != null && wp.roomId !== 0);
 
               return (
                 <div
@@ -512,15 +700,85 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                   style={{
                     left: `${wp.locationX}%`,
                     top: `${wp.locationY}%`,
-                    backgroundColor: getWpColor(wp.waypointType),
+                    zIndex: isRoomPoint || onPath ? 25 : 10,
                   }}
-                  className={`absolute -translate-x-1/2 -translate-y-1/2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full text-[10px] font-bold text-white shadow-md transition transform hover:scale-125 ${
-                    isSelected ? "ring-4 ring-amber-400 scale-125" : ""
-                  } ${isEdgeStart ? "ring-4 ring-emerald-400 animate-bounce" : ""}`}
-                  title={`${wp.name || wp.waypointType} (#${wp.id})`}
+                  className={`absolute -translate-x-1/2 -translate-y-1/2 flex cursor-pointer flex-col items-center ${
+                    testResult && !onPath ? "opacity-40" : ""
+                  }`}
+                  title={`${wp.name || wp.waypointType} (#${wp.id})${
+                    roomLabel ? ` · ${roomLabel}` : ""
+                  }${isPathStart ? " · Điểm bắt đầu" : isPathEnd ? " · Điểm kết thúc" : ""}`}
                 >
-                  {wp.waypointType[0]}
+                  {isRoomPoint && roomLabel && (
+                    <span
+                      className={`mb-1 max-w-[120px] truncate rounded-md px-1.5 py-0.5 text-center text-[10px] font-semibold leading-tight shadow-sm ring-1 ${
+                        isSelected
+                          ? "bg-emerald-700 text-white ring-emerald-800"
+                          : "bg-white/95 text-emerald-800 ring-emerald-200"
+                      }`}
+                    >
+                      {roomLabel}
+                    </span>
+                  )}
+                  <span
+                    style={{ backgroundColor: getWpColor(wp) }}
+                    className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-md transition transform hover:scale-125 ${
+                      isSelected ? "ring-4 ring-amber-400 scale-125" : ""
+                    } ${isEdgeStart ? "ring-4 ring-emerald-400 animate-bounce" : ""} ${
+                      onPath && !isSelected && !isEdgeStart
+                        ? "ring-2 ring-amber-500 scale-110"
+                        : ""
+                    }`}
+                  >
+                    {isPathStart
+                      ? "A"
+                      : isPathEnd
+                        ? "B"
+                        : isRoomPoint
+                          ? "P"
+                          : wp.waypointType[0]}
+                  </span>
                 </div>
+              );
+            })}
+
+            {/* Turn-by-turn step markers on map */}
+            {instructionsOnFloor.map((inst) => {
+              const wp = resolveWaypoint(inst.waypointId);
+              if (!wp) return null;
+              const isActive = activeStepIndex === inst.stepIndex;
+
+              return (
+                <button
+                  key={`step-${inst.stepIndex}-${inst.waypointId}`}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelectStep(inst.stepIndex, inst.floorNumber);
+                  }}
+                  style={{
+                    left: `${wp.locationX}%`,
+                    top: `${wp.locationY}%`,
+                    zIndex: isActive ? 40 : 30,
+                  }}
+                  className={`absolute -translate-x-1/2 translate-y-3 flex max-w-[140px] flex-col items-center gap-0.5 ${
+                    isActive ? "" : "opacity-90"
+                  }`}
+                  title={inst.instruction}
+                >
+                  <span
+                    className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold text-white shadow ${
+                      isActive ? "bg-amber-600 scale-110" : "bg-slate-800"
+                    }`}
+                  >
+                    {inst.stepIndex}
+                  </span>
+                  {isActive && (
+                    <span className="rounded-md bg-white/95 px-1.5 py-0.5 text-center text-[10px] font-medium leading-tight text-slate-800 shadow ring-1 ring-amber-300">
+                      {inst.instruction}
+                    </span>
+                  )}
+                </button>
               );
             })}
           </div>
@@ -529,11 +787,23 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
           {selectedWpId && (
             <div className="flex items-center justify-between rounded-xl p-3 border text-xs" style={{ background: "white", borderColor: T.border }}>
               <div className="flex items-center gap-3">
-                <div className="h-3 w-3 rounded-full" style={{ backgroundColor: getWpColor(waypoints.find((w) => w.id === selectedWpId)?.waypointType || "") }} />
+                <div
+                  className="h-3 w-3 rounded-full"
+                  style={{
+                    backgroundColor: getWpColor(
+                      waypoints.find((w) => w.id === selectedWpId) || "HALLWAY",
+                    ),
+                  }}
+                />
                 <div>
                   <span className="font-bold">Nốt #{selectedWpId}</span>
                   <span className="ml-2 text-slate-500">
-                    ({waypoints.find((w) => w.id === selectedWpId)?.waypointType}) - X: {waypoints.find((w) => w.id === selectedWpId)?.locationX}%, Y: {waypoints.find((w) => w.id === selectedWpId)?.locationY}%
+                    ({waypoints.find((w) => w.id === selectedWpId)?.waypointType}
+                    {waypoints.find((w) => w.id === selectedWpId)?.roomId
+                      ? ` · Phòng #${waypoints.find((w) => w.id === selectedWpId)?.roomId}`
+                      : ""}
+                    ) - X: {waypoints.find((w) => w.id === selectedWpId)?.locationX}%, Y:{" "}
+                    {waypoints.find((w) => w.id === selectedWpId)?.locationY}%
                   </span>
                 </div>
               </div>
