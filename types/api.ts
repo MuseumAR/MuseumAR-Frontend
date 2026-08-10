@@ -347,18 +347,36 @@ export type CreateTourRouteStopDto = {
   estimatedMinutes?: number | null;
 };
 
-// ─── Ticketing ────────────────────────────────────────────────────────────────
+export type TicketPromotionDto = {
+  id: number;
+  ticketTypeId: number;
+  name: string;
+  nameEn?: string | null;
+  description?: string | null;
+  descriptionEn?: string | null;
+  discountType: "Percentage" | "FixedAmount";
+  discountValue: number;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+};
 
 export type TicketTypeDto = {
   id: number;
   name: string;
+  nameEn?: string | null;
   price: number;
   description?: string | null;
+  descriptionEn?: string | null;
   museumId: number;
   exhibitionId?: number | null;
   status: string;
   /** Create-only on BE today — not returned on list DTO */
   isActive?: boolean;
+
+  // Promotion fields
+  activePromotions?: TicketPromotionDto[] | null;
+  originalPrice?: number | null;
 };
 
 export type CreateTicketTypeDto = {
@@ -370,9 +388,24 @@ export type CreateTicketTypeDto = {
   isActive?: boolean;
 };
 
+export type CreateTicketPromotionDto = {
+  name: string;
+  nameEn?: string | null;
+  description?: string | null;
+  descriptionEn?: string | null;
+  discountType: "Percentage" | "FixedAmount";
+  discountValue: number;
+  startDate: string;
+  endDate: string;
+  isActive?: boolean;
+};
+
+export type UpdateTicketPromotionDto = CreateTicketPromotionDto;
+
 export type CreateOrderRequestDto = {
   ticketTypeId: number;
   quantity: number;
+  promotionId?: number | null;
 };
 
 /** POST /api/ticketing/create-order — returns orderCode and optional PayOS link/QR */

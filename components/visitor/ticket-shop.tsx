@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Ticket,
   X,
+  Tag,
 } from "lucide-react";
 import { Navbar } from "@/components/shared/navbar";
 import { useAuth } from "@/context/auth-context";
@@ -70,6 +71,12 @@ export function TicketShop() {
   const [buyingId, setBuyingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  // Checkout modal states (Pre-checkout)
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [checkoutTarget, setCheckoutTarget] = useState<TicketTypeDto | null>(null);
+  const [selectedPromoId, setSelectedPromoId] = useState<number | null>(null);
+  const [checkoutQty, setCheckoutQty] = useState<number>(1);
 
   // Active payment modal state (Shopee retention flow)
   const [pendingOrder, setPendingOrder] = useState<PendingOrder | null>(null);
@@ -191,7 +198,7 @@ export function TicketShop() {
     }));
   }
 
-  async function handleInitiateOrder(ticketType: TicketTypeDto) {
+  async function handleInitiateOrder(ticketType: TicketTypeDto, quantity: number, promoId: number | null) {
     setError(null);
     setSuccess(null);
     setModalError(null);
@@ -203,7 +210,6 @@ export function TicketShop() {
       return;
     }
 
-    const quantity = quantities[ticketType.id] ?? 1;
     setBuyingId(ticketType.id);
 
     try {
@@ -211,9 +217,18 @@ export function TicketShop() {
       const res: CreateOrderResponseDto = await placeTicketOrder({
         ticketTypeId: ticketType.id,
         quantity,
+        promotionId: promoId,
       });
 
-      const totalAmount = res.amount ?? ticketType.price * quantity;
+      const promo = ticketType.activePromotions?.find(p => p.id === promoId);
+      let unitPrice = ticketType.price;
+      if (promo) {
+        const discount = promo.discountType === "Percentage"
+          ? ticketType.price * promo.discountValue / 100
+          : promo.discountValue;
+        unitPrice = Math.max(0, ticketType.price - discount);
+      }
+      const totalAmount = res.amount ?? unitPrice * quantity;
 
       // Open payment modal with order details & QR link
       setPendingOrder({
@@ -227,6 +242,8 @@ export function TicketShop() {
       });
       setRemainingSeconds(900); // 15 minutes
       setIsModalOpen(true);
+      setIsCheckoutOpen(false); // Close checkout modal
+      setCheckoutTarget(null);
     } catch (err) {
       setError(
         getDisplayError(err, t("tickets.error_init")),
@@ -400,6 +417,8 @@ export function TicketShop() {
             {types.map((ticket) => {
               const qty = quantities[ticket.id] ?? 1;
               const busy = buyingId === ticket.id;
+              const hasPromos = ticket.activePromotions && ticket.activePromotions.length > 0;
+
               return (
                 <li
                   key={ticket.id}
@@ -411,18 +430,30 @@ export function TicketShop() {
                   }}
                 >
                   <div className="min-w-0 flex-1">
-                    <h2 className="text-lg font-semibold" style={{ color: C.text }}>
-                      {ticket.name}
-                    </h2>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-lg font-semibold" style={{ color: C.text }}>
+                        {ticket.name}
+                      </h2>
+                      {hasPromos && (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold animate-bounce"
+                          style={{
+                            background: "linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)",
+                            color: "#FFF",
+                            boxShadow: "0 2px 8px rgba(220,38,38,0.30)",
+                          }}
+                        >
+                          🔥 Khuyến mãi
+                        </span>
+                      )}
+                    </div>
                     {ticket.description ? (
                       <p className="mt-1 text-sm leading-relaxed" style={{ color: C.muted }}>
                         {ticket.description}
                       </p>
                     ) : null}
-                    <p
-                      className="mt-3 text-xl font-semibold tabular-nums"
-                      style={{ color: C.secondary }}
-                    >
+
+                    <p className="mt-4 text-xl font-semibold tabular-nums" style={{ color: C.secondary }}>
                       {formatVnd(ticket.price)}
                     </p>
                   </div>
@@ -462,7 +493,16 @@ export function TicketShop() {
 
                     <button
                       type="button"
-                      onClick={() => handleInitiateOrder(ticket)}
+                      onClick={() => {
+                        if (!isAuthenticated) {
+                          router.push(`/login?next=${encodeURIComponent("/tickets")}`);
+                          return;
+                        }
+                        setCheckoutTarget(ticket);
+                        setSelectedPromoId(null);
+                        setCheckoutQty(quantities[ticket.id] ?? 1);
+                        setIsCheckoutOpen(true);
+                      }}
                       disabled={busy}
                       className="inline-flex min-w-[8.5rem] items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
                       style={{
@@ -490,7 +530,238 @@ export function TicketShop() {
         )}
       </main>
 
-      {/* ═══ PAYMENT MODAL ═══ */}
+      {/* ═══ PRE-CHECKOUT PROMOTION SELECTION MODAL ═══ */}
+      {isCheckoutOpen && checkoutTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => {
+            setIsCheckoutOpen(false);
+            setCheckoutTarget(null);
+          }}
+        >
+          <div
+            className="relative w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto"
+            style={{ background: C.surface, border: `1px solid ${C.border}` }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: C.border }}>
+              <div>
+                <h3 className="text-lg font-bold" style={{ color: C.text }}>
+                  Chọn khuyến mãi & Thanh toán
+                </h3>
+                <p className="text-xs" style={{ color: C.mutedLight }}>
+                  Xác nhận thông tin mua vé và áp dụng mã ưu đãi
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCheckoutOpen(false);
+                  setCheckoutTarget(null);
+                }}
+                className="rounded-full p-2 hover:bg-[rgba(200,155,60,0.15)] transition-colors"
+                style={{ color: C.muted }}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Ticket details & Quantity Controls */}
+            <div className="space-y-4">
+              <div>
+                <span className="text-xs font-semibold uppercase tracking-wider block" style={{ color: C.mutedLight }}>Loại vé</span>
+                <span className="text-base font-semibold block mt-0.5" style={{ color: C.text }}>{checkoutTarget.name}</span>
+                {checkoutTarget.description && (
+                  <p className="text-xs mt-1" style={{ color: C.muted }}>{checkoutTarget.description}</p>
+                )}
+              </div>
+
+              {/* Adjust Qty directly in Checkout Modal */}
+              <div className="flex items-center justify-between border-y py-3" style={{ borderColor: C.border }}>
+                <span className="text-sm font-semibold" style={{ color: C.text }}>Số lượng vé mua</span>
+                <div
+                  className="inline-flex items-center rounded-full"
+                  style={{ border: `1px solid ${C.border}`, background: C.bg }}
+                >
+                  <button
+                    type="button"
+                    className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity hover:opacity-70"
+                    style={{ color: C.text }}
+                    onClick={() => setCheckoutQty(prev => Math.max(1, prev - 1))}
+                    disabled={checkoutQty <= 1}
+                  >
+                    <Minus className="h-3 w-3" />
+                  </button>
+                  <span
+                    className="min-w-[1.5rem] text-center text-xs font-medium tabular-nums"
+                    style={{ color: C.text }}
+                  >
+                    {checkoutQty}
+                  </span>
+                  <button
+                    type="button"
+                    className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity hover:opacity-70"
+                    style={{ color: C.text }}
+                    onClick={() => setCheckoutQty(prev => Math.min(MAX_QTY, prev + 1))}
+                    disabled={checkoutQty >= MAX_QTY}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Available Promotions Section */}
+              {checkoutTarget.activePromotions && checkoutTarget.activePromotions.length > 0 ? (
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold uppercase tracking-wider block" style={{ color: C.mutedLight }}>
+                    Khuyến mãi khả dụng
+                  </span>
+                  <div className="flex flex-col gap-2">
+                    {/* Option: Original price (No promotion) */}
+                    <label
+                      className="flex items-center justify-between rounded-2xl p-3 text-xs border cursor-pointer transition-all"
+                      style={{
+                        borderColor: selectedPromoId === null ? C.primary : C.border,
+                        background: selectedPromoId === null ? "rgba(200,155,60,0.06)" : "transparent",
+                      }}
+                      onClick={() => setSelectedPromoId(null)}
+                    >
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="checkout-promo"
+                          checked={selectedPromoId === null}
+                          onChange={() => setSelectedPromoId(null)}
+                          className="accent-[#C89B3C]"
+                        />
+                        <span className="font-semibold" style={{ color: C.text }}>🏷️ Không áp dụng khuyến mãi</span>
+                      </div>
+                      <span style={{ color: C.muted }}>Giá gốc</span>
+                    </label>
+
+                    {/* Promotion options */}
+                    {checkoutTarget.activePromotions.map((promo) => {
+                      const isSelected = selectedPromoId === promo.id;
+                      const discountText = promo.discountType === "Percentage"
+                        ? `-${promo.discountValue}%`
+                        : `-${formatVnd(promo.discountValue)}`;
+
+                      return (
+                        <label
+                          key={promo.id}
+                          className="flex items-center justify-between rounded-2xl p-3 text-xs border cursor-pointer transition-all"
+                          style={{
+                            borderColor: isSelected ? "#B91C1C" : C.border,
+                            background: isSelected ? "rgba(220,38,38,0.04)" : "transparent",
+                          }}
+                          onClick={() => setSelectedPromoId(promo.id)}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <input
+                              type="radio"
+                              name="checkout-promo"
+                              checked={isSelected}
+                              onChange={() => setSelectedPromoId(promo.id)}
+                              className="accent-[#B91C1C]"
+                            />
+                            <div className="min-w-0">
+                              <span className="font-bold block truncate" style={{ color: C.text }}>🔥 {promo.name}</span>
+                              {promo.description && (
+                                <p className="text-[10px] text-stone-500 mt-0.5 truncate">{promo.description}</p>
+                              )}
+                            </div>
+                          </div>
+                          <span className="font-bold shrink-0 text-red-600" style={{ fontSize: "13px" }}>{discountText}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-xl p-3 text-xs text-center border border-dashed" style={{ borderColor: C.border, color: C.mutedLight }}>
+                  Không có chương trình khuyến mãi khả dụng cho loại vé này.
+                </div>
+              )}
+            </div>
+
+            {/* Calculations & Total Payment */}
+            {(() => {
+              const promo = checkoutTarget.activePromotions?.find(p => p.id === selectedPromoId);
+              let unitPrice = checkoutTarget.price;
+              let discountVal = 0;
+
+              if (promo) {
+                discountVal = promo.discountType === "Percentage"
+                  ? checkoutTarget.price * promo.discountValue / 100
+                  : promo.discountValue;
+                unitPrice = Math.max(0, checkoutTarget.price - discountVal);
+              }
+
+              const totalOriginal = checkoutTarget.price * checkoutQty;
+              const totalDiscount = discountVal * checkoutQty;
+              const totalPayment = unitPrice * checkoutQty;
+
+              return (
+                <div className="space-y-3 border-t pt-4" style={{ borderColor: C.border }}>
+                  <div className="space-y-1.5 text-xs">
+                    <div className="flex justify-between" style={{ color: C.muted }}>
+                      <span>Tổng tiền vé ({checkoutQty} vé)</span>
+                      <span className="font-mono">{formatVnd(totalOriginal)}</span>
+                    </div>
+                    {totalDiscount > 0 && (
+                      <div className="flex justify-between text-red-600">
+                        <span>Giảm giá khuyến mãi</span>
+                        <span className="font-mono">-{formatVnd(totalDiscount)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between border-t pt-2.5 mt-1.5" style={{ borderColor: C.border }}>
+                      <span className="text-sm font-semibold" style={{ color: C.text }}>Tổng thanh toán</span>
+                      <span className="text-lg font-bold" style={{ color: totalDiscount > 0 ? "#B91C1C" : C.secondary }}>
+                        {formatVnd(totalPayment)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3.5 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsCheckoutOpen(false);
+                        setCheckoutTarget(null);
+                      }}
+                      className="flex-1 rounded-full py-2.5 text-xs font-semibold border transition-colors hover:bg-stone-50"
+                      style={{ color: C.muted, borderColor: C.border }}
+                    >
+                      Quay lại
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleInitiateOrder(checkoutTarget, checkoutQty, selectedPromoId)}
+                      disabled={buyingId === checkoutTarget.id}
+                      className="flex-1 rounded-full py-2.5 text-xs font-bold text-white transition-opacity hover:opacity-90 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      style={{
+                        background: selectedPromoId ? "linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)" : `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
+                        boxShadow: selectedPromoId ? "0 2px 10px rgba(220,38,38,0.25)" : "0 2px 10px rgba(166,124,45,0.25)",
+                      }}
+                    >
+                      {buyingId === checkoutTarget.id ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Đang tạo đơn...
+                        </>
+                      ) : (
+                        "Tiến hành thanh toán"
+                      )}
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ PAYMENT MODAL (PayOS QR) ═══ */}
       {pendingOrder && isModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
@@ -593,44 +864,57 @@ export function TicketShop() {
               <p className="text-xs max-w-xs" style={{ color: C.muted }}>
                 {t("tickets.qr_instruction")}
               </p>
+            </div>
 
-              {pendingOrder.checkoutUrl && (
+            {/* PayOS External Link */}
+            {pendingOrder.checkoutUrl && (
+              <div className="text-center">
                 <a
                   href={pendingOrder.checkoutUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-xs font-medium underline transition-opacity hover:opacity-80"
+                  className="inline-flex items-center gap-2 text-xs font-medium underline transition-opacity hover:opacity-85"
                   style={{ color: C.secondary }}
                 >
                   {t("tickets.open_payos")} <ExternalLink className="h-3.5 w-3.5" />
                 </a>
-              )}
-            </div>
-
-            {/* Modal Error */}
-            {modalError && (
-              <div
-                className="rounded-2xl px-4 py-3 text-xs"
-                style={{
-                  background: "rgba(139,58,58,0.08)",
-                  border: "1px solid rgba(139,58,58,0.25)",
-                  color: "#8B3A3A",
-                }}
-              >
-                {modalError}
               </div>
             )}
 
-            {/* Action buttons */}
-            <div className="space-y-2 pt-2">
+            {modalError && (
+              <p className="text-xs text-red-600 bg-red-50 p-2.5 rounded-xl border border-red-200">
+                {modalError}
+              </p>
+            )}
+
+            {/* Modal Actions */}
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              {/* EXPLICIT CANCEL ORDER BUTTON */}
+              <button
+                type="button"
+                onClick={handleCancelOrder}
+                disabled={cancelling || confirming}
+                className="flex-1 rounded-full border py-3 text-sm font-semibold transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+                style={{ borderColor: C.border, color: C.muted }}
+              >
+                {cancelling ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Đang hủy...
+                  </span>
+                ) : (
+                  "Hủy đơn hàng này"
+                )}
+              </button>
+
               <button
                 type="button"
                 onClick={handleConfirmPayment}
                 disabled={confirming || cancelling}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="flex-1 rounded-full py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-1.5"
                 style={{
                   background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
-                  color: C.surface,
+                  boxShadow: "0 2px 10px rgba(166,124,45,0.30)",
                 }}
               >
                 {confirming ? (
@@ -645,24 +929,6 @@ export function TicketShop() {
                   </>
                 )}
               </button>
-
-              {/* Explicit cancel order button inside modal */}
-              <button
-                type="button"
-                onClick={handleCancelOrder}
-                disabled={confirming || cancelling}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-medium border transition-colors hover:bg-stone-100 disabled:opacity-50"
-                style={{ borderColor: C.border, color: C.muted }}
-              >
-                {cancelling ? (
-                  <>
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    {t("tickets.cancelling_order")}
-                  </>
-                ) : (
-                  t("tickets.cancel_order")
-                )}
-              </button>
             </div>
           </div>
         </div>
@@ -670,4 +936,3 @@ export function TicketShop() {
     </div>
   );
 }
-
