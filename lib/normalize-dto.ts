@@ -198,6 +198,26 @@ export function normalizeTicketTypeDto(
   raw: unknown,
 ): import("@/types/api").TicketTypeDto {
   const o = asRecord(raw);
+  const activePromosRaw = pickField<unknown[]>(o, "activePromotions", "ActivePromotions") ?? [];
+  const activePromotions: import("@/types/api").TicketPromotionDto[] = (
+    Array.isArray(activePromosRaw) ? activePromosRaw : []
+  ).map((p) => {
+    const pr = asRecord(p);
+    return {
+      id: Number(pickField(pr, "id", "Id") ?? 0),
+      ticketTypeId: Number(pickField(pr, "ticketTypeId", "TicketTypeId") ?? 0),
+      name: String(pickField(pr, "name", "Name") ?? ""),
+      nameEn: pickStr(pr, "nameEn", "NameEn") ?? null,
+      description: pickStr(pr, "description", "Description") ?? null,
+      descriptionEn: pickStr(pr, "descriptionEn", "DescriptionEn") ?? null,
+      discountType: (pickField(pr, "discountType", "DiscountType") as any) ?? "Percentage",
+      discountValue: Number(pickField(pr, "discountValue", "DiscountValue") ?? 0),
+      startDate: String(pickField(pr, "startDate", "StartDate") ?? ""),
+      endDate: String(pickField(pr, "endDate", "EndDate") ?? ""),
+      isActive: Boolean(pickField(pr, "isActive", "IsActive") ?? false),
+    };
+  });
+
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
     name: String(pickField(o, "name", "Name") ?? ""),
@@ -206,6 +226,8 @@ export function normalizeTicketTypeDto(
     museumId: Number(pickField(o, "museumId", "MuseumId") ?? 0),
     exhibitionId: pickNum(o, "exhibitionId", "ExhibitionId") ?? null,
     status: String(pickField(o, "status", "Status") ?? "Pending"),
+    activePromotions,
+    originalPrice: pickNum(o, "originalPrice", "OriginalPrice") ?? null,
   };
 }
 

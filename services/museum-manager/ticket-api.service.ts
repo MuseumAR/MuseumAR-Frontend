@@ -1,6 +1,6 @@
-import { apiGetAuth, apiPostAuth, apiPutAuth } from "@/services/api-client";
+import { apiGetAuth, apiPostAuth, apiPutAuth, apiDeleteAuth } from "@/services/api-client";
 import { normalizeTicketTypeDto } from "@/lib/normalize-dto";
-import type { CreateTicketTypeDto, TicketTypeDto } from "@/types/api";
+import type { CreateTicketTypeDto, CreateTicketPromotionDto, UpdateTicketPromotionDto, TicketTypeDto, TicketPromotionDto } from "@/types/api";
 
 export function getManagerTicketTypes(accessToken?: string | null) {
   return apiGetAuth<unknown[]>("/api/MuseumManager/ticket-types", accessToken).then((data) =>
@@ -16,4 +16,69 @@ export function createManagerTicketType(payload: CreateTicketTypeDto, accessToke
 
 export function publishManagerTicketType(id: number, accessToken?: string | null) {
   return apiPutAuth<unknown>(`/api/MuseumManager/ticket-types/${id}/publish`, {}, accessToken);
+}
+
+// ═══ PROMOTION API ═══
+
+export function getManagerTicketPromotions(ticketTypeId: number, accessToken?: string | null) {
+  return apiGetAuth<TicketPromotionDto[]>(
+    `/api/MuseumManager/ticket-types/${ticketTypeId}/promotions`,
+    accessToken,
+  ).then((data) => (Array.isArray(data) ? data : []));
+}
+
+export function createManagerTicketPromotion(
+  ticketTypeId: number,
+  payload: CreateTicketPromotionDto,
+  accessToken?: string | null,
+) {
+  return apiPostAuth<TicketPromotionDto>(
+    `/api/MuseumManager/ticket-types/${ticketTypeId}/promotions`,
+    payload,
+    accessToken,
+  );
+}
+
+export function getManagerTicketPromotionDetail(
+  promotionId: number,
+  accessToken?: string | null,
+) {
+  return apiGetAuth<TicketPromotionDto>(
+    `/api/MuseumManager/promotions/${promotionId}`,
+    accessToken,
+  );
+}
+
+export function updateManagerTicketPromotion(
+  promotionId: number,
+  payload: UpdateTicketPromotionDto,
+  accessToken?: string | null,
+) {
+  return apiPutAuth<TicketPromotionDto>(
+    `/api/MuseumManager/promotions/${promotionId}`,
+    payload,
+    accessToken,
+  );
+}
+
+export function deleteManagerTicketPromotion(
+  promotionId: number,
+  accessToken?: string | null,
+) {
+  return apiDeleteAuth<unknown>(
+    `/api/MuseumManager/promotions/${promotionId}`,
+    accessToken,
+  );
+}
+
+export function toggleManagerTicketPromotion(
+  promotionId: number,
+  isActive: boolean,
+  accessToken?: string | null,
+) {
+  return apiPutAuth<unknown>(
+    `/api/MuseumManager/promotions/${promotionId}/toggle?isActive=${isActive}`,
+    {},
+    accessToken,
+  );
 }
