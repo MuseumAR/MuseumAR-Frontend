@@ -267,7 +267,6 @@ export type MuseumMapDto = {
    * Seeded maps often put the display name here (e.g. "Bản đồ Tầng trệt").
    */
   mapType: string;
-  /** Not on current BE MuseumMapDto — optional if payload expands */
   floorNumber?: number;
   mapName?: string | null;
 };
@@ -333,6 +332,7 @@ export type CreateTourRouteDto = {
 
 export type UpdateTourRouteDto = {
   name?: string | null;
+  description?: string | null;
   estimatedDurationMinutes?: number | null;
   ageGroupId?: number | null;
   exhibitionId?: number | null;
@@ -691,6 +691,8 @@ export type CreateTagDto = {
 export type WaypointDto = {
   id: string;
   museumId: number;
+  /** Present after BE AddMapIdToWaypoint; may be 0/null for legacy rows */
+  mapId?: number | null;
   floorNumber: number;
   locationX: number;
   locationY: number;
@@ -757,7 +759,7 @@ export type NavigationInstructionDto = {
   action: string;
   distance: number;
   floorNumber: number;
-  waypointId: number;
+  waypointId: string;
 };
 
 export type NavigationRouteResponseDto = {

@@ -449,6 +449,7 @@ function RouteDetailModal({
     try {
       await updateRouteEntry(route.id, {
         name: editName.trim() || null,
+        description: editDesc.trim() || null,
         estimatedDurationMinutes: editDuration ? Number(editDuration) : undefined,
         status: editStatus || undefined,
       });
