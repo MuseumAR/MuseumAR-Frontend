@@ -24,7 +24,7 @@ import type {
   NavigationRouteResponseDto,
 } from "@/types/api";
 import {
-  getNavigationGraphByMuseum,
+  getNavigationGraphByMap,
   createWaypoint,
   deleteWaypoint,
   createEdge,
@@ -79,10 +79,15 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     [maps, selectedMapId]
   );
 
-  const currentFloorWaypoints = useMemo(
-    () => waypoints.filter((w) => currentMap && (w.floorNumber === currentMap.floorNumber || w.museumId === museumId)),
-    [waypoints, currentMap, museumId]
-  );
+  const currentFloorWaypoints = useMemo(() => {
+    if (!currentMap) return [];
+    const floor = currentMap.floorNumber ?? 1;
+    return waypoints.filter((w) => {
+      // Prefer mapId (BE AddMapIdToWaypoint); fall back to floor for legacy rows
+      if (w.mapId != null && w.mapId !== 0) return w.mapId === currentMap.id;
+      return w.floorNumber === floor;
+    });
+  }, [waypoints, currentMap]);
 
   const currentFloorEdges = useMemo(() => {
     const currentWpIds = new Set(currentFloorWaypoints.map((w) => w.id));
@@ -114,7 +119,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     return new Set(testResult.pathWaypoints.map((w) => String(w.id)));
   }, [testResult]);
 
-  /** Consecutive path segments visible on the current floor (for polyline highlight). */
+  /** Consecutive path segments visible on the current map (for polyline highlight). */
   const highlightedPathSegments = useMemo(() => {
     const path = testResult?.pathWaypoints;
     if (!path?.length || !currentMap) return [];
@@ -125,7 +130,15 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     for (let i = 1; i < path.length; i++) {
       const from = path[i - 1];
       const to = path[i];
-      if (from.floorNumber === floor && to.floorNumber === floor) {
+      const fromOnMap =
+        from.mapId != null && from.mapId !== 0
+          ? from.mapId === currentMap.id
+          : from.floorNumber === floor;
+      const toOnMap =
+        to.mapId != null && to.mapId !== 0
+          ? to.mapId === currentMap.id
+          : to.floorNumber === floor;
+      if (fromOnMap && toOnMap) {
         segments.push({ from, to });
       }
     }
@@ -135,7 +148,20 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
   const instructionsOnFloor = useMemo(() => {
     if (!testResult?.instructions?.length || !currentMap) return [];
     const floor = currentMap.floorNumber ?? 1;
-    return testResult.instructions.filter((inst) => inst.floorNumber === floor);
+    const pathIdsOnMap = new Set(
+      (testResult.pathWaypoints || [])
+        .filter((w) =>
+          w.mapId != null && w.mapId !== 0
+            ? w.mapId === currentMap.id
+            : w.floorNumber === floor,
+        )
+        .map((w) => String(w.id)),
+    );
+    return testResult.instructions.filter(
+      (inst) =>
+        inst.floorNumber === floor ||
+        pathIdsOnMap.has(String(inst.waypointId)),
+    );
   }, [testResult, currentMap]);
 
   const resolveWaypoint = (waypointId: string | number) => {
@@ -151,18 +177,21 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     setMapImgFailed(false);
   }, [selectedMapId]);
 
-  // Load graph on mount & map change
+  // Load graph when selected map changes (scoped by MapId on BE)
   useEffect(() => {
-    if (!museumId) return;
+    if (!selectedMapId) return;
     setLoading(true);
-    getNavigationGraphByMuseum(museumId)
+    setTestResult(null);
+    setActiveStepIndex(null);
+    setSelectedWpId(null);
+    getNavigationGraphByMap(selectedMapId)
       .then((data) => {
         setWaypoints(data.waypoints || []);
         setEdges(data.edges || []);
       })
-      .catch((err) => setError("Không thể tải đồ thị chỉ đường."))
+      .catch(() => setError("Không thể tải đồ thị chỉ đường."))
       .finally(() => setLoading(false));
-  }, [museumId]);
+  }, [selectedMapId]);
 
   // Handle map click for adding waypoint
   const handleMapClick = async (e: React.MouseEvent<HTMLDivElement>) => {
