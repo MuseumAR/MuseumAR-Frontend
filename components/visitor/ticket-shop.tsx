@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
@@ -12,7 +11,6 @@ import {
   Plus,
   QrCode,
   ShieldCheck,
-  Ticket,
   X,
   Tag,
 } from "lucide-react";
@@ -320,20 +318,6 @@ export function TicketShop() {
           <p className="mt-3 max-w-xl text-sm leading-relaxed" style={{ color: C.muted }}>
             {t("tickets.subtitle")}
           </p>
-          <div className="mt-5">
-            <Link
-              href="/tickets/mine"
-              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-opacity hover:opacity-85"
-              style={{
-                background: C.surface,
-                border: `1px solid ${C.border}`,
-                color: C.text,
-              }}
-            >
-              <Ticket className="h-4 w-4" style={{ color: C.primary }} />
-              {t("tickets.my_tickets_btn")}
-            </Link>
-          </div>
         </header>
 
         {/* SHOPEE-STYLE PENDING ORDER BANNER */}

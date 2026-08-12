@@ -262,10 +262,7 @@ export type MuseumMapDto = {
   id: number;
   museumId: number;
   mapImageUrl: string;
-  /**
-   * BE maps entity MapName → MapType on the DTO.
-   * Seeded maps often put the display name here (e.g. "Bản đồ Tầng trệt").
-   */
+  /** Stored separately on BE (e.g. "floor", "wing") */
   mapType: string;
   floorNumber?: number;
   mapName?: string | null;
@@ -274,6 +271,32 @@ export type MuseumMapDto = {
 export type CreateMuseumMapDto = {
   museumId: number;
   mapType: string;
+  mapName?: string;
+  floorNumber?: number;
+};
+
+export type MapPoiDto = {
+  id: number;
+  mapId: number;
+  poiType: string;
+  locationX: number;
+  locationY: number;
+  description?: string | null;
+};
+
+export type CreateMapPoiDto = {
+  mapId: number;
+  poiType: string;
+  locationX: number;
+  locationY: number;
+  description?: string | null;
+};
+
+export type UpdateMapPoiDto = {
+  poiType?: string | null;
+  locationX?: number | null;
+  locationY?: number | null;
+  description?: string | null;
 };
 
 // ─── Tour route ───────────────────────────────────────────────────────────────

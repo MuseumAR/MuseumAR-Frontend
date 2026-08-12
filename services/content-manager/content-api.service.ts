@@ -33,14 +33,18 @@ import type {
   UpdateTourRouteDto,
 } from "@/types/api";
 
-export function getExhibits() {
-  return apiGet<unknown[]>("/api/content/exhibits").then((data) =>
+export function getExhibits(includeUnpublished = true) {
+  const query = includeUnpublished ? "?includeUnpublished=true" : "";
+  return apiGet<unknown[]>(`/api/content/exhibits${query}`).then((data) =>
     (Array.isArray(data) ? data : []).map(normalizeExhibitDto),
   );
 }
 
-export function getExhibitById(id: number) {
-  return apiGet<unknown>(`/api/content/exhibits/${id}`).then(normalizeExhibitDto);
+export function getExhibitById(id: number, includeUnpublished = true) {
+  const query = includeUnpublished ? "?includeUnpublished=true" : "";
+  return apiGet<unknown>(`/api/content/exhibits/${id}${query}`).then(
+    normalizeExhibitDto,
+  );
 }
 
 export function createExhibit(payload: CreateExhibitDto) {
@@ -176,6 +180,43 @@ export function updateMuseumMap(id: number, formData: FormData) {
 
 export function deleteMuseumMap(id: number) {
   return apiDeleteAuth<null>(`/api/content/maps/${id}`);
+}
+
+function normalizeMapPoiDto(raw: unknown): import("@/types/api").MapPoiDto {
+  const o = (raw ?? {}) as Record<string, unknown>;
+  return {
+    id: Number(o.id ?? o.Id ?? 0),
+    mapId: Number(o.mapId ?? o.MapId ?? 0),
+    poiType: String(o.poiType ?? o.PoiType ?? o.Poitype ?? "WC"),
+    locationX: Number(o.locationX ?? o.LocationX ?? 0),
+    locationY: Number(o.locationY ?? o.LocationY ?? 0),
+    description: (o.description ?? o.Description ?? null) as string | null,
+  };
+}
+
+export function getMapPois(mapId: number) {
+  return apiGet<unknown[]>(`/api/content/maps/${mapId}/pois`).then((data) =>
+    (Array.isArray(data) ? data : []).map(normalizeMapPoiDto),
+  );
+}
+
+export function createMapPoi(payload: import("@/types/api").CreateMapPoiDto) {
+  return apiPostAuth<unknown>("/api/content/map-pois", payload).then(
+    normalizeMapPoiDto,
+  );
+}
+
+export function updateMapPoi(
+  id: number,
+  payload: import("@/types/api").UpdateMapPoiDto,
+) {
+  return apiPutAuth<unknown>(`/api/content/map-pois/${id}`, payload).then(
+    normalizeMapPoiDto,
+  );
+}
+
+export function deleteMapPoi(id: number) {
+  return apiDeleteAuth<null>(`/api/content/map-pois/${id}`);
 }
 
 export function getTourRoutes() {

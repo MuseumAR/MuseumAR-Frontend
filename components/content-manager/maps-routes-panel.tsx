@@ -984,7 +984,9 @@ export function MapsRoutesPanel({
     setMapError(null);
     try {
       const formData = new FormData();
-      formData.append("MapType", editMapName.trim());
+      // BE now stores MapName and MapType separately — do not put display name in MapType
+      formData.append("MapName", editMapName.trim());
+      formData.append("MapType", editingMap.mapType?.trim() || "floor");
       formData.append("FloorNumber", editMapFloor);
       if (editMapFile) {
         formData.append("MapImage", editMapFile);
