@@ -2,6 +2,8 @@ import { ContentVersionsPanel } from "@/components/content-manager/content-versi
 import { getVersionList } from "@/services/content-manager/content-version.service";
 
 export default async function ContentVersionsPage() {
-  const versions = await getVersionList();
-  return <ContentVersionsPanel initialVersions={versions} />;
+  const { versions, loadError } = await getVersionList();
+  return (
+    <ContentVersionsPanel initialVersions={versions} loadError={loadError} />
+  );
 }

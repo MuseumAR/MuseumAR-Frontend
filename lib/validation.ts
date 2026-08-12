@@ -286,6 +286,17 @@ export function mapApiMessage(message: string): string {
 export function getDisplayError(error: unknown, fallback: string): string {
   if (!error) return fallback;
 
+  const raw =
+    typeof error === "string"
+      ? error
+      : error instanceof Error
+        ? error.message
+        : "";
+
+  if (/UQ_ContentVersion|duplicate key.*ContentVersions|UNIQUE KEY.*ContentVersion/i.test(raw)) {
+    return "This version number already exists. Use a new one (e.g. v1.0.1).";
+  }
+
   if (typeof error === "string") {
     return mapApiMessage(error);
   }
@@ -294,6 +305,9 @@ export function getDisplayError(error: unknown, fallback: string): string {
     const apiResponse = parseApiResponse(error.message);
     if (apiResponse?.message) {
       return mapApiMessage(apiResponse.message);
+    }
+    if (isTechnicalMessage(error.message)) {
+      return fallback;
     }
     return mapApiMessage(error.message);
   }
