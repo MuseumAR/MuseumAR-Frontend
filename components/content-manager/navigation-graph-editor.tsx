@@ -81,12 +81,10 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
 
   const currentFloorWaypoints = useMemo(() => {
     if (!currentMap) return [];
-    const floor = currentMap.floorNumber ?? 1;
-    return waypoints.filter((w) => {
-      // Prefer mapId (BE AddMapIdToWaypoint); fall back to floor for legacy rows
-      if (w.mapId != null && w.mapId !== 0) return w.mapId === currentMap.id;
-      return w.floorNumber === floor;
-    });
+    // BE graph-by-map returns only waypoints with MapId == mapId
+    return waypoints.filter(
+      (w) => w.mapId == null || w.mapId === 0 || w.mapId === currentMap.id,
+    );
   }, [waypoints, currentMap]);
 
   const currentFloorEdges = useMemo(() => {
@@ -119,26 +117,19 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     return new Set(testResult.pathWaypoints.map((w) => String(w.id)));
   }, [testResult]);
 
-  /** Consecutive path segments visible on the current map (for polyline highlight). */
+  /** Consecutive path segments on the loaded map graph. */
   const highlightedPathSegments = useMemo(() => {
     const path = testResult?.pathWaypoints;
     if (!path?.length || !currentMap) return [];
 
-    const floor = currentMap.floorNumber ?? 1;
-    const segments: { from: WaypointDto; to: WaypointDto }[] = [];
+    const onThisMap = (w: WaypointDto) =>
+      w.mapId == null || w.mapId === 0 || w.mapId === currentMap.id;
 
+    const segments: { from: WaypointDto; to: WaypointDto }[] = [];
     for (let i = 1; i < path.length; i++) {
       const from = path[i - 1];
       const to = path[i];
-      const fromOnMap =
-        from.mapId != null && from.mapId !== 0
-          ? from.mapId === currentMap.id
-          : from.floorNumber === floor;
-      const toOnMap =
-        to.mapId != null && to.mapId !== 0
-          ? to.mapId === currentMap.id
-          : to.floorNumber === floor;
-      if (fromOnMap && toOnMap) {
+      if (onThisMap(from) && onThisMap(to)) {
         segments.push({ from, to });
       }
     }
@@ -147,20 +138,18 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
 
   const instructionsOnFloor = useMemo(() => {
     if (!testResult?.instructions?.length || !currentMap) return [];
-    const floor = currentMap.floorNumber ?? 1;
     const pathIdsOnMap = new Set(
       (testResult.pathWaypoints || [])
-        .filter((w) =>
-          w.mapId != null && w.mapId !== 0
-            ? w.mapId === currentMap.id
-            : w.floorNumber === floor,
+        .filter(
+          (w) => w.mapId == null || w.mapId === 0 || w.mapId === currentMap.id,
         )
         .map((w) => String(w.id)),
     );
+    const floor = currentMap.floorNumber ?? 1;
     return testResult.instructions.filter(
       (inst) =>
-        inst.floorNumber === floor ||
-        pathIdsOnMap.has(String(inst.waypointId)),
+        pathIdsOnMap.has(String(inst.waypointId)) ||
+        inst.floorNumber === floor,
     );
   }, [testResult, currentMap]);
 
