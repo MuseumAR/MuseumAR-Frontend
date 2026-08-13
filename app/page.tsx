@@ -4,9 +4,12 @@ import { useEffect, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { BookOpen, Compass, Landmark, ArrowRight, ChevronRight, Headphones, Scan, Ticket } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/shared/navbar";
 import { StableLabel } from "@/components/shared/stable-label";
+import { useAuth } from "@/context/auth-context";
 import { useLanguage } from "@/context/language-context";
+import { getHomePathForRole, isDashboardRole } from "@/lib/roles";
 
 // ── Tokens ───────────────────────────────────────────────────────────────────
 
@@ -67,11 +70,20 @@ function fadeUp(delay = 0) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
+  const router = useRouter();
   const { t } = useLanguage();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const featuresRef = useRef(null);
   const statsRef = useRef(null);
   const featuresInView = useInView(featuresRef, { once: true, margin: "-60px" });
   const statsInView = useInView(statsRef, { once: true, margin: "-60px" });
+
+  useEffect(() => {
+    if (authLoading || !isAuthenticated || !user) return;
+    if (isDashboardRole(user.roleName)) {
+      router.replace(getHomePathForRole(user.roleName));
+    }
+  }, [authLoading, isAuthenticated, user, router]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && window.location.hash) {

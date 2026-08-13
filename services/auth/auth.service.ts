@@ -2,6 +2,7 @@ import { apiPost, apiPostAuth, getApiUrl } from "./auth.api";
 import { clearAuthSession, saveAuthSession } from "./auth.storage";
 import { refreshAccessToken } from "./refresh-token";
 import { AppError } from "@/lib/validation";
+import { canonicalRoleName } from "@/lib/roles";
 import type {
   ChangePasswordRequest,
   ForgotPasswordRequest,
@@ -72,7 +73,9 @@ function normalizeLoginResponse(
     userId: Number(r.userId ?? r.UserId ?? 0),
     fullName: String(r.fullName ?? r.FullName ?? ""),
     email: String(r.email ?? r.Email ?? ""),
-    roleName: String(r.roleName ?? r.RoleName ?? ""),
+    roleName: canonicalRoleName(
+      String(r.roleName ?? r.RoleName ?? r.role ?? r.Role ?? ""),
+    ),
     accessToken: String(r.accessToken ?? r.AccessToken ?? ""),
     refreshToken: (r.refreshToken ?? r.RefreshToken ?? null) as string | null,
   };

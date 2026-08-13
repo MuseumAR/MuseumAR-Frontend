@@ -1,4 +1,5 @@
 import { getMuseumIdFromAccessToken } from "@/lib/jwt";
+import { canonicalRoleName } from "@/lib/roles";
 import type { LoginResponseDto } from "./auth.types";
 
 const ACCESS_TOKEN_KEY = "museumar_access_token";
@@ -105,7 +106,11 @@ export function getAuthUser(): StoredAuthUser | null {
   if (!raw) return null;
 
   try {
-    return backfillMuseumId(JSON.parse(raw) as StoredAuthUser);
+    const parsed = JSON.parse(raw) as StoredAuthUser;
+    return backfillMuseumId({
+      ...parsed,
+      roleName: canonicalRoleName(parsed.roleName ?? ""),
+    });
   } catch {
     return null;
   }

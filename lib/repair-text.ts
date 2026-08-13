@@ -50,11 +50,9 @@ function toLatin1Bytes(value: string): Uint8Array {
   return Uint8Array.from(bytes);
 }
 
-export function repairDisplayText(value: string | null | undefined): string {
-  if (value == null || value === "") return value ?? "";
-
+function decodeOnce(value: string): string | null {
   const bytes = toLatin1Bytes(value);
-  if (bytes.length === 0) return value;
+  if (bytes.length === 0) return null;
 
   try {
     const decoded = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
@@ -65,6 +63,37 @@ export function repairDisplayText(value: string | null | undefined): string {
     // keep original
   }
 
+  return null;
+}
+
+export function repairDisplayText(value: string | null | undefined): string {
+  if (value == null || value === "") return value ?? "";
+  if (/^(https?:|data:|blob:)/i.test(value)) return value;
+
+  let current = value;
+  for (let i = 0; i < 3; i++) {
+    const next = decodeOnce(current);
+    if (!next) break;
+    current = next;
+  }
+  return current;
+}
+
+/** Recursively repair UTF-8 mojibake on every string in an API payload. */
+export function repairJsonValue<T>(value: T): T {
+  if (typeof value === "string") {
+    return repairDisplayText(value) as T;
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => repairJsonValue(item)) as T;
+  }
+  if (value && typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+      out[key] = repairJsonValue(nested);
+    }
+    return out as T;
+  }
   return value;
 }
 

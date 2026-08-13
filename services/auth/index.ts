@@ -18,7 +18,7 @@ export {
 export {
   getStoredMuseumId,
 } from "./resolve-museum-id";
-export { getHomePathForRole, getRoleDisplayLabel, isDashboardRole } from "./auth.utils";
+export { getHomePathForRole, getPostLoginPath, getRoleDisplayLabel, isDashboardRole } from "./auth.utils";
 export { AUTH_CHANGED_EVENT } from "./auth.storage";
 export type { ApiResponse } from "@/types/api";
 export type {
