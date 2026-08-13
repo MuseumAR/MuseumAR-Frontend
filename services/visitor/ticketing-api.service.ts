@@ -29,14 +29,16 @@ export function createOrder(
   );
 }
 
-export function getMyTickets(): Promise<TicketDto[]> {
-  return apiGetAuth<unknown[]>("/api/ticketing/my-tickets").then((data) =>
+export function getMyTickets(lang?: string): Promise<TicketDto[]> {
+  const query = lang ? `?lang=${encodeURIComponent(lang)}` : "";
+  return apiGetAuth<unknown[]>(`/api/ticketing/my-tickets${query}`).then((data) =>
     (Array.isArray(data) ? data : []).map(normalizeTicketDto),
   );
 }
 
-export function getTicketDetail(id: number): Promise<TicketDetailDto> {
-  return apiGetAuth<TicketDetailDto>(`/api/ticketing/my-tickets/${id}`);
+export function getTicketDetail(id: number, lang?: string): Promise<TicketDetailDto> {
+  const query = lang ? `?lang=${encodeURIComponent(lang)}` : "";
+  return apiGetAuth<TicketDetailDto>(`/api/ticketing/my-tickets/${id}${query}`);
 }
 
 export function mockConfirmPayment(orderCode: string) {

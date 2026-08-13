@@ -63,7 +63,7 @@ function formatTimer(secs: number) {
 export function TicketShop() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [types, setTypes] = useState<TicketTypeDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
@@ -171,7 +171,7 @@ export function TicketShop() {
     (async () => {
       setLoading(true);
       try {
-        const list = await listPublicTicketTypes();
+        const list = await listPublicTicketTypes(language);
         if (cancelled) return;
         setTypes(list);
         setQuantities(
@@ -188,7 +188,7 @@ export function TicketShop() {
     return () => {
       cancelled = true;
     };
-  }, [t]);
+  }, [language, t]);
 
   function setQty(id: number, next: number) {
     setQuantities((prev) => ({

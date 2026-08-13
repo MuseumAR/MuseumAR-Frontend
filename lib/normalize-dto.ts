@@ -260,8 +260,10 @@ export function normalizeTicketTypeDto(
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
     name: pickStr(o, "name", "Name") ?? "",
+    nameEn: pickStr(o, "nameEn", "NameEn") ?? null,
     price: Number(pickField(o, "price", "Price") ?? 0),
     description: pickStr(o, "description", "Description") ?? null,
+    descriptionEn: pickStr(o, "descriptionEn", "DescriptionEn") ?? null,
     museumId: Number(pickField(o, "museumId", "MuseumId") ?? 0),
     exhibitionId: pickNum(o, "exhibitionId", "ExhibitionId") ?? null,
     status: String(pickField(o, "status", "Status") ?? "Pending"),

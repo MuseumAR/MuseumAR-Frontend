@@ -28,7 +28,7 @@ export function MyTicketsPanel() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [tickets, setTickets] = useState<TicketDto[]>([]);
   const [loading, setLoading] = useState(true);
   const purchased = searchParams.get("purchased") === "1";
@@ -45,7 +45,7 @@ export function MyTicketsPanel() {
     (async () => {
       setLoading(true);
       // UI mock store only — skips my-tickets API (same VisitorId bug).
-      const list = await listMyTickets();
+      const list = await listMyTickets(language);
       if (!cancelled) {
         setTickets(list);
         setLoading(false);
@@ -55,7 +55,7 @@ export function MyTicketsPanel() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isAuthenticated, router]);
+  }, [authLoading, isAuthenticated, router, language]);
 
   return (
     <div className="min-h-screen" style={{ background: C.bg }}>
