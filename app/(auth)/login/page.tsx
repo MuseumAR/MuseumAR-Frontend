@@ -7,19 +7,8 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { useAuth } from "@/context/auth-context";
-import { getHomePathForRole, login, loginWithGoogle } from "@/services/auth";
-import {
-  getDisplayError,
-  getFirstValidationError,
-  validateLogin,
-} from "@/lib/validation";
-
-function resolvePostLoginPath(roleName: string, next: string | null) {
-  if (next && next.startsWith("/") && !next.startsWith("//")) {
-    return next;
-  }
-  return getHomePathForRole(roleName);
-}
+import { getPostLoginPath, login, loginWithGoogle } from "@/services/auth";
+import { getDisplayError, getFirstValidationError, validateLogin } from "@/lib/validation";
 
 function readNextParam() {
   if (typeof window === "undefined") return null;
@@ -158,7 +147,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
-      router.replace(resolvePostLoginPath(user.roleName, readNextParam()));
+      router.replace(getPostLoginPath(user.roleName, readNextParam()));
     }
   }, [isAuthenticated, isLoading, router, user]);
 
@@ -167,7 +156,7 @@ export default function LoginPage() {
     setIsGoogleLoading(true);
     try {
       const result = await loginWithGoogle({ idToken });
-      router.push(resolvePostLoginPath(result.roleName, readNextParam()));
+      router.replace(getPostLoginPath(result.roleName, readNextParam()));
     } catch (err) {
       setError(getDisplayError(err, "Đăng nhập Google thất bại. Vui lòng thử lại."));
     } finally {
@@ -189,7 +178,7 @@ export default function LoginPage() {
 
     try {
       const result = await login({ email: email.trim(), password });
-      router.push(resolvePostLoginPath(result.roleName, readNextParam()));
+      router.replace(getPostLoginPath(result.roleName, readNextParam()));
     } catch (err) {
       setError(getDisplayError(err, "Đăng nhập thất bại. Vui lòng thử lại."));
     } finally {

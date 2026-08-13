@@ -56,16 +56,58 @@ export const ROLE_HOME_PATH: Record<BackendRole, string> = {
   Visitor: "/tickets",
 };
 
+export function canonicalRoleName(roleName: string): string {
+  const compact = roleName.trim().toLowerCase().replace(/[\s_-]+/g, "");
+  const map: Record<string, BackendRole> = {
+    systemadmin: "SystemAdmin",
+    museummanager: "MuseumManager",
+    contentmanager: "ContentManager",
+    visitor: "Visitor",
+  };
+  return map[compact] ?? roleName.trim();
+}
+
 export function isDashboardRole(roleName: string): roleName is DashboardRole {
-  return (DASHBOARD_ROLES as readonly string[]).includes(roleName);
+  return (DASHBOARD_ROLES as readonly string[]).includes(
+    canonicalRoleName(roleName),
+  );
 }
 
 export function getHomePathForRole(roleName: string): string {
-  return ROLE_HOME_PATH[roleName as BackendRole] ?? "/";
+  const role = canonicalRoleName(roleName) as BackendRole;
+  return ROLE_HOME_PATH[role] ?? "/";
+}
+
+/** After login: staff always land on their dashboard. Visitor keeps `next` if it is a public page. */
+export function getPostLoginPath(roleName: string, next?: string | null): string {
+  const home = getHomePathForRole(roleName);
+  const role = canonicalRoleName(roleName);
+  const safeNext =
+    next && next.startsWith("/") && !next.startsWith("//") ? next : null;
+
+  if (isDashboardRole(role)) {
+    const base = ROLE_BASE_PATH[role];
+    if (safeNext && (safeNext === base || safeNext.startsWith(`${base}/`))) {
+      return safeNext;
+    }
+    return home;
+  }
+
+  if (
+    safeNext &&
+    !safeNext.startsWith("/admin") &&
+    !safeNext.startsWith("/museum-manager") &&
+    !safeNext.startsWith("/content-manager") &&
+    !safeNext.startsWith("/analyst")
+  ) {
+    return safeNext;
+  }
+
+  return home;
 }
 
 export function getRoleDisplayLabel(roleName: string): string {
-  return roleName;
+  return canonicalRoleName(roleName);
 }
 
 const NAV_CONFIG: Record<NavIcon, { label: string; segment: string }> = {
