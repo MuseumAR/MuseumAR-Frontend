@@ -19,13 +19,9 @@ const C = {
   surface: "#FFF8E7",
 };
 
-const NAV_LINKS = [
-  { label: "Home", href: "/" },
-  { label: "Tickets", href: "/tickets" },
-  { label: "Collections", href: "#collections" },
-  { label: "Museums", href: "#museums" },
-  { label: "About", href: "#about" },
-];
+function sectionHref(pathname: string, hash: string) {
+  return pathname === "/" ? hash : `/${hash}`;
+}
 
 function AuthSkeleton() {
   return (
@@ -317,9 +313,9 @@ export function Navbar() {
   const navLinks = [
     { label: t("nav.home"), href: "/" },
     { label: t("nav.tickets"), href: "/tickets" },
-    { label: t("nav.collections"), href: "#collections" },
-    { label: t("nav.museums"), href: "#museums" },
-    { label: t("nav.about"), href: "#about" },
+    { label: t("nav.collections"), href: sectionHref(pathname, "#collections") },
+    { label: t("nav.museums"), href: sectionHref(pathname, "#museums") },
+    { label: t("nav.about"), href: sectionHref(pathname, "#about") },
   ];
 
   return (

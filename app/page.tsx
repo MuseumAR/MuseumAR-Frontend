@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import { BookOpen, Compass, Landmark, ArrowRight, ChevronRight } from "lucide-react";
+import { BookOpen, Compass, Landmark, ArrowRight, ChevronRight, Headphones, Scan, Ticket } from "lucide-react";
 import Link from "next/link";
 import { Navbar } from "@/components/shared/navbar";
 import { useLanguage } from "@/context/language-context";
@@ -195,6 +195,24 @@ export default function LandingPage() {
     { value: "500+", label: t("stat2.label") },
     { value: "50+", label: t("stat3.label") },
     { value: "95%", label: t("stat4.label") },
+  ];
+
+  const aboutItems = [
+    {
+      icon: Headphones,
+      title: t("about.audio_title"),
+      description: t("about.audio_desc"),
+    },
+    {
+      icon: Scan,
+      title: t("about.ar_title"),
+      description: t("about.ar_desc"),
+    },
+    {
+      icon: Ticket,
+      title: t("about.ticket_title"),
+      description: t("about.ticket_desc"),
+    },
   ];
 
   return (
@@ -423,7 +441,7 @@ export default function LandingPage() {
       <section
         ref={featuresRef}
         id="collections"
-        className="px-6 py-28"
+        className="scroll-mt-24 px-6 py-28"
         style={{ background: C.surface }}
       >
         {/* Top decorative rule */}
@@ -546,7 +564,7 @@ export default function LandingPage() {
       <section
         ref={statsRef}
         id="museums"
-        className="px-6 py-24"
+        className="scroll-mt-24 px-6 py-24"
         style={{ background: C.accent }}
       >
         <div className="mx-auto max-w-5xl">
@@ -606,16 +624,96 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ══ CTA ════════════════════════════════════════════════════════════ */}
-      <section id="about" className="px-6 py-24" style={{ background: C.surface }}>
+      {/* ══ ABOUT ══════════════════════════════════════════════════════════ */}
+      <section
+        id="about"
+        className="scroll-mt-24 px-6 py-24"
+        style={{ background: C.surface }}
+      >
         <div className="mx-auto max-w-6xl">
           <OrnamentalRule className="mb-16" />
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="mb-14 text-center"
+          >
+            <p
+              className="mb-3 text-xs font-medium tracking-[0.3em] uppercase"
+              style={{ color: C.primary }}
+            >
+              {t("about.tagline")}
+            </p>
+            <h2
+              className="text-4xl font-bold leading-snug md:text-5xl"
+              style={{
+                fontFamily: "var(--font-be-vietnam), system-ui, sans-serif",
+                color: C.text,
+              }}
+            >
+              {t("about.title")}
+            </h2>
+            <p
+              className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed md:text-base"
+              style={{ color: C.muted }}
+            >
+              {t("about.desc")}
+            </p>
+            <p
+              className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed"
+              style={{ color: C.muted }}
+            >
+              {t("about.mission")}
+            </p>
+          </motion.div>
+
+          <div className="mb-16 grid gap-6 md:grid-cols-3">
+            {aboutItems.map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <motion.div
+                  key={item.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 + i * 0.1 }}
+                  className="relative overflow-hidden rounded-2xl p-8"
+                  style={{
+                    background: C.bg,
+                    border: `1px solid ${C.border}`,
+                  }}
+                >
+                  <div
+                    className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl"
+                    style={{
+                      background: "rgba(200,155,60,0.12)",
+                      border: "1px solid rgba(200,155,60,0.28)",
+                    }}
+                  >
+                    <Icon className="h-5 w-5" style={{ color: C.primary }} />
+                  </div>
+                  <h3
+                    className="mb-3 text-lg font-semibold"
+                    style={{
+                      fontFamily: "var(--font-be-vietnam), system-ui, sans-serif",
+                      color: C.text,
+                    }}
+                  >
+                    {item.title}
+                  </h3>
+                  <p className="text-sm leading-relaxed" style={{ color: C.muted }}>
+                    {item.description}
+                  </p>
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
 
         <motion.div
           initial={{ opacity: 0, y: 24 }}
-          animate={statsInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.4, duration: 0.65 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.65 }}
           className="relative mx-auto max-w-2xl overflow-hidden rounded-3xl p-12 text-center"
           style={{
             background: C.bg,
