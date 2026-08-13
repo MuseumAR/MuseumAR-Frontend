@@ -104,14 +104,51 @@ export function normalizeExhibitDto(raw: unknown): import("@/types/api").Exhibit
 /** Slim BE MuseumDto + optional profile fields if present on payload. */
 export function normalizeMuseumDto(raw: unknown): import("@/types/api").MuseumDto {
   const o = asRecord(raw);
+  const address = pickStr(o, "address", "Address") ?? null;
+  let city = pickStr(o, "city", "City") ?? null;
+  let province = pickStr(o, "province", "Province") ?? null;
+  let country = pickStr(o, "country", "Country") ?? null;
+
+  if (!country || !country.trim() || country === "—" || country === "-") {
+    country = "Việt Nam";
+  }
+
+  if (address) {
+    const parts = address.split(",").map((p) => p.trim()).filter(Boolean);
+    if (parts.length >= 2) {
+      const extractedCity = parts[parts.length - 1];
+      const extractedProvince = parts[parts.length - 2];
+      if (!city || !city.trim() || city === "—" || city === "-") {
+        city = extractedCity;
+      }
+      if (!province || !province.trim() || province === "—" || province === "-") {
+        province = extractedProvince;
+      }
+    } else if (parts.length === 1) {
+      if (!city || !city.trim() || city === "—" || city === "-") {
+        city = parts[0];
+      }
+      if (!province || !province.trim() || province === "—" || province === "-") {
+        province = parts[0];
+      }
+    }
+  }
+
+  if (!city || !city.trim() || city === "—" || city === "-") {
+    city = "Thành phố Hồ Chí Minh";
+  }
+  if (!province || !province.trim() || province === "—" || province === "-") {
+    province = "Quận 1";
+  }
+
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
     name: String(pickField(o, "name", "Name") ?? ""),
     description: pickStr(o, "description", "Description") ?? null,
-    address: pickStr(o, "address", "Address") ?? null,
-    city: pickStr(o, "city", "City") ?? null,
-    province: pickStr(o, "province", "Province") ?? null,
-    country: pickStr(o, "country", "Country") ?? null,
+    address,
+    city,
+    province,
+    country,
     latitude: pickNum(o, "latitude", "Latitude") ?? null,
     longitude: pickNum(o, "longitude", "Longitude") ?? null,
     status: String(pickField(o, "status", "Status") ?? "Active"),

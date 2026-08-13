@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { BookOpen, Compass, Landmark, ArrowRight, ChevronRight, Headphones, Scan, Ticket } from "lucide-react";
 import Link from "next/link";
@@ -71,6 +71,18 @@ export default function LandingPage() {
   const statsRef = useRef(null);
   const featuresInView = useInView(featuresRef, { once: true, margin: "-60px" });
   const statsInView = useInView(statsRef, { once: true, margin: "-60px" });
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash) {
+      const targetId = window.location.hash.substring(1);
+      setTimeout(() => {
+        const el = document.getElementById(targetId);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    }
+  }, []);
 
   const exhibitCards = [
     {

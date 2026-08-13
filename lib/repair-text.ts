@@ -73,16 +73,55 @@ export function repairMuseumText<
     name?: string | null;
     city?: string | null;
     province?: string | null;
+    country?: string | null;
     address?: string | null;
     description?: string | null;
   },
 >(museum: T): T {
+  const address = museum.address ? repairDisplayText(museum.address) : museum.address;
+  let city = museum.city ? repairDisplayText(museum.city) : museum.city;
+  let province = museum.province ? repairDisplayText(museum.province) : museum.province;
+  let country = museum.country ? repairDisplayText(museum.country) : museum.country;
+
+  if (!country || !country.trim() || country === "—" || country === "-") {
+    country = "Việt Nam";
+  }
+
+  if (address) {
+    const parts = address.split(",").map((p) => p.trim()).filter(Boolean);
+    if (parts.length >= 2) {
+      const extractedCity = parts[parts.length - 1];
+      const extractedProvince = parts[parts.length - 2];
+      if (!city || !city.trim() || city === "—" || city === "-") {
+        city = extractedCity;
+      }
+      if (!province || !province.trim() || province === "—" || province === "-") {
+        province = extractedProvince;
+      }
+    } else if (parts.length === 1) {
+      if (!city || !city.trim() || city === "—" || city === "-") {
+        city = parts[0];
+      }
+      if (!province || !province.trim() || province === "—" || province === "-") {
+        province = parts[0];
+      }
+    }
+  }
+
+  if (!city || !city.trim() || city === "—" || city === "-") {
+    city = "Thành phố Hồ Chí Minh";
+  }
+  if (!province || !province.trim() || province === "—" || province === "-") {
+    province = "Quận 1";
+  }
+
   return {
     ...museum,
     name: museum.name ? repairDisplayText(museum.name) : museum.name,
-    city: museum.city ? repairDisplayText(museum.city) : museum.city,
-    province: museum.province ? repairDisplayText(museum.province) : museum.province,
-    address: museum.address ? repairDisplayText(museum.address) : museum.address,
+    city,
+    province,
+    country,
+    address,
     description: museum.description ? repairDisplayText(museum.description) : museum.description,
   };
 }

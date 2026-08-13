@@ -39,12 +39,14 @@ export function CreateExhibitForm({
   const router = useRouter();
   const imageRef = useRef<HTMLInputElement>(null);
   const arRef = useRef<HTMLInputElement>(null);
-  const audioRef = useRef<HTMLInputElement>(null);
+  const audioRefVi = useRef<HTMLInputElement>(null);
+  const audioRefEn = useRef<HTMLInputElement>(null);
 
-  const [title, setTitle] = useState("");
+  const [titleVi, setTitleVi] = useState("");
+  const [titleEn, setTitleEn] = useState("");
   const [exhibitCode, setExhibitCode] = useState("");
-  const [description, setDescription] = useState("");
-  const [languageCode, setLanguageCode] = useState("vi");
+  const [descriptionVi, setDescriptionVi] = useState("");
+  const [descriptionEn, setDescriptionEn] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [ageGroupId, setAgeGroupId] = useState("");
   const [era, setEra] = useState("");
@@ -55,7 +57,8 @@ export function CreateExhibitForm({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [arFile, setArFile] = useState<File | null>(null);
-  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [audioFileVi, setAudioFileVi] = useState<File | null>(null);
+  const [audioFileEn, setAudioFileEn] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,7 +84,7 @@ export function CreateExhibitForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const validation = validateCreateArtifact({ name: title });
+    const validation = validateCreateArtifact({ name: titleVi.trim() || titleEn.trim() });
     if (!validation.valid) {
       setError(getFirstValidationError(validation));
       return;
@@ -91,6 +94,24 @@ export function CreateExhibitForm({
     setIsSubmitting(true);
 
     try {
+      const translationsPayload = [];
+      if (titleVi.trim()) {
+        translationsPayload.push({
+          exhibitId: 0,
+          languageCode: "vi",
+          title: titleVi.trim(),
+          description: descriptionVi.trim() || undefined,
+        });
+      }
+      if (titleEn.trim()) {
+        translationsPayload.push({
+          exhibitId: 0,
+          languageCode: "en",
+          title: titleEn.trim(),
+          description: descriptionEn.trim() || undefined,
+        });
+      }
+
       const res = await createExhibit({
         museumId,
         categoryId: categoryId ? Number(categoryId) : undefined,
@@ -103,20 +124,15 @@ export function CreateExhibitForm({
           era: era.trim() || undefined,
           historicalEvent: historicalEvent.trim() || undefined,
         },
-        translations: [
-          {
-            exhibitId: 0,
-            languageCode,
-            title: title.trim(),
-            description: description.trim() || undefined,
-          },
-        ],
+        translations: translationsPayload,
       });
 
       const exhibitId = typeof res === "object" && res && "id" in res ? (res as any).id : (res as unknown as number);
 
-      if (imageFile) await uploadExhibitImage(exhibitId, imageFile, title);
-      if (audioFile) await uploadExhibitAudio(exhibitId, languageCode, audioFile);
+      const displayTitle = titleVi.trim() || titleEn.trim() || "Artifact";
+      if (imageFile) await uploadExhibitImage(exhibitId, imageFile, displayTitle);
+      if (audioFileVi) await uploadExhibitAudio(exhibitId, "vi", audioFileVi);
+      if (audioFileEn) await uploadExhibitAudio(exhibitId, "en", audioFileEn);
       if (arFile) {
         const arType = arFile.type.startsWith("image/") ? "OverlayImage" : "Model3D";
         await uploadArAsset(exhibitId, arType, arFile);
@@ -166,18 +182,23 @@ export function CreateExhibitForm({
               const file = e.target.files?.[0];
               if (file) setArFile(file);
             }} />
-            <UploadBox label={audioFile?.name ?? "Hướng dẫn âm thanh"} onClick={() => audioRef.current?.click()} />
-            <input ref={audioRef} type="file" accept="audio/*" className="hidden" onChange={(e) => {
+            <UploadBox label={audioFileVi?.name ?? "Audio Tiếng Việt"} onClick={() => audioRefVi.current?.click()} />
+            <input ref={audioRefVi} type="file" accept="audio/*" className="hidden" onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) setAudioFile(file);
+              if (file) setAudioFileVi(file);
+            }} />
+            <UploadBox label={audioFileEn?.name ?? "Audio Tiếng Anh"} onClick={() => audioRefEn.current?.click()} />
+            <input ref={audioRefEn} type="file" accept="audio/*" className="hidden" onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) setAudioFileEn(file);
             }} />
           </div>
 
           <div className="flex-1 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Tiêu đề *" value={title} onChange={setTitle} placeholder="Tiêu đề hiện vật" />
+              <Field label="Tiêu đề (Tiếng Việt) *" value={titleVi} onChange={setTitleVi} placeholder="Tiêu đề tiếng Việt" />
+              <Field label="Tiêu đề (English)" value={titleEn} onChange={setTitleEn} placeholder="English title" />
               <Field label="Mã hiện vật" value={exhibitCode} onChange={setExhibitCode} placeholder="CAT-001" />
-              <Field label="Ngôn ngữ" value={languageCode} onChange={setLanguageCode} placeholder="vi" />
               <SelectField
                 label="Danh mục"
                 value={categoryId}
@@ -219,15 +240,27 @@ export function CreateExhibitForm({
                 placeholder="Không bắt buộc"
               />
             </div>
-            <div>
-              <label className="mb-1.5 block text-sm" style={{ color: T.muted }}>Mô tả</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
-                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-sm" style={{ color: T.muted }}>Mô tả (Tiếng Việt)</label>
+                <textarea
+                  value={descriptionVi}
+                  onChange={(e) => setDescriptionVi(e.target.value)}
+                  rows={4}
+                  className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
+                  style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm" style={{ color: T.muted }}>Mô tả (English)</label>
+                <textarea
+                  value={descriptionEn}
+                  onChange={(e) => setDescriptionEn(e.target.value)}
+                  rows={4}
+                  className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
+                  style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                />
+              </div>
             </div>
             {tags.length > 0 && (
               <div>
@@ -325,7 +358,7 @@ function SelectField({
         className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
         style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
       >
-        <option value="">Không</option
+        <option value="">Không</option>
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}

@@ -281,6 +281,22 @@ export function Navbar() {
     { label: t("nav.about"), href: sectionHref(pathname, "#about") },
   ];
 
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    if (href.includes("#") && pathname === "/") {
+      e.preventDefault();
+      const targetId = href.split("#")[1];
+      const el = document.getElementById(targetId);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth" });
+        window.history.pushState(null, "", href);
+      }
+    } else if (href === "/" && pathname === "/") {
+      e.preventDefault();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.history.pushState(null, "", "/");
+    }
+  };
+
   return (
     <nav
       className="fixed inset-x-0 top-0 z-50 flex items-center justify-between px-4 py-4 sm:px-8"
@@ -319,6 +335,7 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
+              onClick={(e) => handleNavClick(e, link.href)}
               className="rounded-full px-4 py-1.5 text-sm transition-all duration-200"
               style={{
                 color: active ? C.text : C.muted,
