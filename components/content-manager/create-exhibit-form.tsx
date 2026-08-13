@@ -262,7 +262,6 @@ export function CreateExhibitForm({
                 />
               </div>
             </div>
-            </div>
             {tags.length > 0 && (
               <div>
                 <p className="mb-2 text-sm" style={{ color: T.muted }}>Thẻ</p>
