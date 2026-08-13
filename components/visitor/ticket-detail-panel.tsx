@@ -178,19 +178,7 @@ export function TicketDetailPanel() {
                     : "#8B2626",
                 }}
               >
-                {isUsed ? (
-                  <>
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Đã check-in vào cổng
-                  </>
-                ) : isPaidOrActive ? (
-                  <>
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Đã thanh toán (Sẵn sàng vào cổng)
-                  </>
-                ) : (
-                  labelStatus(detail.status)
-                )}
+                    {labelStatus(detail.status)}
               </span>
             </header>
 
@@ -206,7 +194,7 @@ export function TicketDetailPanel() {
               >
                 <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
                 <div>
-                  <strong>Check-in thành công!</strong> Vé của bạn đã chuyển sang trạng thái <em>Đã sử dụng</em>. Vui lòng xuất trình màn hình này cho nhân viên bảo tàng để vào cổng.
+                  <strong>Check-in thành công!</strong> Vé của bạn đã chuyển sang trạng thái <em>{labelStatus(detail.status)}</em>. Vui lòng xuất trình màn hình này cho nhân viên bảo tàng để vào cổng.
                 </div>
               </div>
             )}

@@ -178,7 +178,7 @@ export function validateCreateArtifact(input: CreateArtifactInput): ValidationRe
   const errors: Record<string, string> = {};
 
   if (!input.name.trim()) {
-    errors.name = "Vui lòng nhập tên hiện vật.";
+    errors.name = "Artifact name is required.";
   }
 
   return result(errors);
@@ -188,15 +188,15 @@ export function validateCreateMuseum(input: CreateMuseumInput): ValidationResult
   const errors: Record<string, string> = {};
 
   if (!input.name.trim()) {
-    errors.name = "Vui lòng nhập tên bảo tàng.";
+    errors.name = "Museum name is required.";
   }
 
   if (input.email?.trim() && !EMAIL_REGEX.test(input.email.trim())) {
-    errors.email = "Email không hợp lệ.";
+    errors.email = "Please enter a valid email address.";
   }
 
   if (input.phone?.trim() && input.phone.trim().length < 8) {
-    errors.phone = "Số điện thoại không hợp lệ.";
+    errors.phone = "Please enter a valid phone number.";
   }
 
   return result(errors);
@@ -214,16 +214,16 @@ export function validateCreateTicketType(
   const errors: Record<string, string> = {};
 
   if (!input.museumId || input.museumId <= 0) {
-    errors.museumId = "Vui lòng chọn bảo tàng.";
+    errors.museumId = "Please select a museum.";
   }
 
   if (!input.name.trim()) {
-    errors.name = "Vui lòng nhập tên loại vé.";
+    errors.name = "Ticket type name is required.";
   }
 
   const price = Number(input.price);
   if (!input.price.trim() || Number.isNaN(price) || price < 0) {
-    errors.price = "Vui lòng nhập giá hợp lệ.";
+    errors.price = "Please enter a valid price.";
   }
 
   return result(errors);

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Loader2, Ticket } from "lucide-react";
 import { Navbar } from "@/components/shared/navbar";
+import { StableLabel } from "@/components/shared/stable-label";
 import { useAuth } from "@/context/auth-context";
 import { useLanguage } from "@/context/language-context";
 import { formatDateTimeVi } from "@/lib/format";
@@ -68,7 +69,7 @@ export function MyTicketsPanel() {
             style={{ color: C.muted }}
           >
             <ArrowLeft className="h-4 w-4" />
-            {t("mytickets.back_to_shop")}
+            <StableLabel k="mytickets.back_to_shop" />
           </Link>
           <p
             className="mb-2 text-xs font-medium uppercase tracking-[0.2em]"
@@ -132,7 +133,7 @@ export function MyTicketsPanel() {
                 color: C.surface,
               }}
             >
-              {t("mytickets.buy_now")}
+              <StableLabel k="mytickets.buy_now" />
             </Link>
           </div>
         ) : (
@@ -207,7 +208,7 @@ export function MyTicketsPanel() {
                           className="text-sm font-medium transition-opacity hover:opacity-80"
                           style={{ color: C.secondary }}
                         >
-                          {t("mytickets.view_details")}
+                          <StableLabel k="mytickets.view_details" />
                         </Link>
                       </td>
                     </tr>

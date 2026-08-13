@@ -5,6 +5,7 @@ import { motion, useInView } from "framer-motion";
 import { BookOpen, Compass, Landmark, ArrowRight, ChevronRight, Headphones, Scan, Ticket } from "lucide-react";
 import Link from "next/link";
 import { Navbar } from "@/components/shared/navbar";
+import { StableLabel } from "@/components/shared/stable-label";
 import { useLanguage } from "@/context/language-context";
 
 // ── Tokens ───────────────────────────────────────────────────────────────────
@@ -329,8 +330,8 @@ export default function LandingPage() {
                   fontFamily: "inherit",
                 }}
               >
-                {t("hero.buy_tickets")}
-                <ArrowRight className="h-4 w-4" />
+                <StableLabel k="hero.buy_tickets" />
+                <ArrowRight className="h-4 w-4 shrink-0" />
               </Link>
             </motion.div>
 
@@ -351,8 +352,8 @@ export default function LandingPage() {
                   (e.currentTarget as HTMLElement).style.background = "rgba(255,248,231,0.10)";
                 }}
               >
-                <BookOpen className="h-4 w-4" />
-                {t("hero.view_collection")}
+                <BookOpen className="h-4 w-4 shrink-0" />
+                <StableLabel k="hero.view_collection" />
               </Link>
             </motion.div>
           </motion.div>
@@ -493,7 +494,7 @@ export default function LandingPage() {
                     className="mt-6 flex items-center gap-1.5 text-xs font-medium transition-all"
                     style={{ color: C.primary }}
                   >
-                    {t("feat.explore")}
+                    <StableLabel k="feat.explore" />
                     <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                   </div>
                 </motion.div>
@@ -708,8 +709,8 @@ export default function LandingPage() {
                   boxShadow: "0 4px 20px rgba(166,124,45,0.35)",
                 }}
               >
-                {t("hero.buy_tickets")}
-                <ArrowRight className="h-4 w-4" />
+                <StableLabel k="hero.buy_tickets" />
+                <ArrowRight className="h-4 w-4 shrink-0" />
               </Link>
             </motion.div>
             <Link
@@ -728,7 +729,7 @@ export default function LandingPage() {
                 (e.currentTarget as HTMLElement).style.borderColor = C.border;
               }}
             >
-              {t("cta.signin")}
+              <StableLabel k="cta.signin" />
             </Link>
           </div>
         </motion.div>

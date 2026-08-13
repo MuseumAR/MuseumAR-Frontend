@@ -95,30 +95,30 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
       setShowAddModal(false);
       await loadExhibitsData();
     } catch (err) {
-      setAssignError(getDisplayError(err, "Không thể gán hiện vật vào triển lãm."));
+      setAssignError(getDisplayError(err, "Could not assign artifact to exhibition."));
     } finally {
       setIsAssigning(false);
     }
   };
 
   const handleRemoveExhibit = async (exhibitId: number) => {
-    if (!confirm("Bạn có chắc chắn muốn gỡ hiện vật này khỏi triển lãm?")) return;
+    if (!confirm("Remove this artifact from the exhibition?")) return;
     try {
       await removeExhibitFromExhibition(exhibition.id, exhibitId);
       await loadExhibitsData();
     } catch (err) {
-      alert(getDisplayError(err, "Không thể gỡ hiện vật."));
+      alert(getDisplayError(err, "Could not remove artifact."));
     }
   };
 
   async function handleDelete() {
-    if (!confirm("Bạn có chắc chắn muốn xóa triển lãm này?")) return;
+    if (!confirm("Delete this exhibition?")) return;
     try {
       await deleteExhibition(exhibition.id);
       router.push("/content-manager/exhibition");
       router.refresh();
     } catch (err) {
-      alert(getDisplayError(err, "Không thể xóa triển lãm."));
+      alert(getDisplayError(err, "Could not delete exhibition."));
     }
   }
 
@@ -128,13 +128,13 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
     setIsSubmitting(true);
 
     if (!name.trim()) {
-      setError("Vui lòng nhập tên triển lãm.");
+      setError("Please enter an exhibition name.");
       setIsSubmitting(false);
       return;
     }
 
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-      setError("Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.");
+      setError("End date must be on or after the start date.");
       setIsSubmitting(false);
       return;
     }
@@ -157,7 +157,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
       setShowEdit(false);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Không thể cập nhật triển lãm."));
+      setError(getDisplayError(err, "Could not update exhibition."));
     } finally {
       setIsSubmitting(false);
     }
@@ -175,7 +175,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
         className="mb-6 inline-flex items-center gap-2 text-sm"
         style={{ color: T.muted }}
       >
-        ← Quay lại danh sách
+        ← Back to list
       </Link>
 
       <div className="space-y-6">
@@ -187,12 +187,12 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
           {showEdit ? (
             <form onSubmit={handleUpdate} className="space-y-4">
               <h3 className="text-lg font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-                Chỉnh sửa triển lãm
+                Edit exhibition
               </h3>
               {error && <p className="text-sm" style={{ color: "#8B2E2E" }}>{error}</p>}
               
               <div className="space-y-1.5">
-                <label className="block text-sm" style={{ color: T.muted }}>Tên triển lãm</label>
+                <label className="block text-sm" style={{ color: T.muted }}>Exhibition name</label>
                 <input
                   type="text"
                   required
@@ -204,7 +204,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-sm" style={{ color: T.muted }}>Mô tả</label>
+                <label className="block text-sm" style={{ color: T.muted }}>Description</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -216,15 +216,15 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="block text-sm" style={{ color: T.muted }}>Ngày bắt đầu</label>
+                  <label className="block text-sm" style={{ color: T.muted }}>Start date</label>
                   <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }} />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-sm" style={{ color: T.muted }}>Ngày kết thúc</label>
+                  <label className="block text-sm" style={{ color: T.muted }}>End date</label>
                   <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }} />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-sm" style={{ color: T.muted }}>Trạng thái</label>
+                  <label className="block text-sm" style={{ color: T.muted }}>Status</label>
                   <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}>
                     <option value="Active">{labelStatus("Active")}</option>
                     <option value="Inactive">{labelStatus("Inactive")}</option>
@@ -232,7 +232,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-sm" style={{ color: T.muted }}>Ảnh thu nhỏ mới</label>
+                  <label className="block text-sm" style={{ color: T.muted }}>New thumbnail</label>
                   <input
                     type="file"
                     accept="image/*"
@@ -244,10 +244,10 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
               </div>
               <div className="flex justify-end gap-3 mt-6">
                 <button type="button" onClick={() => setShowEdit(false)} className="rounded-xl px-5 py-2 text-sm font-medium" style={{ border: `1px solid ${T.border}`, color: T.text }}>
-                  Hủy
+                  Cancel
                 </button>
                 <button type="submit" disabled={isSubmitting} className="rounded-xl px-5 py-2 text-sm font-medium disabled:opacity-50" style={{ background: T.primary, color: T.surface }}>
-                  {isSubmitting ? "Đang lưu…" : "Lưu thay đổi"}
+                  {isSubmitting ? "Saving…" : "Save changes"}
                 </button>
               </div>
             </form>
@@ -260,7 +260,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                 {exhibition.thumbnailUrl ? (
                   <img
                     src={exhibition.thumbnailUrl}
-                    alt={exhibition.name || `Triển lãm #${exhibition.id}`}
+                    alt={exhibition.name || `Exhibition #${exhibition.id}`}
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -268,7 +268,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                     className="flex h-full w-full items-center justify-center text-sm"
                     style={{ color: T.mutedLight }}
                   >
-                    Chưa có ảnh
+                    No image yet
                   </div>
                 )}
               </div>
@@ -280,9 +280,9 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                       className="text-2xl font-bold"
                       style={{ fontFamily: cinzel, color: T.primaryDark }}
                     >
-                      {exhibition.name || `Triển lãm #${exhibition.id}`}
+                      {exhibition.name || `Exhibition #${exhibition.id}`}
                     </h2>
-                    <p className="text-xs mt-1" style={{ color: T.mutedLight }}>Mã triển lãm: {exhibition.id}</p>
+                    <p className="text-xs mt-1" style={{ color: T.mutedLight }}>Exhibition ID: {exhibition.id}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <StatusBadge status={exhibition.status} />
@@ -292,7 +292,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                       className="rounded-xl px-4 py-1.5 text-xs font-medium"
                       style={{ border: `1px solid ${T.border}`, color: T.text, background: T.surface }}
                     >
-                      Chỉnh sửa
+                      Edit
                     </button>
                     <button
                       type="button"
@@ -300,7 +300,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                       className="rounded-xl px-4 py-1.5 text-xs font-medium"
                       style={{ border: `1px solid ${T.danger}`, color: T.danger, background: "rgba(180,40,40,0.05)" }}
                     >
-                      Xóa
+                      Delete
                     </button>
                   </div>
                 </div>
@@ -312,10 +312,10 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                 )}
 
                 <dl className="grid gap-3 text-sm sm:grid-cols-2 mt-4 pt-4 border-t" style={{ borderColor: T.border }}>
-                  <InfoRow label="Mã bảo tàng" value={String(exhibition.museumId)} />
-                  <InfoRow label="Trạng thái" value={labelStatus(exhibition.status)} />
-                  <InfoRow label="Ngày bắt đầu" value={formatDate(exhibition.startDate)} />
-                  <InfoRow label="Ngày kết thúc" value={formatDate(exhibition.endDate)} />
+                  <InfoRow label="Museum ID" value={String(exhibition.museumId)} />
+                  <InfoRow label="Status" value={labelStatus(exhibition.status)} />
+                  <InfoRow label="Start date" value={formatDate(exhibition.startDate)} />
+                  <InfoRow label="End date" value={formatDate(exhibition.endDate)} />
                 </dl>
               </div>
             </div>
@@ -330,10 +330,10 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
               <h3 className="text-lg font-bold" style={{ fontFamily: cinzel, color: T.primaryDark }}>
-                Danh sách Hiện vật trong Triển lãm ({exhibitsInExhibition.length})
+                Artifacts in this exhibition ({exhibitsInExhibition.length})
               </h3>
               <p className="text-xs" style={{ color: T.mutedLight }}>
-                Quản lý các hiện vật được trưng bày trong đợt triển lãm này
+                Manage artifacts displayed in this exhibition
               </p>
             </div>
 
@@ -346,25 +346,25 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
               className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold shadow-sm transition-opacity hover:opacity-90"
               style={{ background: T.primary, color: T.surface }}
             >
-              + Gán thêm hiện vật vào Triển lãm
+              + Assign artifact to exhibition
             </button>
           </div>
 
           {loadingExhibits ? (
             <div className="py-8 text-center text-xs font-medium" style={{ color: T.muted }}>
-              Đang tải danh sách hiện vật...
+              Loading artifacts...
             </div>
           ) : exhibitsInExhibition.length === 0 ? (
             <div
               className="rounded-2xl py-8 text-center text-xs font-medium"
               style={{ background: T.bg, color: T.muted }}
             >
-              Chưa có hiện vật nào được gán vào triển lãm này. Bấm nút phía trên để bắt đầu gán hiện vật!
+              No artifacts assigned to this exhibition yet. Use the button above to assign artifacts.
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {exhibitsInExhibition.map((ex) => {
-                const title = ex.translations?.[0]?.title || `Hiện vật #${ex.id}`;
+                const title = ex.translations?.[0]?.title || `Artifact #${ex.id}`;
                 const code = ex.exhibitCode || `EX-${ex.id}`;
                 return (
                   <div
@@ -393,7 +393,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                         {title}
                       </h4>
                       <p className="text-[11px] font-mono mt-0.5" style={{ color: T.mutedLight }}>
-                        Mã: {code}
+                        Code: {code}
                       </p>
                       {ex.roomName && (
                         <p className="text-[10px] mt-0.5" style={{ color: T.success }}>
@@ -407,7 +407,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                       onClick={() => handleRemoveExhibit(ex.id)}
                       className="rounded-lg p-1.5 text-xs font-medium transition-colors hover:bg-red-50"
                       style={{ color: T.danger }}
-                      title="Gỡ khỏi triển lãm"
+                      title="Remove from exhibition"
                     >
                       ✕
                     </button>
@@ -427,10 +427,10 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
             style={{ background: T.surface, border: `1px solid ${T.border}` }}
           >
             <h3 className="text-base font-bold mb-2" style={{ color: T.primaryDark }}>
-              Gán Hiện vật vào Triển lãm
+              Assign artifact to exhibition
             </h3>
             <p className="text-xs mb-4" style={{ color: T.mutedLight }}>
-              Chọn một hiện vật trong kho bảo tàng để gán vào triển lãm &ldquo;{exhibition.name || `#${exhibition.id}`}&rdquo;
+              Choose an artifact from the museum to assign to &ldquo;{exhibition.name || `#${exhibition.id}`}&rdquo;
             </p>
 
             {assignError && (
@@ -442,11 +442,11 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text }}>
-                  Chọn Hiện vật:
+                  Select artifact:
                 </label>
                 {unassignedExhibits.length === 0 ? (
                   <p className="text-xs italic py-2" style={{ color: T.muted }}>
-                    Tất cả hiện vật trong bảo tàng đã được gán vào triển lãm này.
+                    All museum artifacts are already assigned to this exhibition.
                   </p>
                 ) : (
                   <select
@@ -455,9 +455,9 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                     className="w-full rounded-xl px-3.5 py-2.5 text-xs outline-none"
                     style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                   >
-                    <option value="">-- Chọn hiện vật --</option>
+                    <option value="">-- Select artifact --</option>
                     {unassignedExhibits.map((ex) => {
-                      const title = ex.translations?.[0]?.title || `Hiện vật #${ex.id}`;
+                      const title = ex.translations?.[0]?.title || `Artifact #${ex.id}`;
                       const code = ex.exhibitCode || `EX-${ex.id}`;
                       return (
                         <option key={ex.id} value={ex.id}>
@@ -476,7 +476,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                   className="rounded-xl px-4 py-2 text-xs font-semibold"
                   style={{ border: `1px solid ${T.border}`, color: T.text }}
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   type="button"
@@ -485,7 +485,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                   className="rounded-xl px-4 py-2 text-xs font-semibold disabled:opacity-50"
                   style={{ background: T.primary, color: T.surface }}
                 >
-                  {isAssigning ? "Đang gán…" : "Xác nhận gán"}
+                  {isAssigning ? "Assigning…" : "Confirm assign"}
                 </button>
               </div>
             </div>

@@ -1,23 +1,23 @@
 const SEGMENT_TITLES: Record<string, string> = {
-  overview: "Tổng quan",
-  "museum-profile": "Hồ sơ bảo tàng",
-  analytics: "Phân tích",
-  "staff-management": "Quản lý nhân sự",
-  artifact: "Hiện vật",
-  "exhibition-application": "Đăng ký triển lãm",
-  "ticket-application": "Quản lý vé",
-  exhibition: "Triển lãm",
-  "content-versions": "Phiên bản nội dung",
-  "offline-packages": "Gói ngoại tuyến",
-  "maps-routes": "Bản đồ & Lộ trình",
-  users: "Người dùng",
-  "museum-management": "Hồ sơ bảo tàng",
-  "ticket-types": "Loại vé",
-  "audit-logs": "Nhật ký hệ thống",
-  taxonomy: "Phân loại",
-  "system-config": "Cấu hình hệ thống",
-  create: "Tạo mới",
-  edit: "Chỉnh sửa",
+  overview: "Dashboard",
+  "museum-profile": "Museum Profile",
+  analytics: "Analytics",
+  "staff-management": "Staff Management",
+  artifact: "Artifacts",
+  "exhibition-application": "Exhibition Applications",
+  "ticket-application": "Ticket Applications",
+  exhibition: "Exhibitions",
+  "content-versions": "Content Versions",
+  "offline-packages": "Offline Packages",
+  "maps-routes": "Maps & Routes",
+  users: "Users",
+  "museum-management": "Museum Profile",
+  "ticket-types": "Ticket Types",
+  "audit-logs": "Audit Logs",
+  taxonomy: "Taxonomy",
+  "system-config": "System Configuration",
+  create: "Create",
+  edit: "Edit",
 };
 
 export function getPageTitle(pathname: string): string {
@@ -27,14 +27,14 @@ export function getPageTitle(pathname: string): string {
 
   if (last && SEGMENT_TITLES[last]) {
     if (last === "create" || last === "edit") {
-      return `${SEGMENT_TITLES[prev] ?? "Trang"} · ${SEGMENT_TITLES[last]}`;
+      return `${SEGMENT_TITLES[prev] ?? "Page"} · ${SEGMENT_TITLES[last]}`;
     }
     return SEGMENT_TITLES[last];
   }
 
-  if (/^ART-/.test(last ?? "")) return "Chi tiết hiện vật";
+  if (/^ART-/.test(last ?? "")) return "Artifact Detail";
   if (/^\d+$/.test(last ?? "") && segments.includes("exhibition")) {
-    return "Chi tiết triển lãm";
+    return "Exhibition Detail";
   }
-  return "Bảng điều khiển";
+  return "Dashboard";
 }

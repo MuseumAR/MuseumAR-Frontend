@@ -15,6 +15,7 @@ import {
   Tag,
 } from "lucide-react";
 import { Navbar } from "@/components/shared/navbar";
+import { StableLabel } from "@/components/shared/stable-label";
 import { useAuth } from "@/context/auth-context";
 import { useLanguage } from "@/context/language-context";
 import { formatVnd } from "@/lib/format";
@@ -62,7 +63,7 @@ function formatTimer(secs: number) {
 export function TicketShop() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [types, setTypes] = useState<TicketTypeDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [quantities, setQuantities] = useState<Record<number, number>>({});
@@ -170,7 +171,7 @@ export function TicketShop() {
     (async () => {
       setLoading(true);
       try {
-        const list = await listPublicTicketTypes(language);
+        const list = await listPublicTicketTypes();
         if (cancelled) return;
         setTypes(list);
         setQuantities(
@@ -187,7 +188,7 @@ export function TicketShop() {
     return () => {
       cancelled = true;
     };
-  }, [language, t]);
+  }, [t]);
 
   function setQty(id: number, next: number) {
     setQuantities((prev) => ({
@@ -497,13 +498,13 @@ export function TicketShop() {
                     >
                       {busy ? (
                         <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          {t("tickets.creating_order")}
+                          <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                          <StableLabel k="tickets.creating_order" />
                         </>
                       ) : isAuthenticated ? (
-                        t("tickets.buy")
+                        <StableLabel k="tickets.buy" />
                       ) : (
-                        t("tickets.login_to_buy")
+                        <StableLabel k="tickets.login_to_buy" />
                       )}
                     </button>
                   </div>
@@ -860,7 +861,7 @@ export function TicketShop() {
                   className="inline-flex items-center gap-2 text-xs font-medium underline transition-opacity hover:opacity-85"
                   style={{ color: C.secondary }}
                 >
-                  {t("tickets.open_payos")} <ExternalLink className="h-3.5 w-3.5" />
+                  <StableLabel k="tickets.open_payos" /> <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                 </a>
               </div>
             )}
@@ -908,8 +909,8 @@ export function TicketShop() {
                   </>
                 ) : (
                   <>
-                    <ShieldCheck className="h-4 w-4" />
-                    {t("tickets.confirm_paid")}
+                    <ShieldCheck className="h-4 w-4 shrink-0" />
+                    <StableLabel k="tickets.confirm_paid" />
                   </>
                 )}
               </button>

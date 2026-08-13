@@ -54,7 +54,7 @@ export function ArAssetsSection({
       const list = Array.isArray(data) ? data.map(normalizeAsset) : [];
       setAssets(list);
     } catch (err) {
-      setError(getDisplayError(err, "Không thể tải tài sản AR."));
+      setError(getDisplayError(err, "Could not load AR assets."));
       setAssets([]);
     } finally {
       setLoading(false);
@@ -66,14 +66,14 @@ export function ArAssetsSection({
   }, [reload]);
 
   async function handleDelete(id: number) {
-    if (!confirm("Xóa tài sản AR này?")) return;
+    if (!confirm("Delete this AR asset?")) return;
     setDeletingId(id);
     setError(null);
     try {
       await deleteArAsset(id);
       setAssets((prev) => prev.filter((a) => a.id !== id));
     } catch (err) {
-      setError(getDisplayError(err, "Không thể xóa tài sản AR."));
+      setError(getDisplayError(err, "Could not delete AR asset."));
     } finally {
       setDeletingId(null);
     }
@@ -82,7 +82,7 @@ export function ArAssetsSection({
   return (
     <div className="space-y-2">
       <p className="text-sm font-medium" style={{ color: T.text }}>
-        Tài sản AR hiện có
+        Existing AR assets
       </p>
 
       {error && (
@@ -96,17 +96,17 @@ export function ArAssetsSection({
 
       {loading ? (
         <p className="text-xs" style={{ color: T.muted }}>
-          Đang tải tài sản AR…
+          Loading AR assets…
         </p>
       ) : assets.length === 0 ? (
         <p className="text-xs" style={{ color: T.mutedLight }}>
-          Chưa tải lên tài sản AR nào.
+          No AR assets uploaded yet.
         </p>
       ) : (
         <ul className="space-y-2">
           {assets.map((asset) => {
             const url = asset.assetUrl?.trim() || "";
-            const label = url ? fileNameFromUrl(url) : `Tài sản #${asset.id}`;
+            const label = url ? fileNameFromUrl(url) : `Asset #${asset.id}`;
             return (
               <li
                 key={asset.id}
@@ -119,7 +119,7 @@ export function ArAssetsSection({
                     {label}
                   </p>
                   <p className="mt-0.5 text-[11px]" style={{ color: T.mutedLight }}>
-                    {asset.assetType || "mô hình"}
+                    {asset.assetType || "model"}
                     {asset.createdAt ? ` · ${asset.createdAt.slice(0, 10)}` : ""}
                   </p>
                   {asset.description?.trim() && (
@@ -136,8 +136,8 @@ export function ArAssetsSection({
                       rel="noreferrer"
                       className="rounded-lg p-1.5"
                       style={{ color: T.primaryDark }}
-                      title="Mở / tải xuống"
-                      aria-label="Xem tài sản AR"
+                      title="Open / download"
+                      aria-label="View AR asset"
                     >
                       <ExternalLink className="h-4 w-4" />
                     </a>
@@ -148,8 +148,8 @@ export function ArAssetsSection({
                     disabled={deletingId === asset.id}
                     className="rounded-lg p-1.5 disabled:opacity-40"
                     style={{ color: T.danger }}
-                    title="Xóa"
-                    aria-label="Xóa tài sản AR"
+                    title="Delete"
+                    aria-label="Delete AR asset"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

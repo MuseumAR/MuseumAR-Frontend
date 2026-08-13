@@ -45,7 +45,7 @@ export function SystemConfigPanel({ configs }: { configs: SystemConfigDto[] }) {
       setSuccessKey(config.configKey);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Không thể cập nhật cấu hình."));
+      setError(getDisplayError(err, "Unable to update configuration."));
     } finally {
       setSavingKey(null);
     }
@@ -61,7 +61,7 @@ export function SystemConfigPanel({ configs }: { configs: SystemConfigDto[] }) {
         <span className="font-semibold" style={{ color: T.text }}>
           {configs.length}
         </span>
-        {` cấu hình`}
+        {` configs`}
       </p>
 
       {error && (
@@ -80,7 +80,7 @@ export function SystemConfigPanel({ configs }: { configs: SystemConfigDto[] }) {
             style={{ background: T.surface, border: `1px solid ${T.border}` }}
           >
             <p className="text-sm" style={{ color: T.muted }}>
-              Chưa có cấu hình hệ thống từ API.
+              No system configuration from the API yet.
             </p>
           </div>
         ) : (
@@ -97,7 +97,7 @@ export function SystemConfigPanel({ configs }: { configs: SystemConfigDto[] }) {
                   </p>
                   {successKey === config.configKey && (
                     <p className="mt-1 text-xs" style={{ color: T.success }}>
-                      Đã lưu thành công.
+                      Saved successfully.
                     </p>
                   )}
                 </div>
@@ -114,14 +114,14 @@ export function SystemConfigPanel({ configs }: { configs: SystemConfigDto[] }) {
                   }}
                 >
                   <Save className="h-4 w-4" />
-                  {savingKey === config.configKey ? "Đang lưu…" : "Lưu"}
+                  {savingKey === config.configKey ? "Saving…" : "Save"}
                 </button>
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Giá trị cấu hình
+                    Configuration value
                   </label>
                   <input
                     value={config.draftValue}
@@ -132,7 +132,7 @@ export function SystemConfigPanel({ configs }: { configs: SystemConfigDto[] }) {
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Mô tả
+                    Description
                   </label>
                   <input
                     value={config.draftDescription}

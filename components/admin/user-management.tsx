@@ -76,11 +76,11 @@ export function UserManagementPanel({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!fullName.trim()) {
-      setError("Họ tên là bắt buộc.");
+      setError("Full name is required.");
       return;
     }
     if (!editing && (!email.trim() || !password.trim())) {
-      setError("Email và mật khẩu là bắt buộc đối với người dùng mới.");
+      setError("Email and password are required for new users.");
       return;
     }
 
@@ -108,19 +108,19 @@ export function UserManagementPanel({
       setShowForm(false);
       await afterMutation();
     } catch (err) {
-      setError(getDisplayError(err, "Không thể lưu người dùng."));
+      setError(getDisplayError(err, "Unable to save user."));
     } finally {
       setIsSubmitting(false);
     }
   }
 
   async function handleDelete(user: UserResponseDto) {
-    if (!confirm(`Xóa người dùng ${user.fullName}?`)) return;
+    if (!confirm(`Delete user ${user.fullName}?`)) return;
     try {
       await deleteUserEntry(user.id);
       await afterMutation();
     } catch (err) {
-      setError(getDisplayError(err, "Không thể xóa người dùng."));
+      setError(getDisplayError(err, "Unable to delete user."));
     }
   }
 
@@ -131,7 +131,7 @@ export function UserManagementPanel({
           <span className="font-semibold" style={{ color: T.text }}>
             {users.length}
           </span>
-          {" người dùng"}
+          {" users"}
         </p>
         <button
           type="button"
@@ -143,14 +143,14 @@ export function UserManagementPanel({
           }}
         >
           <Plus className="h-4 w-4" />
-          {showForm ? "Đóng biểu mẫu" : "Tạo người dùng"}
+          {showForm ? "Close form" : "Create user"}
         </button>
       </div>
 
       <input
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        placeholder="Tìm theo tên, email, vai trò…"
+        placeholder="Search by name, email, role…"
         className="w-full max-w-md rounded-xl px-4 py-2.5 text-sm outline-none"
         style={{ border: `1px solid ${T.border}`, background: T.surface, color: T.text }}
       />
@@ -162,10 +162,10 @@ export function UserManagementPanel({
           style={{ background: T.surface, border: `1px solid ${T.border}` }}
         >
           <h2 className="mb-4 text-lg font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-            {editing ? "Sửa người dùng" : "Người dùng mới"}
+            {editing ? "Edit user" : "New user"}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Họ tên *" value={fullName} onChange={setFullName} />
+            <Field label="Full name *" value={fullName} onChange={setFullName} />
             {!editing && (
               <Field label="Email *" value={email} onChange={setEmail} type="email" />
             )}
@@ -177,15 +177,15 @@ export function UserManagementPanel({
                 </p>
               </div>
             )}
-            <Field label="Số điện thoại" value={phone} onChange={setPhone} />
+            <Field label="Phone number" value={phone} onChange={setPhone} />
             <Field
-              label={editing ? "Mật khẩu mới (không bắt buộc)" : "Mật khẩu *"}
+              label={editing ? "New password (optional)" : "Password *"}
               value={password}
               onChange={setPassword}
               type="password"
             />
             <div className="space-y-1.5">
-              <label className="block text-sm" style={{ color: T.muted }}>Vai trò *</label>
+              <label className="block text-sm" style={{ color: T.muted }}>Role *</label>
               <select
                 value={roleId}
                 onChange={(e) => setRoleId(Number(e.target.value))}
@@ -199,7 +199,7 @@ export function UserManagementPanel({
             </div>
             {editing && (
               <div className="space-y-1.5">
-                <label className="block text-sm" style={{ color: T.muted }}>Trạng thái *</label>
+                <label className="block text-sm" style={{ color: T.muted }}>Status *</label>
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
@@ -227,7 +227,7 @@ export function UserManagementPanel({
                 color: T.surface,
               }}
             >
-              {isSubmitting ? "Đang lưu…" : editing ? "Lưu thay đổi" : "Tạo người dùng"}
+              {isSubmitting ? "Saving…" : editing ? "Save changes" : "Create user"}
             </button>
           </div>
         </form>
@@ -239,14 +239,14 @@ export function UserManagementPanel({
       >
         {filtered.length === 0 ? (
           <div className="px-8 py-16 text-center">
-            <p className="text-sm" style={{ color: T.muted }}>Không tìm thấy người dùng.</p>
+            <p className="text-sm" style={{ color: T.muted }}>No users found.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] text-left text-sm">
               <thead>
                 <tr style={{ borderBottom: `1px solid ${T.border}`, background: "rgba(245,230,200,0.35)" }}>
-                  {["Tên", "Email", "Vai trò", "Trạng thái", "Thao tác"].map((label) => (
+                  {["Name", "Email", "Role", "Status", "Actions"].map((label) => (
                     <th key={label} className="px-5 py-4 font-medium" style={{ color: T.mutedLight }}>
                       {label}
                     </th>
@@ -278,7 +278,7 @@ export function UserManagementPanel({
                           className="rounded-lg px-3 py-1 text-xs"
                           style={{ border: `1px solid ${T.border}`, color: T.muted }}
                         >
-                          Sửa
+                          Edit
                         </button>
                         <button
                           type="button"
@@ -287,7 +287,7 @@ export function UserManagementPanel({
                           style={{ border: "1px solid rgba(180,40,40,0.25)", color: "#8B2E2E" }}
                         >
                           <Trash2 className="h-3 w-3" />
-                          Xóa
+                          Delete
                         </button>
                       </div>
                     </td>

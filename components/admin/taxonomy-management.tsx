@@ -31,10 +31,10 @@ import type {
 type Tab = "categories" | "themes" | "tag-groups" | "tags";
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: "categories", label: "Danh mục" },
-  { id: "themes", label: "Chủ đề" },
-  { id: "tag-groups", label: "Nhóm thẻ" },
-  { id: "tags", label: "Thẻ" },
+  { id: "categories", label: "Categories" },
+  { id: "themes", label: "Themes" },
+  { id: "tag-groups", label: "Tag groups" },
+  { id: "tags", label: "Tags" },
 ];
 
 export function TaxonomyManagementPanel({
@@ -150,7 +150,7 @@ function CategoriesTab({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!nameVi.trim()) {
-      setError("Tên tiếng Việt là bắt buộc.");
+      setError("Vietnamese name is required.");
       return;
     }
     setBusy(true);
@@ -184,19 +184,19 @@ function CategoriesTab({
       setShowForm(false);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Không thể lưu danh mục."));
+      setError(getDisplayError(err, "Unable to save category."));
     } finally {
       setBusy(false);
     }
   }
 
   async function handleDelete(id: number) {
-    if (!confirm("Xóa danh mục này?")) return;
+    if (!confirm("Delete this category?")) return;
     try {
       await deleteCategoryEntry(id);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Không thể xóa danh mục."));
+      setError(getDisplayError(err, "Unable to delete category."));
     }
   }
 
@@ -205,23 +205,23 @@ function CategoriesTab({
       onCreate={openCreate}
       showForm={showForm}
       onToggle={() => setShowForm((v) => !v)}
-      createLabel="Tạo danh mục"
+      createLabel="Create category"
       error={error}
     >
       {showForm && (
-        <FormCard title={editing ? "Sửa danh mục" : "Danh mục mới"}>
+        <FormCard title={editing ? "Edit category" : "New category"}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Tên (VI) *">
-                <Input value={nameVi} onChange={setNameVi} placeholder="Hiện vật khảo cổ" />
+              <Field label="Name (VI) *">
+                <Input value={nameVi} onChange={setNameVi} placeholder="Archaeological artifacts" />
               </Field>
-              <Field label="Tên (EN)">
+              <Field label="Name (EN)">
                 <Input value={nameEn} onChange={setNameEn} placeholder="Archaeology" />
               </Field>
-              <Field label="Thứ tự">
+              <Field label="Sort order">
                 <Input value={sortOrder} onChange={setSortOrder} type="number" />
               </Field>
-              <Field label="Trạng thái">
+              <Field label="Status">
                 <Select
                   value={status}
                   onChange={setStatus}
@@ -231,20 +231,20 @@ function CategoriesTab({
                   ]}
                 />
               </Field>
-              <Field label="Danh mục cha">
+              <Field label="Parent category">
                 <Select
                   value={parentId}
                   onChange={setParentId}
                   options={[
-                    { value: "", label: "Không" },
+                    { value: "", label: "None" },
                     ...categories
                       .filter((c) => c.id !== editing?.id)
                       .map((c) => ({ value: String(c.id), label: categoryDisplayName(c) })),
                   ]}
                 />
               </Field>
-              <Field label="Mô tả">
-                <Input value={description} onChange={setDescription} placeholder="Không bắt buộc" />
+              <Field label="Description">
+                <Input value={description} onChange={setDescription} placeholder="Optional" />
               </Field>
             </div>
             <FormActions busy={busy} onCancel={() => setShowForm(false)} />
@@ -253,8 +253,8 @@ function CategoriesTab({
       )}
 
       <DataTable
-        empty="Chưa có danh mục."
-        headers={["ID", "Tên", "Trạng thái", "Thứ tự", ""]}
+        empty="No categories yet."
+        headers={["ID", "Name", "Status", "Sort order", ""]}
         rows={categories.map((item) => [
           String(item.id),
           categoryDisplayName(item),
@@ -305,7 +305,7 @@ function ThemesTab({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
-      setError("Tên chủ đề là bắt buộc.");
+      setError("Theme name is required.");
       return;
     }
     setBusy(true);
@@ -321,19 +321,19 @@ function ThemesTab({
       setShowForm(false);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Không thể lưu chủ đề."));
+      setError(getDisplayError(err, "Unable to save theme."));
     } finally {
       setBusy(false);
     }
   }
 
   async function handleDelete(id: number) {
-    if (!confirm("Xóa chủ đề này?")) return;
+    if (!confirm("Delete this theme?")) return;
     try {
       await deleteThemeEntry(id);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Không thể xóa chủ đề."));
+      setError(getDisplayError(err, "Unable to delete theme."));
     }
   }
 
@@ -342,18 +342,18 @@ function ThemesTab({
       onCreate={openCreate}
       showForm={showForm}
       onToggle={() => setShowForm((v) => !v)}
-      createLabel="Tạo chủ đề"
+      createLabel="Create theme"
       error={error}
     >
       {showForm && (
-        <FormCard title={editing ? "Sửa chủ đề" : "Chủ đề mới"}>
+        <FormCard title={editing ? "Edit theme" : "New theme"}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Tên chủ đề *">
-                <Input value={name} onChange={setName} placeholder="Kháng chiến" />
+              <Field label="Theme name *">
+                <Input value={name} onChange={setName} placeholder="Resistance" />
               </Field>
-              <Field label="Mô tả">
-                <Input value={description} onChange={setDescription} placeholder="Không bắt buộc" />
+              <Field label="Description">
+                <Input value={description} onChange={setDescription} placeholder="Optional" />
               </Field>
             </div>
             <FormActions busy={busy} onCancel={() => setShowForm(false)} />
@@ -362,8 +362,8 @@ function ThemesTab({
       )}
 
       <DataTable
-        empty="Chưa có chủ đề."
-        headers={["ID", "Tên", "Mô tả", ""]}
+        empty="No themes yet."
+        headers={["ID", "Name", "Description", ""]}
         rows={themes.map((item) => [
           String(item.id),
           item.themeName,
@@ -407,7 +407,7 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
-      setError("Tên nhóm là bắt buộc.");
+      setError("Group name is required.");
       return;
     }
     setBusy(true);
@@ -419,19 +419,19 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
       setShowForm(false);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Không thể lưu nhóm thẻ."));
+      setError(getDisplayError(err, "Unable to save tag group."));
     } finally {
       setBusy(false);
     }
   }
 
   async function handleDelete(id: number) {
-    if (!confirm("Xóa nhóm thẻ này?")) return;
+    if (!confirm("Delete this tag group?")) return;
     try {
       await deleteTagGroupEntry(id);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Không thể xóa nhóm thẻ."));
+      setError(getDisplayError(err, "Unable to delete tag group."));
     }
   }
 
@@ -440,17 +440,17 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
       onCreate={openCreate}
       showForm={showForm}
       onToggle={() => setShowForm((v) => !v)}
-      createLabel="Tạo nhóm thẻ"
+      createLabel="Create tag group"
       error={error}
     >
       {showForm && (
-        <FormCard title={editing ? "Sửa nhóm thẻ" : "Nhóm thẻ mới"}>
+        <FormCard title={editing ? "Edit tag group" : "New tag group"}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Tên nhóm *">
-                <Input value={name} onChange={setName} placeholder="Thời kỳ" />
+              <Field label="Group name *">
+                <Input value={name} onChange={setName} placeholder="Period" />
               </Field>
-              <Field label="Thứ tự">
+              <Field label="Sort order">
                 <Input value={sortOrder} onChange={setSortOrder} type="number" />
               </Field>
             </div>
@@ -460,8 +460,8 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
       )}
 
       <DataTable
-        empty="Chưa có nhóm thẻ."
-        headers={["ID", "Tên", "Thứ tự", ""]}
+        empty="No tag groups yet."
+        headers={["ID", "Name", "Sort order", ""]}
         rows={tagGroups.map((item) => [
           String(item.id),
           item.groupName,
@@ -521,7 +521,7 @@ function TagsTab({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim() || !tagGroupId) {
-      setError("Tên thẻ và nhóm là bắt buộc.");
+      setError("Tag name and group are required.");
       return;
     }
     setBusy(true);
@@ -537,19 +537,19 @@ function TagsTab({
       setShowForm(false);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Không thể lưu thẻ."));
+      setError(getDisplayError(err, "Unable to save tag."));
     } finally {
       setBusy(false);
     }
   }
 
   async function handleDelete(id: number) {
-    if (!confirm("Xóa thẻ này?")) return;
+    if (!confirm("Delete this tag?")) return;
     try {
       await deleteTagEntry(id);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Không thể xóa thẻ."));
+      setError(getDisplayError(err, "Unable to delete tag."));
     }
   }
 
@@ -558,23 +558,23 @@ function TagsTab({
       onCreate={openCreate}
       showForm={showForm}
       onToggle={() => setShowForm((v) => !v)}
-      createLabel="Tạo thẻ"
+      createLabel="Create tag"
       error={error}
       disableCreate={tagGroups.length === 0}
     >
       {tagGroups.length === 0 && (
         <p className="text-sm" style={{ color: T.muted }}>
-          Hãy tạo nhóm thẻ trước khi thêm thẻ.
+          Create a tag group before adding tags.
         </p>
       )}
       {showForm && (
-        <FormCard title={editing ? "Sửa thẻ" : "Thẻ mới"}>
+        <FormCard title={editing ? "Edit tag" : "New tag"}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Tên thẻ *">
-                <Input value={name} onChange={setName} placeholder="Triều Nguyễn" />
+              <Field label="Tag name *">
+                <Input value={name} onChange={setName} placeholder="Nguyen dynasty" />
               </Field>
-              <Field label="Nhóm thẻ *">
+              <Field label="Tag group *">
                 <Select
                   value={tagGroupId}
                   onChange={setTagGroupId}
@@ -584,7 +584,7 @@ function TagsTab({
                   }))}
                 />
               </Field>
-              <Field label="Thứ tự">
+              <Field label="Sort order">
                 <Input value={sortOrder} onChange={setSortOrder} type="number" />
               </Field>
             </div>
@@ -594,8 +594,8 @@ function TagsTab({
       )}
 
       <DataTable
-        empty="Chưa có thẻ."
-        headers={["ID", "Tên", "Nhóm", "Thứ tự", ""]}
+        empty="No tags yet."
+        headers={["ID", "Name", "Group", "Sort order", ""]}
         rows={tags.map((item) => [
           String(item.id),
           item.tagName,
@@ -645,7 +645,7 @@ function Section({
             }}
           >
             <X className="h-4 w-4" />
-            Đóng biểu mẫu
+            Close form
           </button>
         ) : (
           <button
@@ -778,7 +778,7 @@ function FormActions({
         className="rounded-xl px-4 py-2 text-sm font-medium"
         style={{ border: `1px solid ${T.border}`, color: T.muted, background: T.bg }}
       >
-        Hủy
+        Cancel
       </button>
       <button
         type="submit"
@@ -789,7 +789,7 @@ function FormActions({
           color: T.surface,
         }}
       >
-        {busy ? "Đang lưu…" : "Lưu"}
+        {busy ? "Saving…" : "Save"}
       </button>
     </div>
   );
@@ -809,7 +809,7 @@ function RowActions({
         onClick={onEdit}
         className="rounded-lg p-2"
         style={{ color: T.primaryDark }}
-        aria-label="Sửa"
+        aria-label="Edit"
       >
         <Pencil className="h-4 w-4" />
       </button>
@@ -818,7 +818,7 @@ function RowActions({
         onClick={onDelete}
         className="rounded-lg p-2"
         style={{ color: T.danger }}
-        aria-label="Xóa"
+        aria-label="Delete"
       >
         <Trash2 className="h-4 w-4" />
       </button>

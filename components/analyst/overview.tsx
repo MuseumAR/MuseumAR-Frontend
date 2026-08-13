@@ -9,10 +9,10 @@ export async function AnalystOverview() {
       <section>
         <div className="mb-5">
           <p className="text-xs font-medium uppercase tracking-[0.22em]" style={{ color: T.mutedLight }}>
-            Tổng quan
+            Overview
           </p>
           <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-            Báo cáo & Xuất dữ liệu
+            Reports & Data export
           </h2>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">

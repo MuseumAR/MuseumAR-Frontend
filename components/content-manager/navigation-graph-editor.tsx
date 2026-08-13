@@ -101,7 +101,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
   const getRoomLabel = (wp: WaypointDto) => {
     if (wp.roomId == null || wp.roomId === 0) {
       if (wp.waypointType === "DOOR" || wp.waypointType === "ROOM") {
-        return wp.name?.trim() || "Phòng";
+        return wp.name?.trim() || "Room";
       }
       return null;
     }
@@ -109,7 +109,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     if (room) {
       return room.roomCode ? `${room.roomName} (${room.roomCode})` : room.roomName;
     }
-    return wp.name?.trim() || `Phòng #${wp.roomId}`;
+    return wp.name?.trim() || `Room #${wp.roomId}`;
   };
 
   const pathWaypointIds = useMemo(() => {
@@ -178,7 +178,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
         setWaypoints(data.waypoints || []);
         setEdges(data.edges || []);
       })
-      .catch(() => setError("Không thể tải đồ thị chỉ đường."))
+      .catch(() => setError("Could not load navigation graph."))
       .finally(() => setLoading(false));
   }, [selectedMapId]);
 
@@ -206,7 +206,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
       setWaypoints((prev) => [...prev, newWp]);
       setWpName("");
     } catch (err) {
-      setError("Lỗi khi thêm điểm chỉ đường.");
+      setError("Could not add waypoint.");
     } finally {
       setSaving(false);
     }
@@ -241,7 +241,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
             });
             setEdges((prev) => [...prev, newEdge]);
           } catch (err) {
-            setError("Không thể nối nốt chỉ đường.");
+            setError("Could not connect waypoints.");
           } finally {
             setSaving(false);
             setEdgeStartWpId(null);
@@ -260,7 +260,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
       setEdges((prev) => prev.filter((e) => e.fromWaypointId !== id && e.toWaypointId !== id));
       if (selectedWpId === id) setSelectedWpId(null);
     } catch (err) {
-      setError("Không thể xóa điểm chỉ đường.");
+      setError("Could not delete waypoint.");
     } finally {
       setSaving(false);
     }
@@ -273,7 +273,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
       await deleteEdge(id);
       setEdges((prev) => prev.filter((e) => e.id !== id));
     } catch (err) {
-      setError("Không thể xóa đường nối.");
+      setError("Could not delete edge.");
     } finally {
       setSaving(false);
     }
@@ -288,7 +288,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     try {
       const res = await navigateRoute(Number(testFromRoomId), Number(testToRoomId));
       if (!res) {
-        setError("Không tìm thấy đường đi giữa hai phòng.");
+        setError("No path found between the two rooms.");
         return;
       }
       setTestResult(res);
@@ -301,7 +301,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
         if (mapForFloor) setSelectedMapId(mapForFloor.id);
       }
     } catch (err) {
-      setError("Lỗi khi chạy thử đường dẫn.");
+      setError("Could not run the test path.");
     } finally {
       setTestingPath(false);
     }
@@ -351,10 +351,10 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
           </div>
           <div>
             <h3 className="text-lg font-bold" style={{ fontFamily: cinzel, color: T.text }}>
-              Đồ thị chỉ đường
+              Navigation graph
             </h3>
             <p className="text-xs" style={{ color: T.muted }}>
-              Chấm các nốt chỉ đường và nối đường di chuyển trên sơ đồ mặt bằng
+              Place waypoints and connect walking paths on the floor plan
             </p>
           </div>
         </div>
@@ -370,7 +370,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
           >
             {maps.map((m) => (
               <option key={m.id} value={m.id}>
-                {m.mapName || `Tầng ${m.floorNumber ?? 1}`}
+                {m.mapName || `Floor ${m.floorNumber ?? 1}`}
               </option>
             ))}
           </select>
@@ -393,7 +393,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
           {/* Mode Selector */}
           <div className="rounded-2xl p-4 space-y-3" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
             <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>
-              Công cụ chỉnh sửa
+              Editor tools
             </span>
             <div className="space-y-2">
               <button
@@ -406,7 +406,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                   color: mode === "select" ? "white" : T.text,
                 }}
               >
-                <MapPin className="h-4 w-4" /> Chọn & Xem thông tin
+                <MapPin className="h-4 w-4" /> Select & inspect
               </button>
 
               <button
@@ -419,7 +419,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                   color: mode === "add_waypoint" ? "white" : T.text,
                 }}
               >
-                <Plus className="h-4 w-4" /> Thêm nốt chỉ đường
+                <Plus className="h-4 w-4" /> Add waypoint
               </button>
 
               <button
@@ -432,36 +432,36 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                   color: mode === "connect_edge" ? "white" : T.text,
                 }}
               >
-                <LinkIcon className="h-4 w-4" /> Nối đường đi
+                <LinkIcon className="h-4 w-4" /> Connect path
               </button>
             </div>
 
             {mode === "add_waypoint" && (
               <div className="pt-3 border-t space-y-3" style={{ borderColor: T.border }}>
-                <span className="text-xs font-semibold" style={{ color: T.text }}>Loại điểm chỉ đường:</span>
+                <span className="text-xs font-semibold" style={{ color: T.text }}>Waypoint type:</span>
                 <select
                   value={wpType}
                   onChange={(e) => setWpType(e.target.value)}
                   className="w-full rounded-xl px-3 py-1.5 text-xs font-medium border"
                   style={{ background: "white", borderColor: T.border }}
                 >
-                  <option value="HALLWAY">Hành lang (xanh dương)</option>
-                  <option value="DOOR">Cửa / Phòng (xanh lá)</option>
-                  <option value="STAIR">Cầu thang (cam)</option>
-                  <option value="ELEVATOR">Thang máy (tím)</option>
-                  <option value="LOBBY">Sảnh (hồng)</option>
+                  <option value="HALLWAY">Hallway (blue)</option>
+                  <option value="DOOR">Door / Room (green)</option>
+                  <option value="STAIR">Stairs (orange)</option>
+                  <option value="ELEVATOR">Elevator (purple)</option>
+                  <option value="LOBBY">Lobby (pink)</option>
                 </select>
 
                 {wpType === "DOOR" && (
                   <div>
-                    <span className="text-xs font-semibold" style={{ color: T.text }}>Gắn với Phòng:</span>
+                    <span className="text-xs font-semibold" style={{ color: T.text }}>Link to room:</span>
                     <select
                       value={wpRoomId || ""}
                       onChange={(e) => setWpRoomId(e.target.value ? Number(e.target.value) : undefined)}
                       className="w-full rounded-xl px-3 py-1.5 text-xs font-medium border mt-1"
                       style={{ background: "white", borderColor: T.border }}
                     >
-                      <option value="">-- Chọn phòng --</option>
+                      <option value="">-- Select room --</option>
                       {rooms.map((r) => (
                         <option key={r.id} value={r.id}>
                           {r.roomName} ({r.roomCode})
@@ -471,7 +471,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                   </div>
                 )}
                 <p className="text-[11px] italic" style={{ color: T.muted }}>
-                  👉 Nhấp trực tiếp lên ảnh sơ đồ để thả nốt mới.
+                  👉 Click the floor plan image to drop a new waypoint.
                 </p>
               </div>
             )}
@@ -480,10 +480,10 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
               <div className="pt-3 border-t text-xs space-y-1.5" style={{ borderColor: T.border, color: T.muted }}>
                 {edgeStartWpId ? (
                   <p className="font-semibold text-emerald-600">
-                    ✅ Đã chọn nốt #{edgeStartWpId}. Hãy nhấp nốt thứ 2 để tạo dây nối.
+                    ✅ Selected waypoint #{edgeStartWpId}. Click a second waypoint to connect them.
                   </p>
                 ) : (
-                  <p>👉 Nhấp nốt đầu tiên, sau đó nhấp nốt thứ hai để nối dây.</p>
+                  <p>👉 Click the first waypoint, then the second to connect them.</p>
                 )}
               </div>
             )}
@@ -494,20 +494,20 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-amber-600" />
               <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>
-                Chạy Thử Đường Dẫn (A*)
+                Test path (A*)
               </span>
             </div>
 
             <div className="space-y-2">
               <div>
-                <label className="text-xs font-medium" style={{ color: T.muted }}>Từ Phòng:</label>
+                <label className="text-xs font-medium" style={{ color: T.muted }}>From room:</label>
                 <select
                   value={testFromRoomId}
                   onChange={(e) => setTestFromRoomId(e.target.value ? Number(e.target.value) : "")}
                   className="w-full rounded-xl px-3 py-1.5 text-xs border mt-0.5"
                   style={{ background: "white", borderColor: T.border }}
                 >
-                  <option value="">-- Chọn phòng --</option>
+                  <option value="">-- Select room --</option>
                   {rooms.map((r) => (
                     <option key={r.id} value={r.id}>{r.roomName}</option>
                   ))}
@@ -515,14 +515,14 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
               </div>
 
               <div>
-                <label className="text-xs font-medium" style={{ color: T.muted }}>Đến Phòng:</label>
+                <label className="text-xs font-medium" style={{ color: T.muted }}>To room:</label>
                 <select
                   value={testToRoomId}
                   onChange={(e) => setTestToRoomId(e.target.value ? Number(e.target.value) : "")}
                   className="w-full rounded-xl px-3 py-1.5 text-xs border mt-0.5"
                   style={{ background: "white", borderColor: T.border }}
                 >
-                  <option value="">-- Chọn phòng --</option>
+                  <option value="">-- Select room --</option>
                   {rooms.map((r) => (
                     <option key={r.id} value={r.id}>{r.roomName}</option>
                   ))}
@@ -536,18 +536,18 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                 style={{ background: T.primaryDark }}
               >
                 <Navigation className="h-3.5 w-3.5" />
-                {testingPath ? "Đang tính..." : "Chạy Thử Tuyến Đường"}
+                {testingPath ? "Calculating..." : "Run test route"}
               </button>
             </div>
 
             {testResult && (
               <div className="pt-3 border-t space-y-2 text-xs" style={{ borderColor: T.border }}>
                 <div className="flex items-center justify-between font-bold" style={{ color: T.text }}>
-                  <span>Khoảng cách: {testResult.totalDistance}m</span>
-                  <span>{testResult.instructions.length} bước</span>
+                  <span>Distance: {testResult.totalDistance}m</span>
+                  <span>{testResult.instructions.length} steps</span>
                 </div>
                 <p className="text-[11px]" style={{ color: T.muted }}>
-                  Đường vàng trên bản đồ = tuyến đi. Nhấp bước để nhảy tới vị trí chỉ đường.
+                  Yellow line on the map = the route. Click a step to jump to that waypoint.
                 </p>
                 <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
                   {testResult.instructions.map((inst, idx) => {
@@ -583,7 +583,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                   className="w-full rounded-xl py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-white/80"
                   style={{ border: `1px solid ${T.border}` }}
                 >
-                  Xóa đường thử
+                  Clear test path
                 </button>
               </div>
             )}
@@ -596,23 +596,23 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
           <div className="flex flex-wrap items-center gap-3 text-[11px] font-medium" style={{ color: T.muted }}>
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#16A34A" }} />
-              Phòng / Cửa
+              Room / Door
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#2563EB" }} />
-              Hành lang
+              Hallway
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#EA580C" }} />
-              Cầu thang
+              Stairs
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#7C3AED" }} />
-              Thang máy
+              Elevator
             </span>
             <span className="inline-flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#DB2777" }} />
-              Sảnh
+              Lobby
             </span>
           </div>
 
@@ -627,16 +627,16 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
             {currentMap?.mapImageUrl && !mapImgFailed ? (
               <img
                 src={currentMap.mapImageUrl}
-                alt={currentMap.mapName || "Sơ đồ tầng"}
+                alt={currentMap.mapName || "Floor plan"}
                 className="h-full w-full object-contain pointer-events-none select-none"
                 onError={() => setMapImgFailed(true)}
               />
             ) : (
               <div className="flex h-[500px] flex-col items-center justify-center gap-2 p-6 text-center text-sm text-slate-500">
                 <MapPin className="h-8 w-8 text-amber-600/50" />
-                <p className="font-semibold text-slate-700">{currentMap?.mapName || "Bản đồ sơ đồ mặt bằng"}</p>
+                <p className="font-semibold text-slate-700">{currentMap?.mapName || "Floor plan map"}</p>
                 <p className="text-xs text-slate-400">
-                  (Ảnh sơ đồ demo chưa tải được từ CDN. Bạn vẫn có thể chấm nốt chỉ đường và nối đường đi trực tiếp lên khung bản đồ này)
+                  (Demo floor plan image could not load from the CDN. You can still place waypoints and connect paths on this map frame.)
                 </p>
               </div>
             )}
@@ -725,7 +725,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                   }`}
                   title={`${wp.name || wp.waypointType} (#${wp.id})${
                     roomLabel ? ` · ${roomLabel}` : ""
-                  }${isPathStart ? " · Điểm bắt đầu" : isPathEnd ? " · Điểm kết thúc" : ""}`}
+                  }${isPathStart ? " · Start" : isPathEnd ? " · End" : ""}`}
                 >
                   {isRoomPoint && roomLabel && (
                     <span
@@ -814,11 +814,11 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                   }}
                 />
                 <div>
-                  <span className="font-bold">Nốt #{selectedWpId}</span>
+                  <span className="font-bold">Waypoint #{selectedWpId}</span>
                   <span className="ml-2 text-slate-500">
                     ({waypoints.find((w) => w.id === selectedWpId)?.waypointType}
                     {waypoints.find((w) => w.id === selectedWpId)?.roomId
-                      ? ` · Phòng #${waypoints.find((w) => w.id === selectedWpId)?.roomId}`
+                      ? ` · Room #${waypoints.find((w) => w.id === selectedWpId)?.roomId}`
                       : ""}
                     ) - X: {waypoints.find((w) => w.id === selectedWpId)?.locationX}%, Y:{" "}
                     {waypoints.find((w) => w.id === selectedWpId)?.locationY}%
@@ -830,7 +830,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                 onClick={() => handleDeleteWp(selectedWpId)}
                 className="flex items-center gap-1 text-red-600 font-semibold hover:underline"
               >
-                <Trash2 className="h-3.5 w-3.5" /> Xóa điểm chỉ đường
+                <Trash2 className="h-3.5 w-3.5" /> Delete waypoint
               </button>
             </div>
           )}
