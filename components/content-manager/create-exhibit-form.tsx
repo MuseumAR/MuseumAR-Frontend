@@ -358,7 +358,7 @@ function SelectField({
         className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
         style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
       >
-        <option value="">Không</option
+        <option value="">Không</option>
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}
