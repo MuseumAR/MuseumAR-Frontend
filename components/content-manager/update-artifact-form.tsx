@@ -34,7 +34,9 @@ export function UpdateArtifactForm({
   initialCategoryId,
   initialAgeGroupId,
   initialEra,
+  initialEraEn,
   initialHistoricalEvent,
+  initialHistoricalEventEn,
   initialTagIds,
   initialMapId,
   initialRoomId,
@@ -49,7 +51,9 @@ export function UpdateArtifactForm({
   initialCategoryId?: number | null;
   initialAgeGroupId?: number | null;
   initialEra?: string;
+  initialEraEn?: string;
   initialHistoricalEvent?: string;
+  initialHistoricalEventEn?: string;
   initialTagIds?: number[];
   initialMapId?: number | null;
   initialRoomId?: number | null;
@@ -72,7 +76,9 @@ export function UpdateArtifactForm({
     initialAgeGroupId != null ? String(initialAgeGroupId) : "",
   );
   const [era, setEra] = useState(initialEra ?? "");
+  const [eraEn, setEraEn] = useState(initialEraEn ?? "");
   const [historicalEvent, setHistoricalEvent] = useState(initialHistoricalEvent ?? "");
+  const [historicalEventEn, setHistoricalEventEn] = useState(initialHistoricalEventEn ?? "");
   const [mapId, setMapId] = useState(initialMapId != null ? String(initialMapId) : "");
   const [roomId, setRoomId] = useState(initialRoomId != null ? String(initialRoomId) : "");
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>(initialTagIds ?? []);
@@ -135,7 +141,9 @@ export function UpdateArtifactForm({
         exhibitMetadata: {
           ageGroupId: ageGroupId ? Number(ageGroupId) : undefined,
           era: era.trim() || undefined,
+          eraEn: eraEn.trim() || undefined,
           historicalEvent: historicalEvent.trim() || undefined,
+          historicalEventEn: historicalEventEn.trim() || undefined,
         },
         translations: [
           {
@@ -294,11 +302,18 @@ export function UpdateArtifactForm({
                   label: `${r.roomCode} - ${r.roomName}`,
                 }))}
               />
-              <Field label="Era" value={era} onChange={setEra} placeholder="e.g. Nguyễn dynasty" />
+              <Field label="Era (VI)" value={era} onChange={setEra} placeholder="vd. Nhà Nguyễn" />
+              <Field label="Era (EN)" value={eraEn} onChange={setEraEn} placeholder="e.g. Nguyễn dynasty" />
               <Field
-                label="Historical event"
+                label="Historical event (VI)"
                 value={historicalEvent}
                 onChange={setHistoricalEvent}
+                placeholder="Optional"
+              />
+              <Field
+                label="Historical event (EN)"
+                value={historicalEventEn}
+                onChange={setHistoricalEventEn}
                 placeholder="Optional"
               />
             </div>

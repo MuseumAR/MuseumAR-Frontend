@@ -935,9 +935,11 @@ export function MapsRoutesPanel({
   // Room form state
   const [roomCode, setRoomCode] = useState("");
   const [roomName, setRoomName] = useState("");
+  const [roomNameEn, setRoomNameEn] = useState("");
   const [roomFloorNumber, setRoomFloorNumber] = useState("1");
   const [roomMapId, setRoomMapId] = useState("");
   const [roomDesc, setRoomDesc] = useState("");
+  const [roomDescEn, setRoomDescEn] = useState("");
   const [roomError, setRoomError] = useState<string | null>(null);
   const [deletingRoomId, setDeletingRoomId] = useState<number | null>(null);
 
@@ -1084,12 +1086,16 @@ export function MapsRoutesPanel({
         mapId: roomMapId ? Number(roomMapId) : undefined,
         roomCode: roomCode.trim(),
         roomName: roomName.trim(),
+        roomNameEn: roomNameEn.trim() || undefined,
         floorNumber: Number(roomFloorNumber),
         description: roomDesc.trim() || undefined,
+        descriptionEn: roomDescEn.trim() || undefined,
       });
       setRoomCode("");
       setRoomName("");
+      setRoomNameEn("");
       setRoomDesc("");
+      setRoomDescEn("");
       setRoomMapId("");
       setRoomFloorNumber("1");
       setShowRoomForm(false);
@@ -1599,7 +1605,7 @@ export function MapsRoutesPanel({
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Tên phòng * (VD: Phòng 102 - Văn hóa Đông Sơn)
+                    Tên phòng (VI) * (VD: Phòng 102 - Văn hóa Đông Sơn)
                   </label>
                   <input
                     type="text"
@@ -1607,6 +1613,19 @@ export function MapsRoutesPanel({
                     placeholder="Phòng 102 - Văn hóa Đông Sơn"
                     value={roomName}
                     onChange={(e) => setRoomName(e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-sm" style={{ color: T.muted }}>
+                    Room name (EN)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Room 102 - Dong Son Culture"
+                    value={roomNameEn}
+                    onChange={(e) => setRoomNameEn(e.target.value)}
                     className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                     style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                   />
@@ -1643,15 +1662,28 @@ export function MapsRoutesPanel({
                     ))}
                   </select>
                 </div>
-                <div className="space-y-1.5 sm:col-span-2">
+                <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Mô tả phòng trưng bày
+                    Mô tả phòng (VI)
                   </label>
                   <textarea
                     rows={3}
                     placeholder="Mô tả nội dung các hiện vật được trưng bày trong phòng này..."
                     value={roomDesc}
                     onChange={(e) => setRoomDesc(e.target.value)}
+                    className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
+                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-sm" style={{ color: T.muted }}>
+                    Room description (EN)
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Describe exhibits displayed in this room..."
+                    value={roomDescEn}
+                    onChange={(e) => setRoomDescEn(e.target.value)}
                     className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
                     style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                   />

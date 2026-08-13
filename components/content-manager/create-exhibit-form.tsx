@@ -48,7 +48,9 @@ export function CreateExhibitForm({
   const [categoryId, setCategoryId] = useState("");
   const [ageGroupId, setAgeGroupId] = useState("");
   const [era, setEra] = useState("");
+  const [eraEn, setEraEn] = useState("");
   const [historicalEvent, setHistoricalEvent] = useState("");
+  const [historicalEventEn, setHistoricalEventEn] = useState("");
   const [mapId, setMapId] = useState("");
   const [roomId, setRoomId] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
@@ -101,7 +103,9 @@ export function CreateExhibitForm({
         exhibitMetadata: {
           ageGroupId: ageGroupId ? Number(ageGroupId) : undefined,
           era: era.trim() || undefined,
+          eraEn: eraEn.trim() || undefined,
           historicalEvent: historicalEvent.trim() || undefined,
+          historicalEventEn: historicalEventEn.trim() || undefined,
         },
         translations: [
           {
@@ -211,11 +215,18 @@ export function CreateExhibitForm({
                   label: `${r.roomCode} - ${r.roomName}`,
                 }))}
               />
-              <Field label="Era" value={era} onChange={setEra} placeholder="e.g. Nguyễn dynasty" />
+              <Field label="Era (VI)" value={era} onChange={setEra} placeholder="vd. Nhà Nguyễn" />
+              <Field label="Era (EN)" value={eraEn} onChange={setEraEn} placeholder="e.g. Nguyễn dynasty" />
               <Field
-                label="Historical event"
+                label="Historical event (VI)"
                 value={historicalEvent}
                 onChange={setHistoricalEvent}
+                placeholder="Optional"
+              />
+              <Field
+                label="Historical event (EN)"
+                value={historicalEventEn}
+                onChange={setHistoricalEventEn}
                 placeholder="Optional"
               />
             </div>

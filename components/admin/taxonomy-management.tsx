@@ -280,40 +280,65 @@ function ThemesTab({
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<ThemeDto | null>(null);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [nameVi, setNameVi] = useState("");
+  const [nameEn, setNameEn] = useState("");
+  const [descriptionVi, setDescriptionVi] = useState("");
+  const [descriptionEn, setDescriptionEn] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   function openCreate() {
     setEditing(null);
-    setName("");
-    setDescription("");
+    setNameVi("");
+    setNameEn("");
+    setDescriptionVi("");
+    setDescriptionEn("");
     setError(null);
     setShowForm(true);
   }
 
   function openEdit(item: ThemeDto) {
+    const vi = item.translations?.find((t) => t.languageCode === "vi");
+    const en = item.translations?.find((t) => t.languageCode === "en");
     setEditing(item);
-    setName(item.themeName);
-    setDescription(item.description ?? "");
+    setNameVi(vi?.themeName ?? item.themeName);
+    setNameEn(en?.themeName ?? "");
+    setDescriptionVi(vi?.description ?? item.description ?? "");
+    setDescriptionEn(en?.description ?? "");
     setError(null);
     setShowForm(true);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) {
-      setError("Theme name is required.");
+    if (!nameVi.trim()) {
+      setError("Vietnamese theme name is required.");
       return;
     }
     setBusy(true);
     setError(null);
     try {
+      const translations = [
+        {
+          themeId: editing?.id ?? 0,
+          languageCode: "vi",
+          themeName: nameVi.trim(),
+          description: descriptionVi.trim() || undefined,
+        },
+      ];
+      if (nameEn.trim()) {
+        translations.push({
+          themeId: editing?.id ?? 0,
+          languageCode: "en",
+          themeName: nameEn.trim(),
+          description: descriptionEn.trim() || undefined,
+        });
+      }
       const payload = {
         museumId: museumId ?? editing?.museumId ?? undefined,
-        themeName: name.trim(),
-        description: description.trim() || undefined,
+        themeName: nameVi.trim(),
+        description: descriptionVi.trim() || undefined,
+        translations,
       };
       if (editing) await updateThemeEntry(editing.id, payload);
       else await createThemeEntry(payload);
@@ -348,11 +373,17 @@ function ThemesTab({
         <FormCard title={editing ? "Edit theme" : "New theme"}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Theme name *">
-                <Input value={name} onChange={setName} placeholder="Kháng chiến" />
+              <Field label="Name (VI) *">
+                <Input value={nameVi} onChange={setNameVi} placeholder="Kháng chiến" />
               </Field>
-              <Field label="Description">
-                <Input value={description} onChange={setDescription} placeholder="Optional" />
+              <Field label="Name (EN)">
+                <Input value={nameEn} onChange={setNameEn} placeholder="Resistance war" />
+              </Field>
+              <Field label="Description (VI)">
+                <Input value={descriptionVi} onChange={setDescriptionVi} placeholder="Optional" />
+              </Field>
+              <Field label="Description (EN)">
+                <Input value={descriptionEn} onChange={setDescriptionEn} placeholder="Optional" />
               </Field>
             </div>
             <FormActions busy={busy} onCancel={() => setShowForm(false)} />
@@ -491,7 +522,8 @@ function TagsTab({
 
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<TagDto | null>(null);
-  const [name, setName] = useState("");
+  const [nameVi, setNameVi] = useState("");
+  const [nameEn, setNameEn] = useState("");
   const [tagGroupId, setTagGroupId] = useState(
     tagGroups[0] ? String(tagGroups[0].id) : "",
   );
@@ -501,7 +533,8 @@ function TagsTab({
 
   function openCreate() {
     setEditing(null);
-    setName("");
+    setNameVi("");
+    setNameEn("");
     setTagGroupId(tagGroups[0] ? String(tagGroups[0].id) : "");
     setSortOrder("0");
     setError(null);
@@ -509,8 +542,11 @@ function TagsTab({
   }
 
   function openEdit(item: TagDto) {
+    const vi = item.translations?.find((t) => t.languageCode === "vi");
+    const en = item.translations?.find((t) => t.languageCode === "en");
     setEditing(item);
-    setName(item.tagName);
+    setNameVi(vi?.tagName ?? item.tagName);
+    setNameEn(en?.tagName ?? "");
     setTagGroupId(String(item.tagGroupId));
     setSortOrder(String(item.sortOrder ?? 0));
     setError(null);
@@ -519,17 +555,32 @@ function TagsTab({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !tagGroupId) {
-      setError("Tag name and group are required.");
+    if (!nameVi.trim() || !tagGroupId) {
+      setError("Vietnamese tag name and group are required.");
       return;
     }
     setBusy(true);
     setError(null);
     try {
+      const translations = [
+        {
+          tagId: editing?.id ?? 0,
+          languageCode: "vi",
+          tagName: nameVi.trim(),
+        },
+      ];
+      if (nameEn.trim()) {
+        translations.push({
+          tagId: editing?.id ?? 0,
+          languageCode: "en",
+          tagName: nameEn.trim(),
+        });
+      }
       const payload = {
         tagGroupId: Number(tagGroupId),
-        tagName: name.trim(),
+        tagName: nameVi.trim(),
         sortOrder: Number(sortOrder) || 0,
+        translations,
       };
       if (editing) await updateTagEntry(editing.id, payload);
       else await createTagEntry(payload);
@@ -570,8 +621,11 @@ function TagsTab({
         <FormCard title={editing ? "Edit tag" : "New tag"}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Tag name *">
-                <Input value={name} onChange={setName} placeholder="Nguyễn dynasty" />
+              <Field label="Name (VI) *">
+                <Input value={nameVi} onChange={setNameVi} placeholder="Nhà Nguyễn" />
+              </Field>
+              <Field label="Name (EN)">
+                <Input value={nameEn} onChange={setNameEn} placeholder="Nguyễn dynasty" />
               </Field>
               <Field label="Tag group *">
                 <Select

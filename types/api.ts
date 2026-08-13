@@ -19,8 +19,11 @@ export type ApiResponse<T = unknown> = {
 export type MuseumDto = {
   id: number;
   name: string;
+  nameEn?: string | null;
   description?: string | null;
+  descriptionEn?: string | null;
   address?: string | null;
+  addressEn?: string | null;
   city?: string | null;
   /** Not on current BE MuseumDto GET — kept for UI / future */
   province?: string | null;
@@ -30,15 +33,28 @@ export type MuseumDto = {
   status: string;
   thumbnailUrl?: string | null;
   openingHours?: string | null;
+  openingHoursEn?: string | null;
   contactPhone?: string | null;
   contactEmail?: string | null;
   website?: string | null;
+  translations?: MuseumTranslationDto[];
+};
+
+export type MuseumTranslationDto = {
+  languageCode: string;
+  name: string;
+  description?: string | null;
+  address?: string | null;
+  openingHours?: string | null;
 };
 
 export type UpdateMuseumProfileDto = {
   name: string;
+  nameEn?: string | null;
   description?: string | null;
+  descriptionEn?: string | null;
   address?: string | null;
+  addressEn?: string | null;
   city?: string | null;
   province?: string | null;
   country?: string | null;
@@ -46,6 +62,7 @@ export type UpdateMuseumProfileDto = {
   longitude?: number | null;
   thumbnailUrl?: string | null;
   openingHours?: string | null;
+  openingHoursEn?: string | null;
   contactPhone?: string | null;
   contactEmail?: string | null;
   website?: string | null;
@@ -113,6 +130,13 @@ export type RoomDto = {
   description?: string | null;
   createdAt?: string;
   updatedAt?: string;
+  translations?: RoomTranslationDto[];
+};
+
+export type RoomTranslationDto = {
+  languageCode: string;
+  roomName: string;
+  description?: string | null;
 };
 
 export type CreateRoomDto = {
@@ -120,16 +144,20 @@ export type CreateRoomDto = {
   mapId?: number | null;
   roomCode: string;
   roomName: string;
+  roomNameEn?: string | null;
   floorNumber?: number;
   description?: string | null;
+  descriptionEn?: string | null;
 };
 
 export type UpdateRoomDto = {
   mapId?: number | null;
   roomCode?: string;
   roomName?: string;
+  roomNameEn?: string | null;
   floorNumber?: number;
   description?: string | null;
+  descriptionEn?: string | null;
 };
 
 // ─── Exhibit ──────────────────────────────────────────────────────────────────
@@ -171,7 +199,9 @@ export type ExhibitDto = {
 export type ExhibitMetadataDto = {
   ageGroupId?: number | null;
   era?: string | null;
+  eraEn?: string | null;
   historicalEvent?: string | null;
+  historicalEventEn?: string | null;
 };
 
 export type CreateExhibitDto = {
@@ -190,16 +220,26 @@ export type CreateExhibitDto = {
 
 // ─── Exhibition ───────────────────────────────────────────────────────────────
 
+export type ExhibitionTranslationDto = {
+  exhibitionId?: number;
+  languageCode: string;
+  name: string;
+  description?: string | null;
+};
+
 export type ExhibitionDto = {
   id: number;
   museumId: number;
   themeId?: number | null;
   name?: string | null;
+  nameEn?: string | null;
   description?: string | null;
+  descriptionEn?: string | null;
   thumbnailUrl?: string | null;
   startDate?: string | null;
   endDate?: string | null;
   status: string;
+  translations?: ExhibitionTranslationDto[];
 };
 
 export type CreateExhibitionDto = {
@@ -383,8 +423,10 @@ export type CreateTicketTypeDto = {
   museumId: number;
   exhibitionId?: number | null;
   name: string;
+  nameEn?: string | null;
   price: number;
   description?: string | null;
+  descriptionEn?: string | null;
   isActive?: boolean;
 };
 
@@ -627,11 +669,19 @@ export type CategoryDto = {
   categoryTranslations: CategoryTranslationDto[];
 };
 
+export type ThemeTranslationDto = {
+  themeId?: number;
+  languageCode: string;
+  themeName: string;
+  description?: string | null;
+};
+
 export type ThemeDto = {
   id: number;
   museumId?: number | null;
   themeName: string;
   description?: string | null;
+  translations?: ThemeTranslationDto[];
 };
 
 export type AgeGroupDto = {
@@ -647,11 +697,18 @@ export type TagGroupDto = {
   sortOrder: number;
 };
 
+export type TagTranslationDto = {
+  tagId?: number;
+  languageCode: string;
+  tagName: string;
+};
+
 export type TagDto = {
   id: number;
   tagGroupId: number;
   tagName: string;
   sortOrder: number;
+  translations?: TagTranslationDto[];
 };
 
 export type CreateCategoryDto = {
@@ -673,6 +730,7 @@ export type CreateThemeDto = {
   museumId?: number | null;
   themeName: string;
   description?: string | null;
+  translations?: ThemeTranslationDto[];
 };
 
 export type CreateTagGroupDto = {
@@ -684,6 +742,7 @@ export type CreateTagDto = {
   tagGroupId: number;
   tagName: string;
   sortOrder: number;
+  translations?: TagTranslationDto[];
 };
 
 // ─── Navigation Graph ───────────────────────────────────────────────────────

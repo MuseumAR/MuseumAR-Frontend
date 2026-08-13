@@ -80,8 +80,11 @@ export function normalizeExhibitDto(raw: unknown): import("@/types/api").Exhibit
       ? {
           ageGroupId: pickNum(meta, "ageGroupId", "AgeGroupId") ?? null,
           era: pickStr(meta, "era", "Era") ?? null,
+          eraEn: pickStr(meta, "eraEn", "EraEn") ?? null,
           historicalEvent:
             pickStr(meta, "historicalEvent", "HistoricalEvent") ?? null,
+          historicalEventEn:
+            pickStr(meta, "historicalEventEn", "HistoricalEventEn") ?? null,
         }
       : null,
     translations: (Array.isArray(translationsRaw) ? translationsRaw : []).map(
@@ -107,8 +110,11 @@ export function normalizeMuseumDto(raw: unknown): import("@/types/api").MuseumDt
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
     name: String(pickField(o, "name", "Name") ?? ""),
+    nameEn: pickStr(o, "nameEn", "NameEn") ?? null,
     description: pickStr(o, "description", "Description") ?? null,
+    descriptionEn: pickStr(o, "descriptionEn", "DescriptionEn") ?? null,
     address: pickStr(o, "address", "Address") ?? null,
+    addressEn: pickStr(o, "addressEn", "AddressEn") ?? null,
     city: pickStr(o, "city", "City") ?? null,
     province: pickStr(o, "province", "Province") ?? null,
     country: pickStr(o, "country", "Country") ?? null,
@@ -117,6 +123,7 @@ export function normalizeMuseumDto(raw: unknown): import("@/types/api").MuseumDt
     status: String(pickField(o, "status", "Status") ?? "Active"),
     thumbnailUrl: pickStr(o, "thumbnailUrl", "ThumbnailUrl") ?? null,
     openingHours: pickStr(o, "openingHours", "OpeningHours") ?? null,
+    openingHoursEn: pickStr(o, "openingHoursEn", "OpeningHoursEn") ?? null,
     contactPhone: pickStr(o, "contactPhone", "ContactPhone") ?? null,
     contactEmail: pickStr(o, "contactEmail", "ContactEmail") ?? null,
     website: pickStr(o, "website", "Website") ?? null,
@@ -221,8 +228,10 @@ export function normalizeTicketTypeDto(
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
     name: String(pickField(o, "name", "Name") ?? ""),
+    nameEn: pickStr(o, "nameEn", "NameEn") ?? null,
     price: Number(pickField(o, "price", "Price") ?? 0),
     description: pickStr(o, "description", "Description") ?? null,
+    descriptionEn: pickStr(o, "descriptionEn", "DescriptionEn") ?? null,
     museumId: Number(pickField(o, "museumId", "MuseumId") ?? 0),
     exhibitionId: pickNum(o, "exhibitionId", "ExhibitionId") ?? null,
     status: String(pickField(o, "status", "Status") ?? "Pending"),

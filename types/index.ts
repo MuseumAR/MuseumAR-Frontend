@@ -135,12 +135,17 @@ export type AnalyticsMetric = {
 // ─── Museum Profile ────────────────────────────────────────────────────────
 export type MuseumProfile = {
   name: string;
+  nameEn?: string;
   address: string;
+  addressEn?: string;
   email: string;
   phone: string;
   openingHours: string;
   closingHours: string;
+  openingHoursEn?: string;
   image: string | null;
+  description?: string;
+  descriptionEn?: string;
 };
 
 // ─── Museum Manager Stats / Charts ─────────────────────────────────────────

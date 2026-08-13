@@ -51,7 +51,9 @@ export default async function UpdateArtifactPage({
       initialCategoryId={exhibit?.categoryId ?? null}
       initialAgeGroupId={exhibit?.exhibitMetadata?.ageGroupId ?? null}
       initialEra={exhibit?.exhibitMetadata?.era ?? ""}
+      initialEraEn={exhibit?.exhibitMetadata?.eraEn ?? ""}
       initialHistoricalEvent={exhibit?.exhibitMetadata?.historicalEvent ?? ""}
+      initialHistoricalEventEn={exhibit?.exhibitMetadata?.historicalEventEn ?? ""}
       initialTagIds={exhibitTags.map((t) => t.id)}
       initialMapId={exhibit?.mapId ?? null}
       initialRoomId={exhibit?.roomId ?? null}

@@ -15,9 +15,13 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(profile.name);
+  const [nameEn, setNameEn] = useState(profile.nameEn ?? "");
   const [address, setAddress] = useState(
     profile.address === "—" ? "" : profile.address,
   );
+  const [addressEn, setAddressEn] = useState(profile.addressEn ?? "");
+  const [description, setDescription] = useState(profile.description ?? "");
+  const [descriptionEn, setDescriptionEn] = useState(profile.descriptionEn ?? "");
   const [email, setEmail] = useState(profile.email === "—" ? "" : profile.email);
   const [phone, setPhone] = useState(profile.phone === "—" ? "" : profile.phone);
   const [openingHours, setOpeningHours] = useState(
@@ -26,6 +30,7 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
   const [closingHours, setClosingHours] = useState(
     HOURS.includes(profile.closingHours) ? profile.closingHours : "",
   );
+  const [openingHoursEn, setOpeningHoursEn] = useState(profile.openingHoursEn ?? "");
   const [imagePreview, setImagePreview] = useState<string | null>(profile.image);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,10 +66,15 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
 
       await updateMuseumProfileEntry({
         name: name.trim(),
+        nameEn: nameEn.trim() || undefined,
+        description: description.trim() || undefined,
+        descriptionEn: descriptionEn.trim() || undefined,
         address: address.trim() || undefined,
+        addressEn: addressEn.trim() || undefined,
         contactEmail: email.trim() || undefined,
         contactPhone: phone.trim() || undefined,
         openingHours: hours,
+        openingHoursEn: openingHoursEn.trim() || undefined,
         thumbnailUrl: currentThumbnailUrl,
       });
       router.push("/museum-manager/museum-profile");
@@ -114,12 +124,21 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
 
           <div className="flex-1 space-y-5">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Museum name *" value={name} onChange={setName} />
-              <Field label="Address" value={address} onChange={setAddress} />
+              <Field label="Museum name (VI) *" value={name} onChange={setName} />
+              <Field label="Museum name (EN)" value={nameEn} onChange={setNameEn} />
+              <Field label="Address (VI)" value={address} onChange={setAddress} />
+              <Field label="Address (EN)" value={addressEn} onChange={setAddressEn} />
+              <Field label="Description (VI)" value={description} onChange={setDescription} />
+              <Field label="Description (EN)" value={descriptionEn} onChange={setDescriptionEn} />
               <Field label="Contact email" value={email} onChange={setEmail} type="email" />
               <Field label="Phone number" value={phone} onChange={setPhone} type="tel" />
               <SelectField label="Opening hours" value={openingHours} onChange={setOpeningHours} />
               <SelectField label="Closing hours" value={closingHours} onChange={setClosingHours} />
+              <Field
+                label="Opening hours text (EN)"
+                value={openingHoursEn}
+                onChange={setOpeningHoursEn}
+              />
             </div>
             {error && (
               <p

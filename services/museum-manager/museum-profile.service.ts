@@ -26,12 +26,17 @@ export async function getMuseumProfile(): Promise<MuseumProfile | null> {
 
     return {
       name: museum.name,
+      nameEn: museum.nameEn?.trim() || "",
       address: [museum.address, museum.city].filter(Boolean).join(", ") || "—",
+      addressEn: museum.addressEn?.trim() || "",
       email: museum.contactEmail?.trim() || "—",
       phone: museum.contactPhone?.trim() || "—",
       openingHours: hours.opening,
       closingHours: hours.closing,
+      openingHoursEn: museum.openingHoursEn?.trim() || "",
       image: museum.thumbnailUrl ?? null,
+      description: museum.description?.trim() || "",
+      descriptionEn: museum.descriptionEn?.trim() || "",
     };
   }, null);
 }

@@ -37,8 +37,10 @@ export function TicketApplicationTable({
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
+  const [nameEn, setNameEn] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
+  const [descriptionEn, setDescriptionEn] = useState("");
   const [exhibitionId, setExhibitionId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPublishing, setIsPublishing] = useState<Record<string, boolean>>({});
@@ -113,15 +115,19 @@ export function TicketApplicationTable({
       await createTicketTypeEntryForManager({
         museumId,
         name: name.trim(),
+        nameEn: nameEn.trim() || undefined,
         price: Number(price),
         description: description.trim() || undefined,
+        descriptionEn: descriptionEn.trim() || undefined,
         exhibitionId: exhibitionId.trim() ? Number(exhibitionId) : undefined,
         isActive: true,
       });
       setShowForm(false);
       setName("");
+      setNameEn("");
       setPrice("");
       setDescription("");
+      setDescriptionEn("");
       setExhibitionId("");
       router.refresh();
     } catch (err) {
@@ -294,10 +300,20 @@ export function TicketApplicationTable({
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <label className="block text-sm" style={{ color: T.muted }}>Name *</label>
+              <label className="block text-sm" style={{ color: T.muted }}>Name (VI) *</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                placeholder="Vé người lớn"
+                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="block text-sm" style={{ color: T.muted }}>Name (EN)</label>
+              <input
+                value={nameEn}
+                onChange={(e) => setNameEn(e.target.value)}
                 placeholder="Adult ticket"
                 className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
@@ -328,12 +344,22 @@ export function TicketApplicationTable({
                 ))}
               </select>
             </div>
-            <div className="space-y-1.5 sm:col-span-2">
-              <label className="block text-sm" style={{ color: T.muted }}>Description</label>
+            <div className="space-y-1.5">
+              <label className="block text-sm" style={{ color: T.muted }}>Description (VI)</label>
               <input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Optional description"
+                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="block text-sm" style={{ color: T.muted }}>Description (EN)</label>
+              <input
+                value={descriptionEn}
+                onChange={(e) => setDescriptionEn(e.target.value)}
+                placeholder="Optional English description"
                 className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
               />
