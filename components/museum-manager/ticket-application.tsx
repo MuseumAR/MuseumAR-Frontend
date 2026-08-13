@@ -10,6 +10,7 @@ import type { ExhibitionDto, TicketPromotionDto } from "@/types/api";
 import {
   createTicketTypeEntryForManager,
   publishTicketTypeEntryForManager,
+  deleteTicketTypeEntryForManager,
 } from "@/services/museum-manager/ticket.service";
 import {
   getManagerTicketPromotions,
@@ -146,6 +147,22 @@ export function TicketApplicationTable({
       setError(getDisplayError(err, "Could not publish ticket type. Please try again."));
     } finally {
       setIsPublishing((prev) => ({ ...prev, [ticketId]: false }));
+    }
+  }
+
+  async function handleDeleteTicket(ticketId: string) {
+    if (!confirm("Are you sure you want to delete/deactivate this ticket type?")) {
+      return;
+    }
+    const numericId = getTicketTypeNumericId(ticketId);
+    if (Number.isNaN(numericId)) return;
+
+    setError(null);
+    try {
+      await deleteTicketTypeEntryForManager(numericId);
+      router.refresh();
+    } catch (err) {
+      setError(getDisplayError(err, "Could not delete ticket type."));
     }
   }
 
@@ -416,6 +433,44 @@ export function TicketApplicationTable({
                             {isPublishing[ticket.id] ? "Publishing…" : "Publish"}
                           </button>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/museum-manager/ticket-application/${ticket.id.replace("TK-", "")}`)}
+                          className="inline-flex items-center gap-1 rounded-xl px-3 py-1 text-xs font-medium transition-opacity hover:opacity-90"
+                          style={{
+                            border: "1px solid rgba(79,70,229,0.20)",
+                            background: "rgba(79,70,229,0.08)",
+                            color: "#4F46E5",
+                          }}
+                        >
+                          <Eye className="h-3 w-3" />
+                          Detail
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/museum-manager/ticket-application/${ticket.id.replace("TK-", "")}?edit=true`)}
+                          className="inline-flex items-center gap-1 rounded-xl px-3 py-1 text-xs font-medium transition-opacity hover:opacity-90"
+                          style={{
+                            border: `1px solid ${T.border}`,
+                            background: T.bg,
+                            color: T.text,
+                          }}
+                        >
+                          <Edit2 className="h-3 w-3" />
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTicket(ticket.id)}
+                          className="inline-flex items-center gap-1 rounded-xl px-3 py-1 text-xs font-medium transition-opacity hover:opacity-90 text-red-600 hover:bg-red-50"
+                          style={{
+                            border: "1px solid rgba(220,38,38,0.20)",
+                            background: "rgba(220,38,38,0.08)",
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Delete
+                        </button>
                         <button
                           type="button"
                           onClick={() => {

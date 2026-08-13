@@ -10,6 +10,7 @@ import { formatDateTimeVi, formatVnd } from "@/lib/format";
 import { labelStatus } from "@/lib/status-labels";
 import { checkInTicket, getTicketDetail } from "@/services/visitor/ticketing.service";
 import type { TicketDetailDto } from "@/types/api";
+import { useLanguage } from "@/context/language-context";
 
 const C = {
   bg: "#F5E6C8",
@@ -39,6 +40,7 @@ export function TicketDetailPanel() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { language } = useLanguage();
   const [detail, setDetail] = useState<TicketDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkInLoading, setCheckInLoading] = useState(false);
@@ -64,7 +66,7 @@ export function TicketDetailPanel() {
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const res = await getTicketDetail(id);
+      const res = await getTicketDetail(id, language);
       if (!cancelled) {
         setDetail(res);
         setLoading(false);
@@ -74,7 +76,7 @@ export function TicketDetailPanel() {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isAuthenticated, params.id, router]);
+  }, [authLoading, isAuthenticated, params.id, router, language]);
 
   const handleSelfCheckIn = async () => {
     if (!detail || !detail.ticketCode) return;

@@ -411,6 +411,16 @@ export type CreateTicketTypeDto = {
   isActive?: boolean;
 };
 
+export type UpdateTicketTypeDto = {
+  exhibitionId?: number | null;
+  name: string;
+  nameEn?: string | null;
+  price: number;
+  description?: string | null;
+  descriptionEn?: string | null;
+  isActive?: boolean;
+};
+
 export type CreateTicketPromotionDto = {
   name: string;
   nameEn?: string | null;

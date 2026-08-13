@@ -115,6 +115,11 @@ export type Ticket = {
   type: string;
   price: string;
   status: "Active" | "Pending";
+  description?: string | null;
+  exhibitionId?: number | null;
+  nameEn?: string | null;
+  descriptionEn?: string | null;
+  rawPrice?: number;
 };
 
 // ─── Staff ─────────────────────────────────────────────────────────────────

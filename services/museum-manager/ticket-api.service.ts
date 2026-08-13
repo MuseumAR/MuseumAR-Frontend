@@ -1,6 +1,6 @@
 import { apiGetAuth, apiPostAuth, apiPutAuth, apiDeleteAuth } from "@/services/api-client";
 import { normalizeTicketTypeDto } from "@/lib/normalize-dto";
-import type { CreateTicketTypeDto, CreateTicketPromotionDto, UpdateTicketPromotionDto, TicketTypeDto, TicketPromotionDto } from "@/types/api";
+import type { CreateTicketTypeDto, UpdateTicketTypeDto, CreateTicketPromotionDto, UpdateTicketPromotionDto, TicketTypeDto, TicketPromotionDto } from "@/types/api";
 
 export function getManagerTicketTypes(accessToken?: string | null) {
   return apiGetAuth<unknown[]>("/api/MuseumManager/ticket-types", accessToken).then((data) =>
@@ -16,6 +16,26 @@ export function createManagerTicketType(payload: CreateTicketTypeDto, accessToke
 
 export function publishManagerTicketType(id: number, accessToken?: string | null) {
   return apiPutAuth<unknown>(`/api/MuseumManager/ticket-types/${id}/publish`, {}, accessToken);
+}
+
+export function getManagerTicketTypeDetail(id: number, accessToken?: string | null) {
+  return apiGetAuth<unknown>(`/api/MuseumManager/ticket-types/${id}`, accessToken).then(
+    normalizeTicketTypeDto,
+  );
+}
+
+export function updateManagerTicketType(
+  id: number,
+  payload: UpdateTicketTypeDto,
+  accessToken?: string | null,
+) {
+  return apiPutAuth<unknown>(`/api/MuseumManager/ticket-types/${id}`, payload, accessToken).then(
+    normalizeTicketTypeDto,
+  );
+}
+
+export function deleteManagerTicketType(id: number, accessToken?: string | null) {
+  return apiDeleteAuth<unknown>(`/api/MuseumManager/ticket-types/${id}`, accessToken);
 }
 
 // ═══ PROMOTION API ═══

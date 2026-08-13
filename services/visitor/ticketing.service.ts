@@ -35,9 +35,9 @@ export async function listPublicTicketTypes(lang?: string): Promise<TicketTypeDt
 }
 
 /** Fetch user's paid tickets from backend API */
-export async function listMyTickets(): Promise<TicketDto[]> {
+export async function listMyTickets(lang?: string): Promise<TicketDto[]> {
   try {
-    return await getMyTicketsApi();
+    return await getMyTicketsApi(lang);
   } catch (err) {
     console.warn("Failed to fetch tickets from backend API:", err);
     return [];
@@ -45,9 +45,9 @@ export async function listMyTickets(): Promise<TicketDto[]> {
 }
 
 /** Fetch user's single ticket detail from backend API (with mock fallback) */
-export async function getTicketDetail(id: number): Promise<TicketDetailDto | null> {
+export async function getTicketDetail(id: number, lang?: string): Promise<TicketDetailDto | null> {
   try {
-    return await getTicketDetailApi(id);
+    return await getTicketDetailApi(id, lang);
   } catch (err) {
     console.warn("Failed to fetch ticket detail from backend API, trying fallback:", err);
     return getMockTicketDetail(id);
