@@ -84,7 +84,7 @@ function GoogleButtonFace({
       }}
     >
       <GoogleIcon />
-      <span>{loading ? "Signing in with Google..." : "Continue with Google"}</span>
+      <span>{loading ? "Đang đăng nhập Google..." : "Tiếp tục với Google"}</span>
     </div>
   );
 }

@@ -15,7 +15,7 @@ export function PopularExhibitChart({ data }: { data: PopularExhibit[] }) {
       }}
     >
       <h2 className="text-base font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-        Popular Exhibits
+        Hiện vật phổ biến
       </h2>
       <div className="mt-6 space-y-5">
         {data.map((item) => (

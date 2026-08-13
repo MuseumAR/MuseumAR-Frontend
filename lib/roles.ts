@@ -37,10 +37,10 @@ export type NavItem = {
 };
 
 export const ROLE_LABELS: Record<BackendRole, string> = {
-  SystemAdmin: "System Admin",
-  MuseumManager: "Museum Manager",
-  ContentManager: "Content Manager",
-  Visitor: "Visitor",
+  SystemAdmin: "Quản trị hệ thống",
+  MuseumManager: "Quản lý bảo tàng",
+  ContentManager: "Quản lý nội dung",
+  Visitor: "Khách tham quan",
 };
 
 export const ROLE_BASE_PATH: Record<DashboardRole, string> = {
@@ -69,31 +69,31 @@ export function getRoleDisplayLabel(roleName: string): string {
 }
 
 const NAV_CONFIG: Record<NavIcon, { label: string; segment: string }> = {
-  overview: { label: "Overview", segment: "overview" },
-  museum_profile: { label: "Museum Profile", segment: "museum-profile" },
-  analytics: { label: "Analytics", segment: "analytics" },
-  artifact: { label: "Artifacts", segment: "artifact" },
-  exhibition: { label: "Exhibitions", segment: "exhibition" },
-  content_versions: { label: "Content Versions", segment: "content-versions" },
-  offline_packages: { label: "Offline Packages", segment: "offline-packages" },
-  maps_routes: { label: "Maps & Routes", segment: "maps-routes" },
+  overview: { label: "Tổng quan", segment: "overview" },
+  museum_profile: { label: "Hồ sơ bảo tàng", segment: "museum-profile" },
+  analytics: { label: "Phân tích", segment: "analytics" },
+  artifact: { label: "Hiện vật", segment: "artifact" },
+  exhibition: { label: "Triển lãm", segment: "exhibition" },
+  content_versions: { label: "Phiên bản nội dung", segment: "content-versions" },
+  offline_packages: { label: "Gói ngoại tuyến", segment: "offline-packages" },
+  maps_routes: { label: "Bản đồ & Lộ trình", segment: "maps-routes" },
   ticket_application: {
-    label: "Ticket Management",
+    label: "Quản lý vé",
     segment: "ticket-application",
   },
   museum_management: {
-    label: "Museum Profile",
+    label: "Hồ sơ bảo tàng",
     segment: "museum-management",
   },
   users: {
-    label: "Users",
+    label: "Người dùng",
     segment: "users",
   },
-  ticket_types: { label: "Ticket Types", segment: "ticket-types" },
-  audit_logs: { label: "Audit Logs", segment: "audit-logs" },
-  taxonomy: { label: "Taxonomy", segment: "taxonomy" },
+  ticket_types: { label: "Loại vé", segment: "ticket-types" },
+  audit_logs: { label: "Nhật ký hệ thống", segment: "audit-logs" },
+  taxonomy: { label: "Phân loại", segment: "taxonomy" },
   system_config: {
-    label: "System Configuration",
+    label: "Cấu hình hệ thống",
     segment: "system-config",
   },
 };

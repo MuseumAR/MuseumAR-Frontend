@@ -128,7 +128,7 @@ export function CreateExhibitForm({
       router.push("/content-manager/artifact");
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Unable to create artifact."));
+      setError(getDisplayError(err, "Không thể tạo hiện vật."));
     } finally {
       setIsSubmitting(false);
     }
@@ -137,10 +137,10 @@ export function CreateExhibitForm({
   return (
     <div className="px-8 pb-10">
       <Link href="/content-manager/artifact" className="mb-6 inline-flex items-center gap-2 text-sm" style={{ color: T.muted }}>
-        <span>←</span> Back to artifacts
+        <span>←</span> Quay lại hiện vật
       </Link>
       <h1 className="mb-8 text-3xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-        Create Artifact
+        Tạo hiện vật
       </h1>
 
       <form
@@ -151,7 +151,7 @@ export function CreateExhibitForm({
         <div className="flex flex-col gap-8 lg:flex-row">
           <div className="flex w-full shrink-0 flex-col gap-3 lg:w-48">
             <UploadBox
-              label={imageFile?.name ?? "Image"}
+              label={imageFile?.name ?? "Hình ảnh"}
               preview={imagePreview}
               onClick={() => imageRef.current?.click()}
             />
@@ -161,12 +161,12 @@ export function CreateExhibitForm({
               setImageFile(file);
               setImagePreview(URL.createObjectURL(file));
             }} />
-            <UploadBox label={arFile?.name ?? "AR asset (Image/3D)"} onClick={() => arRef.current?.click()} />
+            <UploadBox label={arFile?.name ?? "Tài sản AR (Hình ảnh/3D)"} onClick={() => arRef.current?.click()} />
             <input ref={arRef} type="file" accept="image/*,.glb,.gltf" className="hidden" onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) setArFile(file);
             }} />
-            <UploadBox label={audioFile?.name ?? "Audio guide"} onClick={() => audioRef.current?.click()} />
+            <UploadBox label={audioFile?.name ?? "Hướng dẫn âm thanh"} onClick={() => audioRef.current?.click()} />
             <input ref={audioRef} type="file" accept="audio/*" className="hidden" onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) setAudioFile(file);
@@ -175,23 +175,23 @@ export function CreateExhibitForm({
 
           <div className="flex-1 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Title *" value={title} onChange={setTitle} placeholder="Artifact title" />
-              <Field label="Artifact code" value={exhibitCode} onChange={setExhibitCode} placeholder="CAT-001" />
-              <Field label="Language" value={languageCode} onChange={setLanguageCode} placeholder="vi" />
+              <Field label="Tiêu đề *" value={title} onChange={setTitle} placeholder="Tiêu đề hiện vật" />
+              <Field label="Mã hiện vật" value={exhibitCode} onChange={setExhibitCode} placeholder="CAT-001" />
+              <Field label="Ngôn ngữ" value={languageCode} onChange={setLanguageCode} placeholder="vi" />
               <SelectField
-                label="Category"
+                label="Danh mục"
                 value={categoryId}
                 onChange={setCategoryId}
                 options={categoryOptions.map((c) => ({ value: String(c.id), label: c.label }))}
               />
               <SelectField
-                label="Age group"
+                label="Nhóm tuổi"
                 value={ageGroupId}
                 onChange={setAgeGroupId}
                 options={ageGroups.map((g) => ({ value: String(g.id), label: g.groupName }))}
               />
               <SelectField
-                label="Floor / Map"
+                label="Tầng / Bản đồ"
                 value={mapId}
                 onChange={(val) => {
                   setMapId(val);
@@ -203,7 +203,7 @@ export function CreateExhibitForm({
                 }))}
               />
               <SelectField
-                label="Official Museum Room"
+                label="Phòng trưng bày"
                 value={roomId}
                 onChange={setRoomId}
                 options={availableRooms.map((r) => ({
@@ -211,16 +211,16 @@ export function CreateExhibitForm({
                   label: `${r.roomCode} - ${r.roomName}`,
                 }))}
               />
-              <Field label="Era" value={era} onChange={setEra} placeholder="e.g. Nguyễn dynasty" />
+              <Field label="Thời kỳ" value={era} onChange={setEra} placeholder="VD: triều Nguyễn" />
               <Field
-                label="Historical event"
+                label="Sự kiện lịch sử"
                 value={historicalEvent}
                 onChange={setHistoricalEvent}
-                placeholder="Optional"
+                placeholder="Không bắt buộc"
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-sm" style={{ color: T.muted }}>Description</label>
+              <label className="mb-1.5 block text-sm" style={{ color: T.muted }}>Mô tả</label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -231,7 +231,7 @@ export function CreateExhibitForm({
             </div>
             {tags.length > 0 && (
               <div>
-                <p className="mb-2 text-sm" style={{ color: T.muted }}>Tags</p>
+                <p className="mb-2 text-sm" style={{ color: T.muted }}>Thẻ</p>
                 <div className="flex flex-wrap gap-2">
                   {tags.map((tag) => {
                     const active = selectedTagIds.includes(tag.id);
@@ -272,7 +272,7 @@ export function CreateExhibitForm({
               color: T.surface,
             }}
           >
-            {isSubmitting ? "Creating…" : "Create artifact"}
+            {isSubmitting ? "Đang tạo…" : "Tạo hiện vật"}
           </button>
         </div>
       </form>
@@ -325,7 +325,7 @@ function SelectField({
         className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
         style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
       >
-        <option value="">None</option>
+        <option value="">Không</option
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}

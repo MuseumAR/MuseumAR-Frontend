@@ -15,7 +15,7 @@ export function TopBar() {
   const { logout } = useAuth();
   const title = getPageTitle(pathname);
 
-  const today = new Intl.DateTimeFormat("en-GB", {
+  const today = new Intl.DateTimeFormat("vi-VN", {
     weekday: "short",
     day: "numeric",
     month: "long",
@@ -29,7 +29,7 @@ export function TopBar() {
     >
       <div>
         <p className="text-xs font-medium uppercase tracking-[0.2em]" style={{ color: T.mutedLight }}>
-          {ROLE_LABELS[role]} Portal
+          {ROLE_LABELS[role]}
         </p>
         <h1
           className="mt-0.5 text-2xl font-semibold"
@@ -47,7 +47,7 @@ export function TopBar() {
           />
           <input
             type="search"
-            placeholder="Search..."
+            placeholder="Tìm kiếm..."
             className="w-full rounded-2xl py-2.5 pl-11 pr-4 text-sm outline-none transition-all"
             style={{
               background: T.surface,
@@ -78,7 +78,7 @@ export function TopBar() {
             border: `1px solid ${T.border}`,
             color: T.muted,
           }}
-          aria-label="Notifications"
+          aria-label="Thông báo"
         >
           <Bell className="h-4 w-4" />
           <span
@@ -130,7 +130,7 @@ export function TopBar() {
               style={{ color: T.text }}
             >
               <KeyRound className="h-4 w-4" style={{ color: T.primary }} />
-              Change password
+              Đổi mật khẩu
             </Link>
             <button
               type="button"
@@ -139,7 +139,7 @@ export function TopBar() {
               style={{ color: "#8B3A3A" }}
             >
               <LogOut className="h-4 w-4" />
-              Log out
+              Đăng xuất
             </button>
           </div>
         </div>

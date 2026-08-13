@@ -51,7 +51,7 @@ export default function ChangePasswordPage() {
       await changePassword({ oldPassword, newPassword });
       setDone(true);
     } catch (err) {
-      setError(getDisplayError(err, "Unable to change password. Please try again."));
+      setError(getDisplayError(err, "Không đổi được mật khẩu. Vui lòng thử lại."));
     } finally {
       setIsSubmitting(false);
     }
@@ -61,7 +61,7 @@ export default function ChangePasswordPage() {
     return (
       <div className="flex min-h-screen items-center justify-center" style={{ background: AUTH_C.bg }}>
         <p className="text-sm" style={{ color: AUTH_C.muted }}>
-          Loading...
+          Đang tải...
         </p>
       </div>
     );
@@ -72,12 +72,12 @@ export default function ChangePasswordPage() {
   return (
     <AuthPageShell
       backHref={dashboardPath}
-      backLabel="Back to Dashboard"
-      title="Change Password"
+      backLabel="Về bảng điều khiển"
+      title="Đổi mật khẩu"
       subtitle={
         done
-          ? "Your password has been updated successfully."
-          : "Update your account password."
+          ? "Mật khẩu đã được cập nhật."
+          : "Cập nhật mật khẩu tài khoản."
       }
       footer={
         done ? (
@@ -89,11 +89,11 @@ export default function ChangePasswordPage() {
               color: AUTH_C.muted,
             }}
           >
-            Return to Dashboard
+            Quay lại bảng điều khiển
           </Link>
         ) : (
           <p className="text-center text-xs" style={{ color: AUTH_C.muted }}>
-            Signed in as {user?.email}
+            Đăng nhập với {user?.email}
           </p>
         )
       }
@@ -105,7 +105,7 @@ export default function ChangePasswordPage() {
             name="oldPassword"
             value={oldPassword}
             onChange={setOldPassword}
-            placeholder="Current password"
+            placeholder="Mật khẩu hiện tại"
             icon={Lock}
             disabled={isSubmitting}
             suffix={
@@ -119,7 +119,7 @@ export default function ChangePasswordPage() {
             name="newPassword"
             value={newPassword}
             onChange={setNewPassword}
-            placeholder="New password"
+            placeholder="Mật khẩu mới"
             icon={Lock}
             disabled={isSubmitting}
             suffix={
@@ -133,7 +133,7 @@ export default function ChangePasswordPage() {
             name="confirmPassword"
             value={confirmPassword}
             onChange={setConfirmPassword}
-            placeholder="Confirm new password"
+            placeholder="Xác nhận mật khẩu mới"
             icon={Lock}
             disabled={isSubmitting}
             suffix={
@@ -165,7 +165,7 @@ export default function ChangePasswordPage() {
                 letterSpacing: "0.12em",
               }}
             >
-              {isSubmitting ? "Saving..." : "Update Password"}
+              {isSubmitting ? "Đang lưu..." : "Cập nhật mật khẩu"}
               <ArrowRight className="h-4 w-4" />
             </button>
           </motion.div>

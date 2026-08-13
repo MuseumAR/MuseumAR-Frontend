@@ -8,6 +8,7 @@ import { Navbar } from "@/components/shared/navbar";
 import { useAuth } from "@/context/auth-context";
 import { useLanguage } from "@/context/language-context";
 import { formatDateTimeVi } from "@/lib/format";
+import { labelStatus } from "@/lib/status-labels";
 import { listMyTickets } from "@/services/visitor/ticketing.service";
 import type { TicketDto } from "@/types/api";
 
@@ -73,7 +74,7 @@ export function MyTicketsPanel() {
             className="mb-2 text-xs font-medium uppercase tracking-[0.2em]"
             style={{ color: C.primary }}
           >
-            My tickets
+            {t("mytickets.title")}
           </p>
           <h1
             className="text-3xl font-semibold tracking-tight sm:text-4xl"
@@ -197,7 +198,7 @@ export function MyTicketsPanel() {
                             color: "#2F5D3A",
                           }}
                         >
-                          {ticket.status}
+                          {labelStatus(ticket.status)}
                         </span>
                       </td>
                       <td className="px-5 py-4 text-right">

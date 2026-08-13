@@ -59,7 +59,7 @@ export function AuditLogPanel() {
         if (!cancelled) setData(result);
       } catch (err) {
         if (!cancelled) {
-          setError(getDisplayError(err, "Unable to load audit logs."));
+          setError(getDisplayError(err, "Không thể tải nhật ký hệ thống."));
           setData(null);
         }
       } finally {
@@ -106,7 +106,7 @@ export function AuditLogPanel() {
         <span className="font-semibold" style={{ color: T.text }}>
           {totalItems}
         </span>
-        {` audit log${totalItems === 1 ? "" : "s"}`}
+        {` nhật ký hệ thống`}
       </p>
 
       <form
@@ -114,27 +114,27 @@ export function AuditLogPanel() {
         className="grid gap-3 rounded-3xl p-5 sm:grid-cols-2 lg:grid-cols-5"
         style={{ background: T.surface, border: `1px solid ${T.border}` }}
       >
-        <Field label="Action">
+        <Field label="Hành động">
           <input
             value={action}
             onChange={(e) => setAction(e.target.value)}
-            placeholder="e.g. Login, Update"
+            placeholder="vd. Login, Update"
             className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
             style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
           />
         </Field>
-        <Field label="User ID">
+        <Field label="Mã người dùng">
           <input
             type="number"
             min="1"
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
-            placeholder="Optional"
+            placeholder="Không bắt buộc"
             className="w-full rounded-xl px-3 py-2.5 text-sm outline-none"
             style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
           />
         </Field>
-        <Field label="From">
+        <Field label="Từ">
           <input
             type="date"
             value={fromDate}
@@ -143,7 +143,7 @@ export function AuditLogPanel() {
             style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
           />
         </Field>
-        <Field label="To">
+        <Field label="Đến">
           <input
             type="date"
             value={toDate}
@@ -162,7 +162,7 @@ export function AuditLogPanel() {
             }}
           >
             <Search className="h-4 w-4" />
-            Apply
+            Áp dụng
           </button>
           <button
             type="button"
@@ -170,7 +170,7 @@ export function AuditLogPanel() {
             className="rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 hover:border-[#C89B45] hover:bg-[rgba(200,155,69,0.12)] hover:opacity-90 active:scale-[0.98]"
             style={{ border: `1px solid ${T.border}`, color: T.muted, background: T.bg }}
           >
-            Reset
+            Đặt lại
           </button>
         </div>
       </form>
@@ -191,13 +191,13 @@ export function AuditLogPanel() {
         {loading ? (
           <div className="px-8 py-16 text-center">
             <p className="text-sm" style={{ color: T.muted }}>
-              Loading audit logs…
+              Đang tải nhật ký hệ thống…
             </p>
           </div>
         ) : items.length === 0 ? (
           <div className="px-8 py-16 text-center">
             <p className="text-sm" style={{ color: T.muted }}>
-              No audit logs found.
+              Không tìm thấy nhật ký hệ thống.
             </p>
           </div>
         ) : (
@@ -210,7 +210,7 @@ export function AuditLogPanel() {
                     background: "rgba(245,230,200,0.35)",
                   }}
                 >
-                  {["Time", "User", "Action", "Entity", "Entity ID", "IP", ""].map((label) => (
+                  {["Thời gian", "Người dùng", "Hành động", "Thực thể", "Mã thực thể", "IP", ""].map((label) => (
                     <th
                       key={label || "details"}
                       className="px-5 py-4 font-medium"
@@ -241,7 +241,7 @@ export function AuditLogPanel() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm" style={{ color: T.muted }}>
-            Page {page} of {totalPages}
+            Trang {page} / {totalPages}
           </p>
           <div className="flex gap-2">
             <button
@@ -252,7 +252,7 @@ export function AuditLogPanel() {
               style={{ border: `1px solid ${T.border}`, color: T.text, background: T.surface }}
             >
               <ChevronLeft className="h-4 w-4" />
-              Prev
+              Trước
             </button>
             <button
               type="button"
@@ -261,7 +261,7 @@ export function AuditLogPanel() {
               className="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm disabled:opacity-40"
               style={{ border: `1px solid ${T.border}`, color: T.text, background: T.surface }}
             >
-              Next
+              Sau
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>
@@ -331,7 +331,7 @@ function LogRow({
               className="text-xs font-medium underline-offset-2 hover:underline"
               style={{ color: T.primaryDark }}
             >
-              {expanded ? "Hide" : "Details"}
+              {expanded ? "Ẩn" : "Chi tiết"}
             </button>
           ) : (
             <span style={{ color: T.mutedLight }}>—</span>
@@ -343,13 +343,13 @@ function LogRow({
           <td colSpan={7} className="px-5 py-4">
             <div className="grid gap-3 text-xs sm:grid-cols-2">
               {log.oldValues && (
-                <DetailBlock label="Old values" value={log.oldValues} />
+                <DetailBlock label="Giá trị cũ" value={log.oldValues} />
               )}
               {log.newValues && (
-                <DetailBlock label="New values" value={log.newValues} />
+                <DetailBlock label="Giá trị mới" value={log.newValues} />
               )}
               {log.userAgent && (
-                <DetailBlock label="User agent" value={log.userAgent} />
+                <DetailBlock label="User-Agent" value={log.userAgent} />
               )}
             </div>
           </td>

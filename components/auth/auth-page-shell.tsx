@@ -19,7 +19,7 @@ function OrnamentalRule() {
 
 export function AuthPageShell({
   backHref = "/login",
-  backLabel = "Back to Sign In",
+  backLabel = "Quay lại đăng nhập",
   title,
   subtitle,
   children,
@@ -90,7 +90,7 @@ export function AuthPageShell({
                 MUSEUM<span style={{ color: AUTH_C.primary }}>AR</span>
               </p>
               <p className="text-[9px] tracking-widest uppercase" style={{ color: AUTH_C.mutedLight }}>
-                Cultural Heritage Platform
+                Nền tảng di sản văn hóa
               </p>
             </div>
           </div>

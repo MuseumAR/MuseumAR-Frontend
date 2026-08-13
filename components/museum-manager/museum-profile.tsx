@@ -12,7 +12,7 @@ export function MuseumProfileView({ profile }: { profile: MuseumProfile | null }
           style={{ background: T.surface, border: `1px solid ${T.border}` }}
         >
           <p className="text-sm" style={{ color: T.muted }}>
-            Museum profile is not available yet.
+            Hồ sơ bảo tàng chưa có.
           </p>
         </div>
       </div>
@@ -37,7 +37,7 @@ export function MuseumProfileView({ profile }: { profile: MuseumProfile | null }
                 className="flex h-full w-full items-center justify-center"
                 style={{ color: T.mutedLight }}
               >
-                No image
+                Không có ảnh
               </div>
             )}
           </div>
@@ -71,7 +71,7 @@ export function MuseumProfileView({ profile }: { profile: MuseumProfile | null }
             className="rounded-xl border px-5 py-1.5 text-sm"
             style={{ borderColor: "rgba(79,125,74,0.35)", color: T.success }}
           >
-            Update
+            Cập nhật
           </Link>
         </div>
       </div>
