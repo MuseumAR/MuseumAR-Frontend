@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Plus, Download, FileArchive, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
+import { labelStatus } from "@/lib/status-labels";
 import { getApiUrl } from "@/services/api-client";
 import { generatePackageEntry } from "@/services/content-manager/offline-package.service";
 import type { OfflinePackageDto } from "@/types/api";
@@ -56,7 +57,7 @@ export function OfflinePackagesPanel({
       setVersionId("");
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Không thể tạo gói Offline."));
+      setError(getDisplayError(err, "Không thể tạo gói ngoại tuyến."));
     } finally {
       setIsSubmitting(false);
     }
@@ -67,10 +68,10 @@ export function OfflinePackagesPanel({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold" style={{ fontFamily: cinzel, color: T.text }}>
-            Offline Packages ({packages.length})
+            Gói ngoại tuyến ({packages.length})
           </h2>
           <p className="text-xs mt-0.5" style={{ color: T.mutedLight }}>
-            Quản lý và tải các gói đóng gói dữ liệu nén (.zip) phục vụ truy cập ngoại tuyến trên Mobile
+            Quản lý và tải các gói đóng gói dữ liệu nén (.zip) phục vụ truy cập ngoại tuyến trên điện thoại
           </p>
         </div>
 
@@ -84,15 +85,15 @@ export function OfflinePackagesPanel({
           }}
         >
           <Plus className="h-4 w-4" />
-          + Tạo gói Offline mới
+          + Tạo gói ngoại tuyến mới
         </button>
       </div>
 
       {showForm && (
         <form onSubmit={handleSubmit} className="max-w-md rounded-3xl p-6 shadow-sm" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
-          <h3 className="text-sm font-bold mb-3" style={{ color: T.primaryDark }}>Tạo gói Offline ZIP mới</h3>
+          <h3 className="text-sm font-bold mb-3" style={{ color: T.primaryDark }}>Tạo gói ZIP ngoại tuyến mới</h3>
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold" style={{ color: T.muted }}>ID Phiên bản nội dung (Content Version ID) *</label>
+            <label className="block text-xs font-semibold" style={{ color: T.muted }}>ID phiên bản nội dung *</label>
             <input
               type="number"
               min="1"
@@ -124,14 +125,14 @@ export function OfflinePackagesPanel({
       <div className="overflow-hidden rounded-3xl shadow-sm" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
         {packages.length === 0 ? (
           <div className="px-8 py-16 text-center text-sm font-medium" style={{ color: T.muted }}>
-            Chưa có gói Offline nào. Bấm nút phía trên để tạo gói dữ liệu nén ZIP mới!
+            Chưa có gói ngoại tuyến nào. Bấm nút phía trên để tạo gói dữ liệu nén ZIP mới!
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[700px] text-left text-sm">
               <thead>
                 <tr style={{ borderBottom: `1px solid ${T.border}`, background: "rgba(245,230,200,0.35)" }}>
-                  {["Mã Gói", "Version", "Trạng thái", "Dung lượng", "Ảnh / Audio / 3D", "Ngày tạo", "Hành động"].map((h) => (
+                  {["Mã gói", "Phiên bản", "Trạng thái", "Dung lượng", "Ảnh / Âm thanh / 3D", "Ngày tạo", "Hành động"].map((h) => (
                     <th key={h} className="px-5 py-4 font-semibold text-xs uppercase tracking-wider" style={{ color: T.mutedLight }}>
                       {h}
                     </th>
@@ -174,7 +175,7 @@ export function OfflinePackagesPanel({
                           ) : (
                             <AlertTriangle className="h-3.5 w-3.5" />
                           )}
-                          {pkg.status || "—"}
+                          {labelStatus(pkg.status) || "—"}
                         </span>
                       </td>
                       <td className="px-5 py-4 font-mono text-xs font-medium" style={{ color: T.text }}>
@@ -183,7 +184,7 @@ export function OfflinePackagesPanel({
                       <td className="px-5 py-4 text-xs" style={{ color: T.muted }}>
                         <div className="flex flex-col gap-0.5">
                           <span>📷 Ảnh: {pkg.imageCount ?? 0}</span>
-                          <span>🔊 Audio: {pkg.audioCount ?? 0}</span>
+                          <span>🔊 Âm thanh: {pkg.audioCount ?? 0}</span>
                           <span>🧊 3D AR: {pkg.arassetCount ?? 0}</span>
                         </div>
                       </td>

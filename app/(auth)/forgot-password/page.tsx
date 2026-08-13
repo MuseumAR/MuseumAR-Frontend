@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
       await forgotPassword({ email: email.trim() });
       setSent(true);
     } catch (err) {
-      setError(getDisplayError(err, "Unable to send reset link. Please try again."));
+      setError(getDisplayError(err, "Không gửi được liên kết. Vui lòng thử lại."));
     } finally {
       setIsSubmitting(false);
     }
@@ -43,17 +43,17 @@ export default function ForgotPasswordPage() {
 
   return (
     <AuthPageShell
-      title="Forgot Password"
+      title="Quên mật khẩu"
       subtitle={
         sent
-          ? "If an account exists for that email, a reset link has been sent."
-          : "Enter your email and we will send you a password reset link."
+          ? "Nếu email tồn tại, liên kết đặt lại mật khẩu đã được gửi."
+          : "Nhập email để nhận liên kết đặt lại mật khẩu."
       }
       footer={
         <p className="text-center text-xs" style={{ color: AUTH_C.muted }}>
-          Remember your password?{" "}
+          Nhớ mật khẩu?{" "}
           <Link href="/login" className="font-medium hover:opacity-70" style={{ color: AUTH_C.primary }}>
-            Sign In
+            Đăng nhập
           </Link>
         </p>
       }
@@ -67,8 +67,7 @@ export default function ForgotPasswordPage() {
             color: AUTH_C.muted,
           }}
         >
-          Check your inbox for the reset link. In development, the backend logs the token to the
-          server console.
+          Hãy kiểm tra hộp thư. Ở môi trường phát triển, backend ghi token ra console máy chủ.
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -77,7 +76,7 @@ export default function ForgotPasswordPage() {
             name="email"
             value={email}
             onChange={setEmail}
-            placeholder="Email address"
+            placeholder="Địa chỉ email"
             icon={Mail}
             disabled={isSubmitting}
           />
@@ -104,7 +103,7 @@ export default function ForgotPasswordPage() {
                 letterSpacing: "0.12em",
               }}
             >
-              {isSubmitting ? "Sending..." : "Send Reset Link"}
+              {isSubmitting ? "Đang gửi..." : "Gửi liên kết đặt lại"}
               <ArrowRight className="h-4 w-4" />
             </button>
           </motion.div>

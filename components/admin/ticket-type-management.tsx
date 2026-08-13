@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { labelStatus } from "@/lib/status-labels";
 import type { TicketTypeDto, TicketPromotionDto } from "@/types/api";
 import { Tag, Eye, X } from "lucide-react";
 import {
@@ -40,7 +41,7 @@ export function TicketTypeManagementPanel({
       const data = await getManagerTicketPromotions(ticketTypeId);
       setPromotions(data);
     } catch {
-      setError("Unable to load promotions.");
+      setError("Không thể tải khuyến mãi.");
     } finally {
       setLoadingPromos(false);
     }
@@ -52,7 +53,7 @@ export function TicketTypeManagementPanel({
       const detail = await getManagerTicketPromotionDetail(promotionId);
       setViewingPromoDetail(detail);
     } catch {
-      setError("Unable to load promotion details.");
+      setError("Không thể tải chi tiết khuyến mãi.");
     } finally {
       setLoadingDetailId(null);
     }
@@ -65,7 +66,7 @@ export function TicketTypeManagementPanel({
           <span className="font-semibold" style={{ color: T.text }}>
             {ticketTypes.length}
           </span>
-          {` ticket type${ticketTypes.length === 1 ? "" : "s"}`}
+          {` loại vé`}
           {museumName ? (
             <span style={{ color: T.mutedLight }}>{` · ${museumName}`}</span>
           ) : null}
@@ -85,7 +86,7 @@ export function TicketTypeManagementPanel({
         {ticketTypes.length === 0 ? (
           <div className="px-8 py-16 text-center">
             <p className="text-sm" style={{ color: T.muted }}>
-              No ticket types yet.
+              Chưa có loại vé.
             </p>
           </div>
         ) : (
@@ -98,7 +99,7 @@ export function TicketTypeManagementPanel({
                     background: "rgba(245,230,200,0.35)",
                   }}
                 >
-                  {["ID", "Name", "Price", "Exhibition ID", "Description", "Status", "Actions"].map((label) => (
+                  {["ID", "Tên", "Giá", "Mã triển lãm", "Mô tả", "Trạng thái", "Thao tác"].map((label) => (
                     <th
                       key={label}
                       className="px-5 py-4 font-medium"
@@ -144,7 +145,7 @@ export function TicketTypeManagementPanel({
                             color: ticket.status === "Approved" ? T.success : T.primaryDark,
                           }}
                         >
-                          {ticket.status}
+                          {labelStatus(ticket.status)}
                         </span>
                       </td>
                       <td className="px-5 py-4">
@@ -167,7 +168,7 @@ export function TicketTypeManagementPanel({
                           }}
                         >
                           <Tag className="h-3 w-3" />
-                          {isPromoOpen ? "Close" : "Promotions"}
+                          {isPromoOpen ? "Đóng" : "Khuyến mãi"}
                         </button>
                       </td>
                     </tr>
@@ -185,13 +186,13 @@ export function TicketTypeManagementPanel({
                 <div className="mx-5 mb-5 mt-3 rounded-2xl p-5 space-y-4" style={{ background: "rgba(220,38,38,0.03)", border: "1px solid rgba(220,38,38,0.15)" }}>
                   <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: T.text }}>
                     <Tag className="h-4 w-4" style={{ color: "#B91C1C" }} />
-                    Promotions for &quot;{ticket.name}&quot; (View Only)
+                    Khuyến mãi cho &quot;{ticket.name}&quot; (Chỉ xem)
                   </h3>
 
                   {loadingPromos ? (
-                    <p className="text-xs animate-pulse" style={{ color: T.muted }}>Loading promotions...</p>
+                    <p className="text-xs animate-pulse" style={{ color: T.muted }}>Đang tải khuyến mãi…</p>
                   ) : promotions.length === 0 ? (
-                    <p className="text-xs" style={{ color: T.muted }}>No promotions yet.</p>
+                    <p className="text-xs" style={{ color: T.muted }}>Chưa có khuyến mãi.</p>
                   ) : (
                     <div className="space-y-2">
                       {promotions.map((promo) => {
@@ -220,11 +221,11 @@ export function TicketTypeManagementPanel({
                                     color: isCurrentlyActive ? T.success : isExpired ? "#8B3A3A" : T.primaryDark,
                                   }}
                                 >
-                                  {isCurrentlyActive ? "🟢 Active" : isExpired ? "⏰ Expired" : promo.isActive ? "⏳ Scheduled" : "⏸ Paused"}
+                                  {isCurrentlyActive ? "🟢 Đang hoạt động" : isExpired ? "⏰ Hết hạn" : promo.isActive ? "⏳ Đã lên lịch" : "⏸ Tạm dừng"}
                                 </span>
                               </div>
                               <p className="mt-0.5" style={{ color: T.muted }}>
-                                {promo.discountType === "Percentage" ? `${promo.discountValue}% off` : `${promo.discountValue.toLocaleString()} VND off`}
+                                {promo.discountType === "Percentage" ? `Giảm ${promo.discountValue}%` : `Giảm ${promo.discountValue.toLocaleString()} VND`}
                                 {" · "}
                                 {start.toLocaleDateString("vi-VN")} → {end.toLocaleDateString("vi-VN")}
                               </p>
@@ -234,7 +235,7 @@ export function TicketTypeManagementPanel({
                                 type="button"
                                 onClick={() => handleViewDetail(promo.id)}
                                 className="rounded-lg p-1.5 transition-opacity hover:opacity-70 text-indigo-600 hover:bg-indigo-50"
-                                title="View Details"
+                                title="Xem chi tiết"
                                 disabled={loadingDetailId === promo.id}
                               >
                                 {loadingDetailId === promo.id ? (
@@ -269,7 +270,7 @@ export function TicketTypeManagementPanel({
             <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: T.border }}>
               <h3 className="text-lg font-bold flex items-center gap-2" style={{ fontFamily: cinzel, color: T.text }}>
                 <Tag className="h-5 w-5" style={{ color: "#B91C1C" }} />
-                Promotion Details (Admin)
+                Chi tiết khuyến mãi (Quản trị)
               </h3>
               <button
                 type="button"
@@ -283,20 +284,20 @@ export function TicketTypeManagementPanel({
 
             <div className="space-y-3.5 text-sm">
               <div>
-                <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Name</span>
+                <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Tên</span>
                 <span className="text-base font-semibold" style={{ color: T.text }}>{viewingPromoDetail.name}</span>
               </div>
 
               {viewingPromoDetail.nameEn && (
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>English Name</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Tên tiếng Anh</span>
                   <span className="text-base" style={{ color: T.text }}>{viewingPromoDetail.nameEn}</span>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Discount Value</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Giá trị giảm</span>
                   <span className="text-base font-bold text-red-600">
                     {viewingPromoDetail.discountType === "Percentage"
                       ? `${viewingPromoDetail.discountValue}%`
@@ -304,22 +305,22 @@ export function TicketTypeManagementPanel({
                   </span>
                 </div>
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Type</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Loại</span>
                   <span className="text-base" style={{ color: T.text }}>
-                    {viewingPromoDetail.discountType === "Percentage" ? "Percentage Off (%)" : "Fixed Amount Off"}
+                    {viewingPromoDetail.discountType === "Percentage" ? "Giảm theo phần trăm (%)" : "Giảm số tiền cố định"}
                   </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Start Date</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Ngày bắt đầu</span>
                   <span className="text-base" style={{ color: T.text }}>
                     {new Date(viewingPromoDetail.startDate).toLocaleDateString("vi-VN")}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>End Date</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Ngày kết thúc</span>
                   <span className="text-base" style={{ color: T.text }}>
                     {new Date(viewingPromoDetail.endDate).toLocaleDateString("vi-VN")}
                   </span>
@@ -327,22 +328,22 @@ export function TicketTypeManagementPanel({
               </div>
 
               <div>
-                <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Description</span>
+                <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Mô tả</span>
                 <p className="mt-0.5 leading-relaxed" style={{ color: T.text }}>
-                  {viewingPromoDetail.description || <span className="italic" style={{ color: T.mutedLight }}>No description</span>}
+                  {viewingPromoDetail.description || <span className="italic" style={{ color: T.mutedLight }}>Chưa có mô tả</span>}
                 </p>
               </div>
 
               {viewingPromoDetail.descriptionEn && (
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>English Description</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Mô tả tiếng Anh</span>
                   <p className="mt-0.5 leading-relaxed" style={{ color: T.text }}>{viewingPromoDetail.descriptionEn}</p>
                 </div>
               )}
 
               <div className="border-t pt-3 flex items-center justify-between" style={{ borderColor: T.border }}>
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Status</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Trạng thái</span>
                   <span
                     className="mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-bold"
                     style={{
@@ -350,7 +351,7 @@ export function TicketTypeManagementPanel({
                       color: viewingPromoDetail.isActive ? T.success : "#8B3A3A",
                     }}
                   >
-                    {viewingPromoDetail.isActive ? "🟢 Active" : "⏸ Paused / Inactive"}
+                    {viewingPromoDetail.isActive ? "🟢 Đang hoạt động" : "⏸ Tạm dừng / Ngừng hoạt động"}
                   </span>
                 </div>
                 <button
@@ -362,7 +363,7 @@ export function TicketTypeManagementPanel({
                     color: T.surface,
                   }}
                 >
-                  Close
+                  Đóng
                 </button>
               </div>
             </div>

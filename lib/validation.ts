@@ -67,13 +67,13 @@ export function validateLogin(input: LoginInput): ValidationResult {
   const password = input.password;
 
   if (!email) {
-    errors.email = "Email is required.";
+    errors.email = "Vui lòng nhập email.";
   } else if (!EMAIL_REGEX.test(email)) {
-    errors.email = "Please enter a valid email address.";
+    errors.email = "Email không hợp lệ.";
   }
 
   if (!password) {
-    errors.password = "Password is required.";
+    errors.password = "Vui lòng nhập mật khẩu.";
   }
 
   return result(errors);
@@ -87,27 +87,27 @@ export function validateRegister(input: RegisterInput): ValidationResult {
   const confirmPassword = input.confirmPassword;
 
   if (!fullName) {
-    errors.fullName = "Full name is required.";
+    errors.fullName = "Vui lòng nhập họ tên.";
   } else if (fullName.length < 2) {
-    errors.fullName = "Full name must be at least 2 characters.";
+    errors.fullName = "Họ tên phải có ít nhất 2 ký tự.";
   }
 
   if (!email) {
-    errors.email = "Email is required.";
+    errors.email = "Vui lòng nhập email.";
   } else if (!EMAIL_REGEX.test(email)) {
-    errors.email = "Please enter a valid email address.";
+    errors.email = "Email không hợp lệ.";
   }
 
   if (!password) {
-    errors.password = "Password is required.";
+    errors.password = "Vui lòng nhập mật khẩu.";
   } else if (password.length < 6) {
-    errors.password = "Password must be at least 6 characters.";
+    errors.password = "Mật khẩu phải có ít nhất 6 ký tự.";
   }
 
   if (!confirmPassword) {
-    errors.confirmPassword = "Please confirm your password.";
+    errors.confirmPassword = "Vui lòng xác nhận mật khẩu.";
   } else if (password !== confirmPassword) {
-    errors.confirmPassword = "Passwords do not match.";
+    errors.confirmPassword = "Mật khẩu xác nhận không khớp.";
   }
 
   return result(errors);
@@ -118,9 +118,9 @@ export function validateForgotPassword(input: ForgotPasswordInput): ValidationRe
   const email = input.email.trim();
 
   if (!email) {
-    errors.email = "Email is required.";
+    errors.email = "Vui lòng nhập email.";
   } else if (!EMAIL_REGEX.test(email)) {
-    errors.email = "Please enter a valid email address.";
+    errors.email = "Email không hợp lệ.";
   }
 
   return result(errors);
@@ -131,19 +131,19 @@ export function validateResetPassword(input: ResetPasswordInput): ValidationResu
   const { token, newPassword, confirmPassword } = input;
 
   if (!token.trim()) {
-    errors.token = "Reset token is missing or invalid.";
+    errors.token = "Mã đặt lại mật khẩu không hợp lệ.";
   }
 
   if (!newPassword) {
-    errors.newPassword = "New password is required.";
+    errors.newPassword = "Vui lòng nhập mật khẩu mới.";
   } else if (newPassword.length < 6) {
-    errors.newPassword = "Password must be at least 6 characters.";
+    errors.newPassword = "Mật khẩu phải có ít nhất 6 ký tự.";
   }
 
   if (!confirmPassword) {
-    errors.confirmPassword = "Please confirm your new password.";
+    errors.confirmPassword = "Vui lòng xác nhận mật khẩu mới.";
   } else if (newPassword !== confirmPassword) {
-    errors.confirmPassword = "Passwords do not match.";
+    errors.confirmPassword = "Mật khẩu xác nhận không khớp.";
   }
 
   return result(errors);
@@ -154,21 +154,21 @@ export function validateChangePassword(input: ChangePasswordInput): ValidationRe
   const { oldPassword, newPassword, confirmPassword } = input;
 
   if (!oldPassword) {
-    errors.oldPassword = "Current password is required.";
+    errors.oldPassword = "Vui lòng nhập mật khẩu hiện tại.";
   }
 
   if (!newPassword) {
-    errors.newPassword = "New password is required.";
+    errors.newPassword = "Vui lòng nhập mật khẩu mới.";
   } else if (newPassword.length < 6) {
-    errors.newPassword = "Password must be at least 6 characters.";
+    errors.newPassword = "Mật khẩu phải có ít nhất 6 ký tự.";
   } else if (newPassword === oldPassword) {
-    errors.newPassword = "New password must be different from the current password.";
+    errors.newPassword = "Mật khẩu mới phải khác mật khẩu hiện tại.";
   }
 
   if (!confirmPassword) {
-    errors.confirmPassword = "Please confirm your new password.";
+    errors.confirmPassword = "Vui lòng xác nhận mật khẩu mới.";
   } else if (newPassword !== confirmPassword) {
-    errors.confirmPassword = "Passwords do not match.";
+    errors.confirmPassword = "Mật khẩu xác nhận không khớp.";
   }
 
   return result(errors);
@@ -178,7 +178,7 @@ export function validateCreateArtifact(input: CreateArtifactInput): ValidationRe
   const errors: Record<string, string> = {};
 
   if (!input.name.trim()) {
-    errors.name = "Artifact name is required.";
+    errors.name = "Vui lòng nhập tên hiện vật.";
   }
 
   return result(errors);
@@ -188,15 +188,15 @@ export function validateCreateMuseum(input: CreateMuseumInput): ValidationResult
   const errors: Record<string, string> = {};
 
   if (!input.name.trim()) {
-    errors.name = "Museum name is required.";
+    errors.name = "Vui lòng nhập tên bảo tàng.";
   }
 
   if (input.email?.trim() && !EMAIL_REGEX.test(input.email.trim())) {
-    errors.email = "Please enter a valid email address.";
+    errors.email = "Email không hợp lệ.";
   }
 
   if (input.phone?.trim() && input.phone.trim().length < 8) {
-    errors.phone = "Please enter a valid phone number.";
+    errors.phone = "Số điện thoại không hợp lệ.";
   }
 
   return result(errors);
@@ -214,36 +214,36 @@ export function validateCreateTicketType(
   const errors: Record<string, string> = {};
 
   if (!input.museumId || input.museumId <= 0) {
-    errors.museumId = "Please select a museum.";
+    errors.museumId = "Vui lòng chọn bảo tàng.";
   }
 
   if (!input.name.trim()) {
-    errors.name = "Ticket type name is required.";
+    errors.name = "Vui lòng nhập tên loại vé.";
   }
 
   const price = Number(input.price);
   if (!input.price.trim() || Number.isNaN(price) || price < 0) {
-    errors.price = "Please enter a valid price.";
+    errors.price = "Vui lòng nhập giá hợp lệ.";
   }
 
   return result(errors);
 }
 
 const API_MESSAGE_MAP: Record<string, string> = {
-  "Invalid credentials.": "Incorrect email or password.",
+  "Invalid credentials.": "Email hoặc mật khẩu không đúng.",
   "Invalid credentials or account is inactive.":
-    "Incorrect email or password, or your account is inactive.",
-  "Email already exists.": "This email is already registered.",
-  "Login failed": "Login failed. Please try again.",
-  "Registration failed": "Registration failed. Please try again.",
-  "Not authenticated": "Your session has expired. Please sign in again.",
-  "Incorrect old password.": "Current password is incorrect.",
-  "Invalid or expired reset token.": "This reset link is invalid or has expired.",
-  "Request failed": "Unable to connect to the server. Please try again later.",
-  "Failed to fetch": "Unable to reach the API. Is the backend running?",
+    "Email hoặc mật khẩu không đúng, hoặc tài khoản đã bị khóa.",
+  "Email already exists.": "Email này đã được đăng ký.",
+  "Login failed": "Đăng nhập thất bại. Vui lòng thử lại.",
+  "Registration failed": "Đăng ký thất bại. Vui lòng thử lại.",
+  "Not authenticated": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+  "Incorrect old password.": "Mật khẩu hiện tại không đúng.",
+  "Invalid or expired reset token.": "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.",
+  "Request failed": "Không kết nối được máy chủ. Vui lòng thử lại sau.",
+  "Failed to fetch": "Không kết nối được API. Backend đã chạy chưa?",
   "NetworkError when attempting to fetch resource.":
-    "Unable to reach the API. Is the backend running?",
-  "NEXT_PUBLIC_API_URL is not configured": "API is not configured.",
+    "Không kết nối được API. Backend đã chạy chưa?",
+  "NEXT_PUBLIC_API_URL is not configured": "Chưa cấu hình địa chỉ API.",
 };
 
 const TECHNICAL_PATTERNS = [
@@ -274,7 +274,7 @@ function parseApiResponse(text: string): ApiResponse | null {
 
 export function mapApiMessage(message: string): string {
   const trimmed = message.trim();
-  if (!trimmed) return "Request failed";
+  if (!trimmed) return "Yêu cầu thất bại";
 
   if (API_MESSAGE_MAP[trimmed]) {
     return API_MESSAGE_MAP[trimmed];

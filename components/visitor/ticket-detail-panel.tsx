@@ -7,6 +7,7 @@ import { CheckCircle2, ArrowLeft, Loader2, QrCode, ShieldCheck } from "lucide-re
 import { Navbar } from "@/components/shared/navbar";
 import { useAuth } from "@/context/auth-context";
 import { formatDateTimeVi, formatVnd } from "@/lib/format";
+import { labelStatus } from "@/lib/status-labels";
 import { checkInTicket, getTicketDetail } from "@/services/visitor/ticketing.service";
 import type { TicketDetailDto } from "@/types/api";
 
@@ -180,7 +181,7 @@ export function TicketDetailPanel() {
                 {isUsed ? (
                   <>
                     <CheckCircle2 className="h-3.5 w-3.5" />
-                    Đã Check-in vào cổng (Used)
+                    Đã check-in vào cổng
                   </>
                 ) : isPaidOrActive ? (
                   <>
@@ -188,7 +189,7 @@ export function TicketDetailPanel() {
                     Đã thanh toán (Sẵn sàng vào cổng)
                   </>
                 ) : (
-                  detail.status
+                  labelStatus(detail.status)
                 )}
               </span>
             </header>
@@ -279,7 +280,7 @@ export function TicketDetailPanel() {
               </h2>
               <dl className="grid gap-4 sm:grid-cols-2">
                 <Field label="Mã vé" value={detail.ticketCode} />
-                <Field label="Trạng thái" value={detail.status} />
+                <Field label="Trạng thái" value={labelStatus(detail.status)} />
                 <Field
                   label="Ngày mua"
                   value={formatDateTimeVi(detail.purchaseDate)}
@@ -352,7 +353,7 @@ export function TicketDetailPanel() {
                 />
                 <Field
                   label="Thanh toán"
-                  value={detail.order.paymentStatus}
+                  value={labelStatus(detail.order.paymentStatus)}
                 />
                 <Field
                   label="Phương thức"

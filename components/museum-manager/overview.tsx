@@ -23,27 +23,27 @@ export async function MuseumManagerOverview() {
       <section>
         <div className="mb-5">
           <p className="text-xs font-medium uppercase tracking-[0.22em]" style={{ color: T.mutedLight }}>
-            Museum Overview
+            Tổng quan
           </p>
           <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-            Visitor & Engagement
+            Khách tham quan & Tương tác
           </h2>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Total Visitors" value={stats.totalVisitor} icon="users" watermark="column" />
-          <StatCard label="QR Scans Today" value={stats.qrScansToday} icon="qrCode" watermark="map" />
-          <StatCard label="Offline Downloads" value={stats.offlineDownloads} icon="download" watermark="scroll" />
-          <StatCard label="Avg. Listening Time" value={stats.averageListeningTime} icon="headphones" watermark="vase" />
+          <StatCard label="Tổng khách" value={stats.totalVisitor} icon="users" watermark="column" />
+          <StatCard label="Lượt quét QR hôm nay" value={stats.qrScansToday} icon="qrCode" watermark="map" />
+          <StatCard label="Lượt tải ngoại tuyến" value={stats.offlineDownloads} icon="download" watermark="scroll" />
+          <StatCard label="Thời gian nghe trung bình" value={stats.averageListeningTime} icon="headphones" watermark="vase" />
         </div>
       </section>
 
       <section>
         <div className="mb-5">
           <p className="text-xs font-medium uppercase tracking-[0.22em]" style={{ color: T.mutedLight }}>
-            Analytics
+            Phân tích
           </p>
           <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-            Exhibition Insights
+            Thông tin triển lãm
           </h2>
         </div>
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">

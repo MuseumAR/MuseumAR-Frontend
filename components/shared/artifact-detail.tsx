@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { ARTIFACT_LABELS } from "@/lib/field-labels";
 import { getDisplayError } from "@/lib/validation";
+import { labelStatus } from "@/lib/status-labels";
 import type { ActiveInactive, Artifact } from "@/types";
 import type { ExhibitArassetDto } from "@/types/api";
 import { deleteExhibit } from "@/services/content-manager/exhibit.service";
@@ -36,10 +37,10 @@ export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" 
 
   async function handleDelete() {
     if (!exhibitId || Number.isNaN(exhibitId)) {
-      setError("Unable to find this artifact.");
+      setError("Không tìm thấy hiện vật này.");
       return;
     }
-    if (!confirm("Delete this artifact?")) return;
+    if (!confirm("Xóa hiện vật này?")) return;
 
     setIsDeleting(true);
     setError(null);
@@ -48,7 +49,7 @@ export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" 
       router.push(backPath);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Unable to delete artifact."));
+      setError(getDisplayError(err, "Không thể xóa hiện vật."));
     } finally {
       setIsDeleting(false);
     }
@@ -61,7 +62,7 @@ export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" 
         className="mb-6 inline-flex items-center gap-2 text-sm"
         style={{ color: T.muted }}
       >
-        <span>←</span> Back to list
+        <span>←</span> Quay lại hiện vật
       </Link>
 
       <div
@@ -85,7 +86,7 @@ export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" 
                   {artifact.name}
                 </h2>
                 <p className="text-xs font-mono mt-1" style={{ color: T.mutedLight }}>
-                  Code: {artifact.id} {exhibitId ? `(DB ID: #${exhibitId})` : ""}
+                  Mã: {artifact.id} {exhibitId ? `(Mã DB: #${exhibitId})` : ""}
                 </p>
               </div>
               <StatusBadge status={artifact.status} />
@@ -108,7 +109,7 @@ export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" 
             {artifact.audioUrl && (
               <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(200,155,69,0.04)", border: `1px solid ${T.border}` }}>
                 <p className="mb-2 text-sm font-semibold flex items-center gap-2" style={{ color: T.primaryDark }}>
-                  <span>🔊</span> Audio Guide Preview
+                  <span>🔊</span> Nghe thử hướng dẫn âm thanh
                 </p>
                 <audio controls src={artifact.audioUrl} className="w-full max-w-md" />
               </div>
@@ -117,13 +118,13 @@ export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" 
             {(arAssets.length > 0 || artifact.arOverlayUrl || artifact.arMarkerUrl) && (
               <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(79,125,74,0.04)", border: `1px solid ${T.border}` }}>
                 <p className="mb-3 text-sm font-semibold flex items-center gap-2" style={{ color: T.success }}>
-                  <span>🕶️</span> AR Assets Details ({arAssets.length > 0 ? arAssets.length : (artifact.arOverlayUrl ? 1 : 0)})
+                  <span>🕶️</span> Chi tiết tài sản AR ({arAssets.length > 0 ? arAssets.length : (artifact.arOverlayUrl ? 1 : 0)})
                 </p>
                 <div className="flex flex-wrap gap-4 text-xs">
                   {arAssets.length > 0 ? (
                     arAssets.map((asset) => {
                       const url = asset.assetUrl || "";
-                      const typeName = asset.assetType || "Asset";
+                      const typeName = asset.assetType || "Tài sản";
                       return (
                         <div key={asset.id} className="flex flex-col gap-1.5 rounded-xl p-3 border min-w-[140px]" style={{ background: T.bg, borderColor: T.border }}>
                           <div className="flex items-center justify-between gap-2">
@@ -136,7 +137,7 @@ export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" 
                             </a>
                           ) : (
                             <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-emerald-700 hover:underline my-1.5">
-                              📎 Download File ({typeName})
+                              📎 Tải tệp ({typeName})
                             </a>
                           )}
                           {asset.description && (
@@ -149,23 +150,23 @@ export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" 
                     <>
                       {artifact.arOverlayUrl && (
                         <div className="flex flex-col gap-1.5 rounded-xl p-3 border" style={{ background: T.bg, borderColor: T.border }}>
-                          <span className="font-semibold" style={{ color: T.muted }}>Overlay Model/Image</span>
+                          <span className="font-semibold" style={{ color: T.muted }}>Mô hình / Hình overlay</span>
                           {artifact.arOverlayUrl.match(/\.(png|jpg|jpeg|webp)$/i) ? (
                             <a href={artifact.arOverlayUrl} target="_blank" rel="noreferrer" className="block h-20 w-20 overflow-hidden rounded-lg border">
-                              <img src={artifact.arOverlayUrl} alt="AR Overlay Preview" className="h-full w-full object-cover" />
+                              <img src={artifact.arOverlayUrl} alt="Xem trước lớp phủ AR" className="h-full w-full object-cover" />
                             </a>
                           ) : (
                             <a href={artifact.arOverlayUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-emerald-700 hover:underline">
-                              📎 Download 3D Model (.glb)
+                              📎 Tải mô hình 3D (.glb)
                             </a>
                           )}
                         </div>
                       )}
                       {artifact.arMarkerUrl && (
                         <div className="flex flex-col gap-1.5 rounded-xl p-3 border" style={{ background: T.bg, borderColor: T.border }}>
-                          <span className="font-semibold" style={{ color: T.muted }}>Marker Target Image</span>
+                          <span className="font-semibold" style={{ color: T.muted }}>Ảnh đánh dấu mục tiêu</span>
                           <a href={artifact.arMarkerUrl} target="_blank" rel="noreferrer" className="block h-20 w-20 overflow-hidden rounded-lg border">
-                            <img src={artifact.arMarkerUrl} alt="AR Marker Target" className="h-full w-full object-cover" />
+                            <img src={artifact.arMarkerUrl} alt="Ảnh đánh dấu AR" className="h-full w-full object-cover" />
                           </a>
                         </div>
                       )}
@@ -184,7 +185,7 @@ export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" 
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 text-xs">
                   {artifact.qrCodeImageUrl && (
                     <a href={artifact.qrCodeImageUrl} target="_blank" rel="noreferrer" className="block h-28 w-28 shrink-0 overflow-hidden rounded-xl border p-1" style={{ background: "#FFFFFF", borderColor: T.border }}>
-                      <img src={artifact.qrCodeImageUrl} alt="Artifact QR Code" className="h-full w-full object-contain" />
+                      <img src={artifact.qrCodeImageUrl} alt="Mã QR hiện vật" className="h-full w-full object-contain" />
                     </a>
                   )}
                   <div className="space-y-1.5">
@@ -229,14 +230,14 @@ export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" 
               className="rounded-xl border px-5 py-1.5 text-sm disabled:opacity-50"
               style={{ borderColor: "rgba(180,83,9,0.35)", color: T.danger }}
             >
-              {isDeleting ? "Deleting…" : "Delete"}
+              {isDeleting ? "Đang xóa…" : "Xóa"}
             </button>
             <Link
               href={`/content-manager/artifact/${artifact.id}/edit`}
               className="rounded-xl border px-5 py-1.5 text-sm"
               style={{ borderColor: "rgba(79,125,74,0.35)", color: T.success }}
             >
-              Update
+              Cập nhật
             </Link>
           </div>
         )}
@@ -258,7 +259,7 @@ function ActiveRow({ label, value }: { label: string; value: ActiveInactive }) {
   return (
     <div className="flex gap-2">
       <dt style={{ color: T.mutedLight }}>{label}:</dt>
-      <dd style={{ color: value === "Active" ? T.success : T.primaryDark }}>{value}</dd>
+      <dd style={{ color: value === "Active" ? T.success : T.primaryDark }}>{labelStatus(value)}</dd>
     </div>
   );
 }
@@ -275,7 +276,7 @@ function StatusBadge({ status }: { status: Artifact["status"] }) {
       className="rounded-full border px-3 py-0.5 text-xs"
       style={{ borderColor: s.border, background: s.bg, color: s.color }}
     >
-      {status}
+      {labelStatus(status)}
     </span>
   );
 }

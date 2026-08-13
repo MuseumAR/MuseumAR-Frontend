@@ -18,13 +18,13 @@ export function AnalyticsPageContent({ metrics, dashboard }: Props) {
             className="text-xs font-medium uppercase tracking-[0.22em]"
             style={{ color: T.mutedLight }}
           >
-            Key Metrics
+            Chỉ số chính
           </p>
           <h2
             className="mt-1 text-xl font-semibold"
             style={{ fontFamily: cinzel, color: T.text }}
           >
-            Performance Overview
+            Tổng quan hiệu suất
           </h2>
         </div>
 
@@ -70,7 +70,7 @@ export function AnalyticsPageContent({ metrics, dashboard }: Props) {
                   {metric.value}
                 </p>
                 <p className="mt-1.5 text-xs" style={{ color: T.mutedLight }}>
-                  vs last month
+                  so với tháng trước
                 </p>
               </div>
             );
@@ -85,13 +85,13 @@ export function AnalyticsPageContent({ metrics, dashboard }: Props) {
             className="text-xs font-medium uppercase tracking-[0.22em]"
             style={{ color: T.mutedLight }}
           >
-            Detailed Analytics
+            Phân tích chi tiết
           </p>
           <h2
             className="mt-1 text-xl font-semibold"
             style={{ fontFamily: cinzel, color: T.text }}
           >
-            Engagement Breakdown
+            Phân tích tương tác
           </h2>
         </div>
         <AnalyticsCharts dashboard={dashboard} />

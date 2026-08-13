@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
+import { labelStatus } from "@/lib/status-labels";
 import {
   deleteExhibition,
   updateExhibition,
@@ -33,7 +34,7 @@ function StatusBadge({ status }: { status: string }) {
         color: active ? T.success : inactive ? T.primaryDark : T.muted,
       }}
     >
-      {status}
+      {labelStatus(status)}
     </span>
   );
 }
@@ -111,13 +112,13 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
   };
 
   async function handleDelete() {
-    if (!confirm("Are you sure you want to delete this exhibition?")) return;
+    if (!confirm("Bạn có chắc chắn muốn xóa triển lãm này?")) return;
     try {
       await deleteExhibition(exhibition.id);
       router.push("/content-manager/exhibition");
       router.refresh();
     } catch (err) {
-      alert(getDisplayError(err, "Unable to delete exhibition."));
+      alert(getDisplayError(err, "Không thể xóa triển lãm."));
     }
   }
 
@@ -127,13 +128,13 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
     setIsSubmitting(true);
 
     if (!name.trim()) {
-      setError("Exhibition Name is required.");
+      setError("Vui lòng nhập tên triển lãm.");
       setIsSubmitting(false);
       return;
     }
 
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-      setError("End date must be after or equal to Start date.");
+      setError("Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.");
       setIsSubmitting(false);
       return;
     }
@@ -156,7 +157,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
       setShowEdit(false);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Unable to update exhibition."));
+      setError(getDisplayError(err, "Không thể cập nhật triển lãm."));
     } finally {
       setIsSubmitting(false);
     }
@@ -174,7 +175,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
         className="mb-6 inline-flex items-center gap-2 text-sm"
         style={{ color: T.muted }}
       >
-        ← Back to list
+        ← Quay lại danh sách
       </Link>
 
       <div className="space-y-6">
@@ -186,12 +187,12 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
           {showEdit ? (
             <form onSubmit={handleUpdate} className="space-y-4">
               <h3 className="text-lg font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-                Edit Exhibition
+                Chỉnh sửa triển lãm
               </h3>
               {error && <p className="text-sm" style={{ color: "#8B2E2E" }}>{error}</p>}
               
               <div className="space-y-1.5">
-                <label className="block text-sm" style={{ color: T.muted }}>Exhibition Name</label>
+                <label className="block text-sm" style={{ color: T.muted }}>Tên triển lãm</label>
                 <input
                   type="text"
                   required
@@ -203,7 +204,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-sm" style={{ color: T.muted }}>Description</label>
+                <label className="block text-sm" style={{ color: T.muted }}>Mô tả</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -215,23 +216,23 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="block text-sm" style={{ color: T.muted }}>Start date</label>
+                  <label className="block text-sm" style={{ color: T.muted }}>Ngày bắt đầu</label>
                   <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }} />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-sm" style={{ color: T.muted }}>End date</label>
+                  <label className="block text-sm" style={{ color: T.muted }}>Ngày kết thúc</label>
                   <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }} />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-sm" style={{ color: T.muted }}>Status</label>
+                  <label className="block text-sm" style={{ color: T.muted }}>Trạng thái</label>
                   <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}>
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                    <option value="Ended">Ended</option>
+                    <option value="Active">{labelStatus("Active")}</option>
+                    <option value="Inactive">{labelStatus("Inactive")}</option>
+                    <option value="Ended">{labelStatus("Ended")}</option>
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-sm" style={{ color: T.muted }}>New Thumbnail Image</label>
+                  <label className="block text-sm" style={{ color: T.muted }}>Ảnh thu nhỏ mới</label>
                   <input
                     type="file"
                     accept="image/*"
@@ -243,10 +244,10 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
               </div>
               <div className="flex justify-end gap-3 mt-6">
                 <button type="button" onClick={() => setShowEdit(false)} className="rounded-xl px-5 py-2 text-sm font-medium" style={{ border: `1px solid ${T.border}`, color: T.text }}>
-                  Cancel
+                  Hủy
                 </button>
                 <button type="submit" disabled={isSubmitting} className="rounded-xl px-5 py-2 text-sm font-medium disabled:opacity-50" style={{ background: T.primary, color: T.surface }}>
-                  {isSubmitting ? "Saving…" : "Save Changes"}
+                  {isSubmitting ? "Đang lưu…" : "Lưu thay đổi"}
                 </button>
               </div>
             </form>
@@ -259,7 +260,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                 {exhibition.thumbnailUrl ? (
                   <img
                     src={exhibition.thumbnailUrl}
-                    alt={exhibition.name || `Exhibition #${exhibition.id}`}
+                    alt={exhibition.name || `Triển lãm #${exhibition.id}`}
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -267,7 +268,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                     className="flex h-full w-full items-center justify-center text-sm"
                     style={{ color: T.mutedLight }}
                   >
-                    No thumbnail
+                    Chưa có ảnh
                   </div>
                 )}
               </div>
@@ -279,9 +280,9 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                       className="text-2xl font-bold"
                       style={{ fontFamily: cinzel, color: T.primaryDark }}
                     >
-                      {exhibition.name || `Exhibition #${exhibition.id}`}
+                      {exhibition.name || `Triển lãm #${exhibition.id}`}
                     </h2>
-                    <p className="text-xs mt-1" style={{ color: T.mutedLight }}>Exhibition ID: {exhibition.id}</p>
+                    <p className="text-xs mt-1" style={{ color: T.mutedLight }}>Mã triển lãm: {exhibition.id}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <StatusBadge status={exhibition.status} />
@@ -291,7 +292,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                       className="rounded-xl px-4 py-1.5 text-xs font-medium"
                       style={{ border: `1px solid ${T.border}`, color: T.text, background: T.surface }}
                     >
-                      Edit
+                      Chỉnh sửa
                     </button>
                     <button
                       type="button"
@@ -299,7 +300,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                       className="rounded-xl px-4 py-1.5 text-xs font-medium"
                       style={{ border: `1px solid ${T.danger}`, color: T.danger, background: "rgba(180,40,40,0.05)" }}
                     >
-                      Delete
+                      Xóa
                     </button>
                   </div>
                 </div>
@@ -311,10 +312,10 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                 )}
 
                 <dl className="grid gap-3 text-sm sm:grid-cols-2 mt-4 pt-4 border-t" style={{ borderColor: T.border }}>
-                  <InfoRow label="Museum ID" value={String(exhibition.museumId)} />
-                  <InfoRow label="Status" value={exhibition.status} />
-                  <InfoRow label="Start date" value={formatDate(exhibition.startDate)} />
-                  <InfoRow label="End date" value={formatDate(exhibition.endDate)} />
+                  <InfoRow label="Mã bảo tàng" value={String(exhibition.museumId)} />
+                  <InfoRow label="Trạng thái" value={labelStatus(exhibition.status)} />
+                  <InfoRow label="Ngày bắt đầu" value={formatDate(exhibition.startDate)} />
+                  <InfoRow label="Ngày kết thúc" value={formatDate(exhibition.endDate)} />
                 </dl>
               </div>
             </div>
@@ -456,7 +457,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                   >
                     <option value="">-- Chọn hiện vật --</option>
                     {unassignedExhibits.map((ex) => {
-                      const title = ex.translations?.[0]?.title || `Exhibit #${ex.id}`;
+                      const title = ex.translations?.[0]?.title || `Hiện vật #${ex.id}`;
                       const code = ex.exhibitCode || `EX-${ex.id}`;
                       return (
                         <option key={ex.id} value={ex.id}>

@@ -268,43 +268,6 @@ function UserMenu() {
   );
 }
 
-function LanguageSwitcher() {
-  const { language, setLanguage } = useLanguage();
-
-  return (
-    <div
-      className="inline-flex items-center rounded-full p-0.5 text-xs font-semibold"
-      style={{
-        background: C.surface,
-        border: `1px solid ${C.border}`,
-      }}
-    >
-      <button
-        type="button"
-        onClick={() => setLanguage("vi")}
-        className="rounded-full px-2.5 py-1 transition-all"
-        style={{
-          background: language === "vi" ? C.primary : "transparent",
-          color: language === "vi" ? C.surface : C.muted,
-        }}
-      >
-        🇻🇳 VI
-      </button>
-      <button
-        type="button"
-        onClick={() => setLanguage("en")}
-        className="rounded-full px-2.5 py-1 transition-all"
-        style={{
-          background: language === "en" ? C.primary : "transparent",
-          color: language === "en" ? C.surface : C.muted,
-        }}
-      >
-        🇬🇧 EN
-      </button>
-    </div>
-  );
-}
-
 export function Navbar() {
   const pathname = usePathname();
   const { isAuthenticated, isLoading } = useAuth();
@@ -376,7 +339,6 @@ export function Navbar() {
       </div>
 
       <div className="flex items-center gap-3">
-        <LanguageSwitcher />
         {isLoading ? (
           <AuthSkeleton />
         ) : isAuthenticated ? (

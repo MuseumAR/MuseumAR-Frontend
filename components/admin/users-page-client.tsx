@@ -20,7 +20,7 @@ export function UsersPageClient() {
       const data = await getUsers();
       setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(getDisplayError(err, "Unable to load users."));
+      setError(getDisplayError(err, "Không thể tải người dùng."));
       setUsers([]);
     } finally {
       setLoading(false);
@@ -35,7 +35,7 @@ export function UsersPageClient() {
     return (
       <div className="px-8 pb-10">
         <p className="text-sm" style={{ color: T.muted }}>
-          Loading users…
+          Đang tải người dùng…
         </p>
       </div>
     );

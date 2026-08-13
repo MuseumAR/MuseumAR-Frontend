@@ -24,70 +24,6 @@ const C = {
 
 // ── Data ─────────────────────────────────────────────────────────────────────
 
-const EXHIBIT_LABELS = [
-  {
-    id: 1,
-    x: "6%",
-    y: "42%",
-    catalog: "CAT · №0247",
-    name: "Egyptian Sarcophagus",
-    period: "3000 BC · Cairo",
-    status: "AR Model Available",
-    delay: 1.1,
-  },
-  {
-    id: 2,
-    x: "70%",
-    y: "22%",
-    catalog: "CAT · №0391",
-    name: "Ionic Capital",
-    period: "480 BC · Athens",
-    status: "3D Scan Complete",
-    delay: 1.3,
-  },
-  {
-    id: 3,
-    x: "74%",
-    y: "64%",
-    catalog: "CAT · №0158",
-    name: "Roman Mosaic",
-    period: "200 AD · Rome",
-    status: "Reconstructed",
-    delay: 1.5,
-  },
-];
-
-const FEATURES = [
-  {
-    roman: "I",
-    icon: Landmark,
-    title: "Interactive AR Tours",
-    description:
-      "Walk through reconstructed ancient sites with real-time AR overlays that reveal historical context layer by layer.",
-  },
-  {
-    roman: "II",
-    icon: BookOpen,
-    title: "3D Artifact Visualization",
-    description:
-      "Examine priceless artifacts from every angle with photorealistic 3D models sourced from museum archives worldwide.",
-  },
-  {
-    roman: "III",
-    icon: Compass,
-    title: "Historical Reconstruction",
-    description:
-      "Experience lost civilizations and ancient landmarks digitally restored to their original grandeur through AR technology.",
-  },
-];
-
-const STATS = [
-  { value: "10,000+", label: "Annual Visitors" },
-  { value: "500+", label: "Archived Artifacts" },
-  { value: "50+", label: "Partner Museums" },
-  { value: "95%", label: "Visitor Satisfaction" },
-];
-
 // ── Decorative helpers ────────────────────────────────────────────────────────
 
 function OrnamentalRule({ className = "" }: { className?: string }) {
@@ -143,7 +79,7 @@ export default function LandingPage() {
       y: "42%",
       catalog: "CAT · №0247",
       name: t("hero.ex1_name"),
-      period: "3000 BC · Cairo",
+      period: t("hero.ex1_period"),
       status: t("hero.ex1_status"),
       delay: 1.1,
     },
@@ -153,7 +89,7 @@ export default function LandingPage() {
       y: "22%",
       catalog: "CAT · №0391",
       name: t("hero.ex2_name"),
-      period: "480 BC · Athens",
+      period: t("hero.ex2_period"),
       status: t("hero.ex2_status"),
       delay: 1.3,
     },
@@ -163,7 +99,7 @@ export default function LandingPage() {
       y: "64%",
       catalog: "CAT · №0158",
       name: t("hero.ex3_name"),
-      period: "200 AD · Rome",
+      period: t("hero.ex3_period"),
       status: t("hero.ex3_status"),
       delay: 1.5,
     },
@@ -432,7 +368,7 @@ export default function LandingPage() {
             className="text-[9px] tracking-[0.25em] uppercase"
             style={{ color: "rgba(200,155,60,0.6)" }}
           >
-            Scroll
+            {t("hero.scroll")}
           </span>
         </motion.div>
       </section>

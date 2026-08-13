@@ -4,10 +4,10 @@ import { getServerAccessToken } from "@/services/auth/resolve-access-token.serve
 import { getMuseumDashboard } from "@/services/museum-manager/dashboard-api.service";
 
 const EMPTY_METRICS: AnalyticsMetric[] = [
-  { label: "Total QR scans", value: "0", change: "—" },
-  { label: "Avg. listening duration", value: "0 min", change: "—" },
-  { label: "Offline downloads", value: "0", change: "—" },
-  { label: "Popular exhibits", value: "0", change: "—" },
+  { label: "Tổng lượt quét QR", value: "0", change: "—" },
+  { label: "Thời gian nghe trung bình", value: "0 phút", change: "—" },
+  { label: "Lượt tải ngoại tuyến", value: "0", change: "—" },
+  { label: "Hiện vật phổ biến", value: "0", change: "—" },
 ];
 
 export async function getAnalyticsMetrics(): Promise<AnalyticsMetric[]> {
@@ -16,22 +16,22 @@ export async function getAnalyticsMetrics(): Promise<AnalyticsMetric[]> {
     const dashboard = await getMuseumDashboard(token);
     return [
       {
-        label: "Total QR scans",
+        label: "Tổng lượt quét QR",
         value: dashboard.totalQrScans.toLocaleString(),
         change: "—",
       },
       {
-        label: "Avg. listening duration",
-        value: `${dashboard.averageListeningDurationMinutes.toFixed(1)} min`,
+        label: "Thời gian nghe trung bình",
+        value: `${dashboard.averageListeningDurationMinutes.toFixed(1)} phút`,
         change: "—",
       },
       {
-        label: "Offline downloads",
+        label: "Lượt tải ngoại tuyến",
         value: dashboard.totalOfflineDownloads.toLocaleString(),
         change: "—",
       },
       {
-        label: "Popular exhibits",
+        label: "Hiện vật phổ biến",
         value: dashboard.popularExhibits.length.toLocaleString(),
         change: "—",
       },

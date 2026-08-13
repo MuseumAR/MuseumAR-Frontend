@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
+import { labelStatus } from "@/lib/status-labels";
 import { createExhibitionEntry, uploadExhibitionImage } from "@/services/content-manager/exhibition.service";
 import { createThemeEntry } from "@/services/content-manager";
 import type { ExhibitionDto, ThemeDto } from "@/types/api";
@@ -25,7 +26,7 @@ function StatusBadge({ status }: { status: string }) {
         color: active ? T.success : inactive ? T.primaryDark : T.muted,
       }}
     >
-      {status}
+      {labelStatus(status)}
     </span>
   );
 }
@@ -57,13 +58,13 @@ export function ExhibitionPanel({
     setIsSubmitting(true);
 
     if (!name.trim()) {
-      setError("Exhibition Name is required.");
+      setError("Vui lòng nhập tên triển lãm.");
       setIsSubmitting(false);
       return;
     }
 
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-      setError("End date must be after or equal to Start date.");
+      setError("Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.");
       setIsSubmitting(false);
       return;
     }
@@ -82,7 +83,7 @@ export function ExhibitionPanel({
             const newTheme = await createThemeEntry({ themeName: trimmedTheme });
             finalThemeId = newTheme.id;
           } catch (err) {
-            setError("Failed to create new theme.");
+            setError("Không thể tạo chủ đề mới.");
             setIsSubmitting(false);
             return;
           }
@@ -112,7 +113,7 @@ export function ExhibitionPanel({
       setThumbnailFile(null);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Unable to create exhibition."));
+      setError(getDisplayError(err, "Không thể tạo triển lãm."));
     } finally {
       setIsSubmitting(false);
     }
@@ -125,7 +126,7 @@ export function ExhibitionPanel({
           <span className="font-semibold" style={{ color: T.text }}>
             {exhibitions.length}
           </span>
-          {` exhibition${exhibitions.length === 1 ? "" : "s"}`}
+          {` triển lãm`}
         </p>
         <button
           type="button"
@@ -137,7 +138,7 @@ export function ExhibitionPanel({
           }}
         >
           <Plus className="h-4 w-4" />
-          {showForm ? "Close" : "Create exhibition"}
+          {showForm ? "Đóng" : "Tạo triển lãm"}
         </button>
       </div>
 
@@ -148,11 +149,11 @@ export function ExhibitionPanel({
           style={{ background: T.surface, border: `1px solid ${T.border}` }}
         >
           <div className="space-y-1.5">
-            <label className="block text-sm" style={{ color: T.muted }}>Exhibition Name</label>
+            <label className="block text-sm" style={{ color: T.muted }}>Tên triển lãm</label>
             <input
               type="text"
               required
-              placeholder="e.g., Saigon Nature and Archaeology Exhibition"
+              placeholder="VD: Triển lãm Thiên nhiên và Khảo cổ Sài Gòn"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
@@ -161,9 +162,9 @@ export function ExhibitionPanel({
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-sm" style={{ color: T.muted }}>Description</label>
+            <label className="block text-sm" style={{ color: T.muted }}>Mô tả</label>
             <textarea
-              placeholder="Provide a detailed description of the exhibition..."
+              placeholder="Nhập mô tả chi tiết về triển lãm..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
@@ -174,19 +175,19 @@ export function ExhibitionPanel({
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-1.5">
-              <label className="block text-sm" style={{ color: T.muted }}>Start date</label>
+              <label className="block text-sm" style={{ color: T.muted }}>Ngày bắt đầu</label>
               <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }} />
             </div>
             <div className="space-y-1.5">
-              <label className="block text-sm" style={{ color: T.muted }}>End date</label>
+              <label className="block text-sm" style={{ color: T.muted }}>Ngày kết thúc</label>
               <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }} />
             </div>
             <div className="space-y-1.5 relative">
-              <label className="block text-sm" style={{ color: T.muted }}>Theme</label>
+              <label className="block text-sm" style={{ color: T.muted }}>Chủ đề</label>
               <input
                 type="text"
                 list="theme-suggestions"
-                placeholder="Select or type new..."
+                placeholder="Chọn hoặc nhập mới..."
                 value={themeInput}
                 onChange={(e) => setThemeInput(e.target.value)}
                 className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
@@ -199,15 +200,15 @@ export function ExhibitionPanel({
               </datalist>
             </div>
             <div className="space-y-1.5">
-              <label className="block text-sm" style={{ color: T.muted }}>Status</label>
+              <label className="block text-sm" style={{ color: T.muted }}>Trạng thái</label>
               <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-                <option value="Ended">Ended</option>
+                <option value="Active">{labelStatus("Active")}</option>
+                <option value="Inactive">{labelStatus("Inactive")}</option>
+                <option value="Ended">{labelStatus("Ended")}</option>
               </select>
             </div>
             <div className="space-y-1.5 sm:col-span-2 lg:col-span-4">
-              <label className="block text-sm" style={{ color: T.muted }}>Thumbnail Image</label>
+              <label className="block text-sm" style={{ color: T.muted }}>Ảnh thu nhỏ</label>
               <input
                 type="file"
                 accept="image/*"
@@ -220,7 +221,7 @@ export function ExhibitionPanel({
           {error && <p className="mt-4 text-sm" style={{ color: "#8B2E2E" }}>{error}</p>}
           <div className="mt-4 flex justify-end">
             <button type="submit" disabled={isSubmitting} className="rounded-xl px-5 py-2 text-sm font-medium disabled:opacity-50" style={{ background: T.primary, color: T.surface }}>
-              {isSubmitting ? "Saving…" : "Save"}
+              {isSubmitting ? "Đang lưu…" : "Lưu"}
             </button>
           </div>
         </form>
@@ -228,7 +229,7 @@ export function ExhibitionPanel({
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {exhibitions.length === 0 ? (
-          <p className="text-sm" style={{ color: T.muted }}>No exhibitions yet.</p>
+          <p className="text-sm" style={{ color: T.muted }}>Chưa có triển lãm nào.</p>
         ) : (
           exhibitions.map((item) => (
             <Link
@@ -251,25 +252,25 @@ export function ExhibitionPanel({
                 </div>
               ) : null}
               <h3 className="font-semibold text-lg" style={{ fontFamily: cinzel, color: T.primaryDark }}>
-                {item.name || `Exhibition #${item.id}`}
+                {item.name || `Triển lãm #${item.id}`}
               </h3>
-              <p className="text-xs mt-0.5" style={{ color: T.mutedLight }}>ID: {item.id}</p>
+              <p className="text-xs mt-0.5" style={{ color: T.mutedLight }}>Mã: {item.id}</p>
               <div className="mt-3 space-y-2 text-sm" style={{ color: T.muted }}>
                 <div className="flex justify-between">
-                  <span>Start</span>
+                  <span>Bắt đầu</span>
                   <span style={{ color: T.text }}>{item.startDate?.slice(0, 10) ?? "—"}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>End</span>
+                  <span>Kết thúc</span>
                   <span style={{ color: T.text }}>{item.endDate?.slice(0, 10) ?? "—"}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Status</span>
+                  <span>Trạng thái</span>
                   <StatusBadge status={item.status} />
                 </div>
               </div>
               <p className="mt-4 text-xs font-medium" style={{ color: T.primaryDark }}>
-                View details →
+                Xem chi tiết →
               </p>
             </Link>
           ))

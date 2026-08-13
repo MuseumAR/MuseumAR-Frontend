@@ -1,4 +1,5 @@
 import { dashboardTheme as T, sans } from "@/lib/dashboard-theme";
+import { labelStatus } from "@/lib/status-labels";
 import type { MuseumDto } from "@/types/api";
 
 function StatusBadge({ status }: { status: string }) {
@@ -11,7 +12,7 @@ function StatusBadge({ status }: { status: string }) {
         color: active ? T.success : T.danger,
       }}
     >
-      {status}
+      {labelStatus(status)}
     </span>
   );
 }
@@ -38,7 +39,7 @@ export function MuseumManagementPanel({ museum }: { museum: MuseumDto | null }) 
           style={{ background: T.surface, border: `1px solid ${T.border}` }}
         >
           <p className="text-sm" style={{ color: T.muted }}>
-            Museum profile is not available yet.
+            Hồ sơ bảo tàng chưa có.
           </p>
         </div>
       </div>
@@ -67,7 +68,7 @@ export function MuseumManagementPanel({ museum }: { museum: MuseumDto | null }) 
                 className="flex h-full w-full items-center justify-center text-sm"
                 style={{ color: T.mutedLight }}
               >
-                No image
+                Chưa có ảnh
               </div>
             )}
           </div>
@@ -85,20 +86,20 @@ export function MuseumManagementPanel({ museum }: { museum: MuseumDto | null }) 
 
             <div className="grid gap-4 sm:grid-cols-2">
               <InfoRow label="ID" value={String(museum.id)} />
-              <InfoRow label="City" value={museum.city ?? "—"} />
-              <InfoRow label="Address" value={museum.address ?? "—"} />
-              <InfoRow label="Province" value={museum.province ?? "—"} />
-              <InfoRow label="Country" value={museum.country ?? "—"} />
-              <InfoRow label="Phone" value={museum.contactPhone ?? "—"} />
+              <InfoRow label="Thành phố" value={museum.city ?? "—"} />
+              <InfoRow label="Địa chỉ" value={museum.address ?? "—"} />
+              <InfoRow label="Tỉnh/Thành" value={museum.province ?? "—"} />
+              <InfoRow label="Quốc gia" value={museum.country ?? "—"} />
+              <InfoRow label="Số điện thoại" value={museum.contactPhone ?? "—"} />
               <InfoRow label="Email" value={museum.contactEmail ?? "—"} />
               <InfoRow label="Website" value={museum.website ?? "—"} />
-              <InfoRow label="Opening hours" value={museum.openingHours ?? "—"} />
+              <InfoRow label="Giờ mở cửa" value={museum.openingHours ?? "—"} />
             </div>
 
             {museum.description && (
               <div>
                 <p className="text-xs font-medium" style={{ color: T.mutedLight }}>
-                  Description
+                  Mô tả
                 </p>
                 <p
                   className="mt-1 text-sm leading-relaxed"
