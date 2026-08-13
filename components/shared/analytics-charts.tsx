@@ -82,7 +82,7 @@ function BarChart({
 
 function LineChart({
   points,
-  labels = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"],
+  labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
 }: {
   points: number[];
   labels?: string[];
@@ -171,8 +171,8 @@ export function AnalyticsCharts({ dashboard }: { dashboard?: MuseumDashboardDto 
         totalScans,
       ]
     : [3200, 4100, 3800, 4500, 4200, 4800, 5200];
-  const arTitle = totalScans > 0 ? "Xu hướng tương tác" : "Xu hướng phiên AR";
-  const arSubtitle = totalScans > 0 ? "Lượt quét theo tuần" : "Lượt phiên theo tuần";
+  const arTitle = totalScans > 0 ? "Engagement trend" : "AR session trend";
+  const arSubtitle = totalScans > 0 ? "Weekly scans" : "Weekly sessions";
 
   const hasQrStats = !!(dashboard?.exhibitScanStats && dashboard.exhibitScanStats.length > 0);
   const qrConversion = hasQrStats
@@ -181,16 +181,16 @@ export function AnalyticsCharts({ dashboard }: { dashboard?: MuseumDashboardDto 
         value: x.scanCount,
       }))
     : [
-        { label: "T2", value: 62 },
-        { label: "T3", value: 68 },
-        { label: "T4", value: 71 },
-        { label: "T5", value: 65 },
-        { label: "T6", value: 74 },
-        { label: "T7", value: 82 },
-        { label: "CN", value: 78 },
+        { label: "Mon", value: 62 },
+        { label: "Tue", value: 68 },
+        { label: "Wed", value: 71 },
+        { label: "Thu", value: 65 },
+        { label: "Fri", value: 74 },
+        { label: "Sat", value: 82 },
+        { label: "Sun", value: 78 },
       ];
-  const qrTitle = hasQrStats ? "Lượt quét QR theo hiện vật" : "Tỷ lệ chuyển đổi quét QR";
-  const qrSubtitle = hasQrStats ? "Hiện vật được quét nhiều nhất" : "Tỷ lệ chuyển đổi theo ngày (%)";
+  const qrTitle = hasQrStats ? "QR scans by exhibit" : "QR scan conversion rate";
+  const qrSubtitle = hasQrStats ? "Most scanned exhibits" : "Daily conversion rate (%)";
   const qrSuffix = hasQrStats ? "" : "%";
 
   const hasLangStats = !!(dashboard?.languageUsageStats && dashboard.languageUsageStats.length > 0);
@@ -206,8 +206,8 @@ export function AnalyticsCharts({ dashboard }: { dashboard?: MuseumDashboardDto 
         { label: "DE", value: 44 },
         { label: "ES", value: 41 },
       ];
-  const langTitle = hasLangStats ? "Thống kê ngôn ngữ" : "Tỷ lệ nghe xong theo ngôn ngữ";
-  const langSubtitle = hasLangStats ? "Tỷ lệ sử dụng ngôn ngữ (%)" : "Tỷ lệ hoàn thành theo ngôn ngữ";
+  const langTitle = hasLangStats ? "Language statistics" : "Audio completion by language";
+  const langSubtitle = hasLangStats ? "Language usage (%)" : "Completion rate by language";
   const langSuffix = "%";
 
   const hasPopularStats = !!(dashboard?.popularExhibits && dashboard.popularExhibits.length > 0);
@@ -217,15 +217,15 @@ export function AnalyticsCharts({ dashboard }: { dashboard?: MuseumDashboardDto 
         value: Math.round(x.avgDurationSeconds / 60),
       }))
     : [
-        { label: "0-2 phút", value: 18 },
-        { label: "2-4 phút", value: 35 },
-        { label: "4-6 phút", value: 28 },
-        { label: "6-8 phút", value: 12 },
-        { label: "8 phút+", value: 7 },
+        { label: "0-2 min", value: 18 },
+        { label: "2-4 min", value: 35 },
+        { label: "4-6 min", value: 28 },
+        { label: "6-8 min", value: 12 },
+        { label: "8 min+", value: 7 },
       ];
-  const durationTitle = hasPopularStats ? "Thời gian nghe trung bình (phút)" : "Phân bố thời lượng phiên";
-  const durationSubtitle = hasPopularStats ? "Theo hiện vật phổ biến" : "Mức độ tương tác của khách";
-  const durationSuffix = hasPopularStats ? " phút" : "%";
+  const durationTitle = hasPopularStats ? "Average listening time (min)" : "Session duration distribution";
+  const durationSubtitle = hasPopularStats ? "By popular exhibits" : "Visitor engagement level";
+  const durationSuffix = hasPopularStats ? " min" : "%";
 
   return (
     <div className="grid gap-5 lg:grid-cols-2">

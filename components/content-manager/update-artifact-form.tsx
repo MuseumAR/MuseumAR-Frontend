@@ -136,7 +136,7 @@ export function UpdateArtifactForm({
     }
 
     if (!exhibitId || Number.isNaN(exhibitId)) {
-      setError("Không tìm thấy hiện vật này.");
+      setError("Could not find this artifact.");
       return;
     }
 
@@ -190,7 +190,7 @@ export function UpdateArtifactForm({
       router.push(`/content-manager/artifact/${artifact.id}`);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Không thể cập nhật hiện vật."));
+      setError(getDisplayError(err, "Could not update artifact."));
     } finally {
       setIsSubmitting(false);
     }
@@ -203,12 +203,12 @@ export function UpdateArtifactForm({
         className="mb-6 inline-flex items-center gap-2 text-sm"
         style={{ color: T.muted }}
       >
-        <span>←</span> Quay lại hiện vật
+        <span>←</span> Back to artifact
       </Link>
 
       <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-          Cập nhật hiện vật
+          Update artifact
         </h1>
         <StatusBadge status={artifact.status} />
       </div>
@@ -221,7 +221,7 @@ export function UpdateArtifactForm({
         <div className="flex flex-col gap-8 lg:flex-row">
           <div className="flex w-full shrink-0 flex-col gap-3 lg:w-48">
             <UploadBox
-              label={imageFile?.name ?? "Hình ảnh"}
+              label={imageFile?.name ?? "Image"}
               preview={imagePreview}
               onClick={() => imageRef.current?.click()}
             />
@@ -243,8 +243,8 @@ export function UpdateArtifactForm({
                 (artifact.arOverlayUrl
                   ? `✓ AR: ${fileNameFromUrl(artifact.arOverlayUrl)}`
                   : artifact.arModelStatus === "Active"
-                    ? "✓ Tài sản AR đang hoạt động (Nhấp để đổi)"
-                    : "Tài sản AR (Hình ảnh/3D)")
+                    ? "✓ AR asset is active (Click to replace)"
+                    : "AR asset (Image/3D)")
               }
               preview={arPreview}
               onClick={() => arRef.current?.click()}
@@ -270,7 +270,7 @@ export function UpdateArtifactForm({
                 audioFileVi?.name ??
                 (existingAudioVi
                   ? `✓ Audio VI: ${fileNameFromUrl(existingAudioVi)}`
-                  : "Audio Tiếng Việt")
+                  : "Vietnamese audio")
               }
               onClick={() => audioRefVi.current?.click()}
             />
@@ -289,7 +289,7 @@ export function UpdateArtifactForm({
                 audioFileEn?.name ??
                 (existingAudioEn
                   ? `✓ Audio EN: ${fileNameFromUrl(existingAudioEn)}`
-                  : "Audio Tiếng Anh")
+                  : "English audio")
               }
               onClick={() => audioRefEn.current?.click()}
             />
@@ -307,23 +307,23 @@ export function UpdateArtifactForm({
 
           <div className="flex-1 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Tiêu đề (Tiếng Việt) *" value={titleVi} onChange={setTitleVi} placeholder="Tiêu đề tiếng Việt" />
-              <Field label="Tiêu đề (English)" value={titleEn} onChange={setTitleEn} placeholder="English title" />
-              <Field label="Mã hiện vật" value={exhibitCode} onChange={setExhibitCode} placeholder="CAT-001" />
+              <Field label="Title (Vietnamese) *" value={titleVi} onChange={setTitleVi} placeholder="Vietnamese title" />
+              <Field label="Title (English)" value={titleEn} onChange={setTitleEn} placeholder="English title" />
+              <Field label="Artifact code" value={exhibitCode} onChange={setExhibitCode} placeholder="CAT-001" />
               <SelectField
-                label="Danh mục"
+                label="Category"
                 value={categoryId}
                 onChange={setCategoryId}
                 options={categoryOptions.map((c) => ({ value: String(c.id), label: c.label }))}
               />
               <SelectField
-                label="Nhóm tuổi"
+                label="Age group"
                 value={ageGroupId}
                 onChange={setAgeGroupId}
                 options={ageGroups.map((g) => ({ value: String(g.id), label: g.groupName }))}
               />
               <SelectField
-                label="Tầng / Bản đồ"
+                label="Floor / Map"
                 value={mapId}
                 onChange={(val) => {
                   setMapId(val);
@@ -331,11 +331,11 @@ export function UpdateArtifactForm({
                 }}
                 options={maps.map((m) => ({
                   value: String(m.id),
-                  label: `${m.floorNumber != null ? `Tầng ${m.floorNumber}` : "Tầng"}${m.mapName ? ` (${m.mapName})` : ""}`,
+                  label: `${m.floorNumber != null ? `Floor ${m.floorNumber}` : "Floor"}${m.mapName ? ` (${m.mapName})` : ""}`,
                 }))}
               />
               <SelectField
-                label="Phòng trưng bày"
+                label="Exhibition room"
                 value={roomId}
                 onChange={setRoomId}
                 options={availableRooms.map((r) => ({
@@ -343,18 +343,18 @@ export function UpdateArtifactForm({
                   label: `${r.roomCode} - ${r.roomName}`,
                 }))}
               />
-              <Field label="Thời kỳ" value={era} onChange={setEra} placeholder="VD: triều Nguyễn" />
+              <Field label="Era" value={era} onChange={setEra} placeholder="e.g. Nguyen dynasty" />
               <Field
-                label="Sự kiện lịch sử"
+                label="Historical event"
                 value={historicalEvent}
                 onChange={setHistoricalEvent}
-                placeholder="Không bắt buộc"
+                placeholder="Optional"
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="mb-1.5 block text-sm" style={{ color: T.muted }}>
-                  Mô tả (Tiếng Việt)
+                  Description (Vietnamese)
                 </label>
                 <textarea
                   value={descriptionVi}
@@ -366,7 +366,7 @@ export function UpdateArtifactForm({
               </div>
               <div>
                 <label className="mb-1.5 block text-sm" style={{ color: T.muted }}>
-                  Mô tả (English)
+                  Description (English)
                 </label>
                 <textarea
                   value={descriptionEn}
@@ -380,7 +380,7 @@ export function UpdateArtifactForm({
             </div>
             {tags.length > 0 && (
               <div>
-                <p className="mb-2 text-sm" style={{ color: T.muted }}>Thẻ</p>
+                <p className="mb-2 text-sm" style={{ color: T.muted }}>Tags</p>
                 <div className="flex flex-wrap gap-2">
                   {tags.map((tag) => {
                     const active = selectedTagIds.includes(tag.id);
@@ -426,7 +426,7 @@ export function UpdateArtifactForm({
             className="rounded-xl px-5 py-2 text-sm"
             style={{ border: `1px solid ${T.border}`, color: T.muted }}
           >
-            Hủy
+            Cancel
           </Link>
           <button
             type="submit"
@@ -437,7 +437,7 @@ export function UpdateArtifactForm({
               color: T.surface,
             }}
           >
-            {isSubmitting ? "Đang lưu…" : "Lưu thay đổi"}
+            {isSubmitting ? "Saving…" : "Save changes"}
           </button>
         </div>
       </form>
@@ -490,7 +490,7 @@ function SelectField({
         className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
         style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
       >
-        <option value="">Không</option>
+        <option value="">None</option>
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}

@@ -27,7 +27,7 @@ export function ContentVersionsPanel({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!versionNumber.trim()) {
-      setError("Vui lòng nhập số phiên bản.");
+      setError("Please enter a version number.");
       return;
     }
     setError(null);
@@ -51,7 +51,7 @@ export function ContentVersionsPanel({
       setDescription("");
       setShowForm(false);
     } catch (err) {
-      setError(getDisplayError(err, "Không thể tạo phiên bản nội dung."));
+      setError(getDisplayError(err, "Could not create content version."));
     } finally {
       setIsSubmitting(false);
     }
@@ -66,19 +66,19 @@ export function ContentVersionsPanel({
         <Info className="mt-0.5 h-5 w-5 shrink-0" style={{ color: T.primaryDark }} />
         <div className="space-y-1 text-sm" style={{ color: T.muted }}>
           <p style={{ color: T.text }}>
-            <strong>Phiên bản nội dung</strong> đánh dấu một bản chụp nội dung bảo tàng
-            (hiện vật, media, tài sản AR, v.v.).
+            <strong>Content Versions</strong> mark a snapshot of museum content
+            (artifacts, media, AR assets, etc.).
           </p>
           <p>
-            Tạo một phiên bản, ghi lại <strong>mã ID</strong> được trả về, rồi mở{" "}
+            Create a version, note the returned <strong>ID</strong>, then open{" "}
             <Link
               href="/content-manager/offline-packages"
               className="font-medium underline-offset-2 hover:underline"
               style={{ color: T.primaryDark }}
             >
-              Gói ngoại tuyến
+              Offline Packages
             </Link>{" "}
-            và nhập mã đó để tạo gói tải về.
+            and enter that ID to generate a downloadable package.
           </p>
         </div>
       </div>
@@ -88,7 +88,7 @@ export function ContentVersionsPanel({
           <span className="font-semibold" style={{ color: T.text }}>
             {versions.length}
           </span>
-          {` phiên bản`}
+          {` versions`}
         </p>
         <button
           type="button"
@@ -100,7 +100,7 @@ export function ContentVersionsPanel({
           }}
         >
           <Plus className="h-4 w-4" />
-          {showForm ? "Đóng" : "Tạo phiên bản"}
+          {showForm ? "Close" : "Create version"}
         </button>
       </div>
 
@@ -109,8 +109,8 @@ export function ContentVersionsPanel({
           className="rounded-2xl px-4 py-3 text-sm"
           style={{ background: "rgba(79,125,74,0.10)", color: T.success }}
         >
-          Đã tạo phiên bản. Dùng mã <strong style={{ color: T.text }}>{lastId}</strong> trong
-          Gói ngoại tuyến.
+          Version created. Use ID <strong style={{ color: T.text }}>{lastId}</strong> in
+          Offline Packages.
         </p>
       )}
 
@@ -123,7 +123,7 @@ export function ContentVersionsPanel({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <label className="block text-sm" style={{ color: T.muted }}>
-                Số phiên bản *
+                Version number *
               </label>
               <input
                 value={versionNumber}
@@ -135,13 +135,13 @@ export function ContentVersionsPanel({
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <label className="block text-sm" style={{ color: T.muted }}>
-                Mô tả thay đổi
+                Change description
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                placeholder="VD: Phát hành đầu tiên với hiện vật Đông Sơn"
+                placeholder="e.g. First release with Dong Son artifacts"
                 className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
               />
@@ -159,7 +159,7 @@ export function ContentVersionsPanel({
               className="rounded-xl px-5 py-2 text-sm font-medium disabled:opacity-50"
               style={{ background: T.primary, color: T.surface }}
             >
-              {isSubmitting ? "Đang tạo…" : "Lưu"}
+              {isSubmitting ? "Creating…" : "Save"}
             </button>
           </div>
         </form>
@@ -171,7 +171,7 @@ export function ContentVersionsPanel({
       >
         {versions.length === 0 ? (
           <p className="px-8 py-16 text-center text-sm" style={{ color: T.muted }}>
-            Chưa có phiên bản nội dung. Tạo một phiên bản để bắt đầu.
+            No content versions yet. Create a version to get started.
           </p>
         ) : (
           <table className="w-full text-left text-sm">
@@ -182,7 +182,7 @@ export function ContentVersionsPanel({
                   background: "rgba(245,230,200,0.35)",
                 }}
               >
-                {["Mã", "Phiên bản", "Trạng thái", "Mô tả", "Ngày tạo"].map((h) => (
+                {["ID", "Version", "Status", "Description", "Created"].map((h) => (
                   <th key={h} className="px-5 py-4 font-medium" style={{ color: T.mutedLight }}>
                     {h}
                   </th>

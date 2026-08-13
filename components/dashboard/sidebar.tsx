@@ -62,7 +62,7 @@ export function Sidebar({ role }: { role: DashboardRole }) {
           className="mb-3 px-3 text-[10px] font-medium uppercase tracking-[0.22em]"
           style={{ color: T.mutedLight }}
         >
-          Điều hướng
+          Navigation
         </p>
         {navItems.map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -138,7 +138,7 @@ export function Sidebar({ role }: { role: DashboardRole }) {
               }}
             >
               <Home className="h-3.5 w-3.5" />
-              Trang chủ
+              Home
             </Link>
             <button
               type="button"
@@ -151,7 +151,7 @@ export function Sidebar({ role }: { role: DashboardRole }) {
               }}
             >
               <LogOut className="h-3.5 w-3.5" />
-              Đăng xuất
+              Log out
             </button>
           </div>
         </div>

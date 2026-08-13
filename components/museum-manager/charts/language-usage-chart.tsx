@@ -22,7 +22,7 @@ export function LanguageUsageChart({ data }: { data: LanguageUsage[] }) {
       }}
     >
       <h2 className="text-base font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-        Ngôn ngữ sử dụng
+        Language usage
       </h2>
       <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row sm:justify-center">
         <div

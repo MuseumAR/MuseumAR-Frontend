@@ -44,14 +44,14 @@ export function VisitorsTrendChart({ data }: { data: VisitorTrend[] }) {
       }}
     >
       <h2 className="text-base font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-        Xu hướng khách tham quan
+        Visitor trend
       </h2>
       <div className="mt-4 flex flex-1 items-center justify-center overflow-x-auto">
         <svg
           viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
           className="h-full w-full max-w-full"
           role="img"
-          aria-label="Biểu đồ xu hướng khách tham quan"
+          aria-label="Visitor trend chart"
         >
           {Y_TICKS.map((tick) => {
             const y = PADDING.top + innerHeight - (tick / Y_MAX) * innerHeight;

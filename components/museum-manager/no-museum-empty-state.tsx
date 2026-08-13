@@ -3,8 +3,8 @@ import { Landmark, Plus } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 
 export function NoMuseumEmptyState({
-  title = "Chưa đăng ký bảo tàng",
-  description = "Tạo hồ sơ bảo tàng để bắt đầu quản lý triển lãm, phân tích và vé.",
+  title = "Museum not registered",
+  description = "Create a museum profile to start managing exhibitions, analytics, and tickets.",
 }: {
   title?: string;
   description?: string;
@@ -32,7 +32,7 @@ export function NoMuseumEmptyState({
         }}
       >
         <Plus className="h-4 w-4" />
-        Đăng ký bảo tàng
+        Register museum
       </Link>
     </div>
   );

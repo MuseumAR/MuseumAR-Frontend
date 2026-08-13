@@ -8,11 +8,11 @@ import {
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 
 const QUICK_LINKS = [
-  { href: "/content-manager/artifact", label: "Hiện vật" },
-  { href: "/content-manager/exhibition", label: "Triển lãm" },
-  { href: "/content-manager/content-versions", label: "Phiên bản nội dung" },
-  { href: "/content-manager/offline-packages", label: "Gói ngoại tuyến" },
-  { href: "/content-manager/maps-routes", label: "Bản đồ & Lộ trình" },
+  { href: "/content-manager/artifact", label: "Artifacts" },
+  { href: "/content-manager/exhibition", label: "Exhibitions" },
+  { href: "/content-manager/content-versions", label: "Content Versions" },
+  { href: "/content-manager/offline-packages", label: "Offline Packages" },
+  { href: "/content-manager/maps-routes", label: "Maps & Routes" },
 ];
 
 export async function ContentManagerOverview() {
@@ -26,24 +26,24 @@ export async function ContentManagerOverview() {
       <section>
         <div className="mb-5">
           <p className="text-xs font-medium uppercase tracking-[0.22em]" style={{ color: T.mutedLight }}>
-            Quản lý nội dung
+            Content Manager
           </p>
           <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-            Bảng điều khiển nội dung
+            Content dashboard
           </h2>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
-          <StatCard label="Tổng hiện vật" value={stats.total} icon="layers" watermark="scroll" />
-          <StatCard label="Đã xuất bản" value={stats.published} icon="box" watermark="column" />
-          <StatCard label="Nháp" value={stats.draft} icon="layers" watermark="vase" />
-          <StatCard label="Có AR" value={stats.withAr} icon="box" watermark="map" />
-          <StatCard label="Có QR" value={stats.withQr} icon="qrCode" watermark="scroll" />
+          <StatCard label="Total artifacts" value={stats.total} icon="layers" watermark="scroll" />
+          <StatCard label="Published" value={stats.published} icon="box" watermark="column" />
+          <StatCard label="Drafts" value={stats.draft} icon="layers" watermark="vase" />
+          <StatCard label="With AR" value={stats.withAr} icon="box" watermark="map" />
+          <StatCard label="With QR" value={stats.withQr} icon="qrCode" watermark="scroll" />
         </div>
       </section>
 
       <section>
         <p className="mb-3 text-xs font-medium uppercase tracking-[0.22em]" style={{ color: T.mutedLight }}>
-          Truy cập nhanh
+          Quick access
         </p>
         <div className="flex flex-wrap gap-2">
           {QUICK_LINKS.map((link) => (

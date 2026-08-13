@@ -5,9 +5,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, KeyRound, LayoutDashboard, LogOut, Ticket } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
-import { useLanguage } from "@/context/language-context";
 import { getHomePathForRole, getRoleDisplayLabel } from "@/services/auth";
 import { isDashboardRole } from "@/lib/roles";
+import { VisitorLanguageToggle } from "@/components/shared/visitor-language-toggle";
+import { StableLabel } from "@/components/shared/stable-label";
 
 const C = {
   bg: "rgba(245,230,200,0.88)",
@@ -39,12 +40,12 @@ function AuthSkeleton() {
 }
 
 function GuestAuthActions() {
-  const { t } = useLanguage();
   return (
     <div className="flex items-center gap-2">
+      <VisitorLanguageToggle />
       <Link
         href="/login"
-        className="rounded-full px-4 py-1.5 text-sm transition-all duration-200"
+        className="inline-flex items-center justify-center rounded-full px-4 py-1.5 text-sm transition-all duration-200"
         style={{ color: C.muted }}
         onMouseEnter={(e) => {
           (e.currentTarget as HTMLElement).style.color = C.text;
@@ -55,18 +56,18 @@ function GuestAuthActions() {
           (e.currentTarget as HTMLElement).style.background = "transparent";
         }}
       >
-        {t("nav.login")}
+        <StableLabel k="nav.login" />
       </Link>
       <Link
         href="/register"
-        className="rounded-full px-5 py-1.5 text-sm font-medium transition-all hover:opacity-85"
+        className="inline-flex items-center justify-center rounded-full px-5 py-1.5 text-sm font-medium transition-all hover:opacity-85"
         style={{
           background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
           color: C.surface,
           boxShadow: "0 2px 10px rgba(166,124,45,0.30)",
         }}
       >
-        {t("nav.register")}
+        <StableLabel k="nav.register" />
       </Link>
     </div>
   );
@@ -74,7 +75,6 @@ function GuestAuthActions() {
 
 function UserMenu() {
   const { user, logout } = useAuth();
-  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -107,6 +107,7 @@ function UserMenu() {
 
   return (
     <div className="flex items-center gap-2 sm:gap-3">
+      {!hasDashboard && <VisitorLanguageToggle />}
       {hasDashboard && (
         <Link
           href={dashboardPath}
@@ -117,8 +118,8 @@ function UserMenu() {
             boxShadow: "0 2px 10px rgba(166,124,45,0.30)",
           }}
         >
-          <LayoutDashboard className="h-4 w-4" />
-          {t("nav.dashboard")}
+          <LayoutDashboard className="h-4 w-4 shrink-0" />
+          <StableLabel k="nav.dashboard" />
         </Link>
       )}
 
@@ -203,8 +204,8 @@ function UserMenu() {
                   (e.currentTarget as HTMLElement).style.background = "transparent";
                 }}
               >
-                <LayoutDashboard className="h-4 w-4" style={{ color: C.primary }} />
-                {t("nav.dashboard")}
+                <LayoutDashboard className="h-4 w-4 shrink-0" style={{ color: C.primary }} />
+                <StableLabel k="nav.dashboard" />
               </Link>
             )}
 
@@ -221,8 +222,8 @@ function UserMenu() {
                 (e.currentTarget as HTMLElement).style.background = "transparent";
               }}
             >
-              <Ticket className="h-4 w-4" style={{ color: C.primary }} />
-              {t("nav.my_tickets")}
+              <Ticket className="h-4 w-4 shrink-0" style={{ color: C.primary }} />
+              <StableLabel k="nav.my_tickets" />
             </Link>
 
             <Link
@@ -238,8 +239,8 @@ function UserMenu() {
                 (e.currentTarget as HTMLElement).style.background = "transparent";
               }}
             >
-              <KeyRound className="h-4 w-4" style={{ color: C.primary }} />
-              {t("nav.change_password")}
+              <KeyRound className="h-4 w-4 shrink-0" style={{ color: C.primary }} />
+              <StableLabel k="nav.change_password" />
             </Link>
 
             <button
@@ -258,8 +259,8 @@ function UserMenu() {
                 (e.currentTarget as HTMLElement).style.background = "transparent";
               }}
             >
-              <LogOut className="h-4 w-4" />
-              {t("nav.logout")}
+              <LogOut className="h-4 w-4 shrink-0" />
+              <StableLabel k="nav.logout" />
             </button>
           </div>
         )}
@@ -271,14 +272,13 @@ function UserMenu() {
 export function Navbar() {
   const pathname = usePathname();
   const { isAuthenticated, isLoading } = useAuth();
-  const { t } = useLanguage();
 
   const navLinks = [
-    { label: t("nav.home"), href: "/" },
-    { label: t("nav.tickets"), href: "/tickets" },
-    { label: t("nav.collections"), href: sectionHref(pathname, "#collections") },
-    { label: t("nav.museums"), href: sectionHref(pathname, "#museums") },
-    { label: t("nav.about"), href: sectionHref(pathname, "#about") },
+    { key: "nav.home", href: "/" },
+    { key: "nav.tickets", href: "/tickets" },
+    { key: "nav.collections", href: sectionHref(pathname, "#collections") },
+    { key: "nav.museums", href: sectionHref(pathname, "#museums") },
+    { key: "nav.about", href: sectionHref(pathname, "#about") },
   ];
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
@@ -336,7 +336,7 @@ export function Navbar() {
               key={link.href}
               href={link.href}
               onClick={(e) => handleNavClick(e, link.href)}
-              className="rounded-full px-4 py-1.5 text-sm transition-all duration-200"
+              className="inline-flex items-center justify-center rounded-full px-4 py-1.5 text-sm transition-all duration-200"
               style={{
                 color: active ? C.text : C.muted,
                 background: active ? "rgba(200,155,60,0.12)" : "transparent",
@@ -349,7 +349,7 @@ export function Navbar() {
                 if (!active) (e.currentTarget as HTMLElement).style.color = C.muted;
               }}
             >
-              {link.label}
+              <StableLabel k={link.key} />
             </Link>
           );
         })}

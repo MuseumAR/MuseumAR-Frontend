@@ -16,7 +16,7 @@ function DashboardLoading() {
           className="h-10 w-10 animate-spin rounded-full border-2 border-transparent"
           style={{ borderTopColor: "#C89B3C", borderRightColor: "#C89B3C" }}
         />
-        <p className="text-sm">Đang tải bảng điều khiển…</p>
+        <p className="text-sm">Loading dashboard…</p>
       </div>
     </div>
   );
