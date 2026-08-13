@@ -16,13 +16,25 @@ interface Props {
   artifact: Artifact;
   backPath: string;
   variant?: "museum-manager" | "content-manager";
+  translations?: Array<{
+    languageCode: string;
+    title: string;
+    description?: string | null;
+    audioUrl?: string | null;
+  }>;
 }
 
-export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" }: Props) {
+export function ArtifactDetail({
+  artifact,
+  backPath,
+  variant = "museum-manager",
+  translations = [],
+}: Props) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [arAssets, setArAssets] = useState<ExhibitArassetDto[]>([]);
+  const [activeTab, setActiveTab] = useState<"vi" | "en">("vi");
 
   const exhibitId =
     artifact.exhibitId ?? Number(artifact.id.replace(/^EX-/i, ""));
@@ -80,40 +92,77 @@ export function ArtifactDetail({ artifact, backPath, variant = "museum-manager" 
           )}
 
           <div className="flex-1 space-y-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <h2 className="text-2xl font-bold" style={{ fontFamily: cinzel, color: T.primaryDark }}>
-                  {artifact.name}
-                </h2>
-                <p className="text-xs font-mono mt-1" style={{ color: T.mutedLight }}>
-                  Mã: {artifact.id} {exhibitId ? `(Mã DB: #${exhibitId})` : ""}
-                </p>
-              </div>
-              <StatusBadge status={artifact.status} />
+            <div className="flex border-b" style={{ borderColor: T.border }}>
+              <button
+                type="button"
+                onClick={() => setActiveTab("vi")}
+                className="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+                style={{
+                  borderColor: activeTab === "vi" ? T.primary : "transparent",
+                  color: activeTab === "vi" ? T.primaryDark : T.muted,
+                }}
+              >
+                Tiếng Việt 🇻🇳
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("en")}
+                className="px-4 py-2 text-sm font-medium border-b-2 transition-colors"
+                style={{
+                  borderColor: activeTab === "en" ? T.primary : "transparent",
+                  color: activeTab === "en" ? T.primaryDark : T.muted,
+                }}
+              >
+                English 🇬🇧
+              </button>
             </div>
 
-            <dl className="space-y-2 text-sm">
-              <InfoRow label={ARTIFACT_LABELS.category!} value={artifact.category} />
-              <InfoRow label={ARTIFACT_LABELS.era!} value={artifact.era} />
-              <InfoRow label={ARTIFACT_LABELS.location!} value={artifact.location} />
-              <ActiveRow label={ARTIFACT_LABELS.qrLinked!} value={artifact.qrLinked} />
-              <ActiveRow label={ARTIFACT_LABELS.arModelStatus!} value={artifact.arModelStatus} />
-              <ActiveRow label={ARTIFACT_LABELS.audio!} value={artifact.audio} />
-            </dl>
+            {(() => {
+              const translationVi = translations?.find((t) => t.languageCode === "vi");
+              const translationEn = translations?.find((t) => t.languageCode === "en");
+              const currentTitle = activeTab === "vi" ? (translationVi?.title || artifact.name) : (translationEn?.title || "— (Chưa dịch sang Tiếng Anh)");
+              const currentDesc = activeTab === "vi" ? (translationVi?.description || artifact.description || "Chưa có mô tả.") : (translationEn?.description || "No description available.");
+              const currentAudioUrl = activeTab === "vi" ? (translationVi?.audioUrl || artifact.audioUrl) : translationEn?.audioUrl;
 
-            <p className="mt-2 text-sm leading-relaxed" style={{ color: T.muted }}>
-              <span style={{ color: T.mutedLight }}>{ARTIFACT_LABELS.description}: </span>
-              {artifact.description}
-            </p>
+              return (
+                <>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h2 className="text-2xl font-bold" style={{ fontFamily: cinzel, color: T.primaryDark }}>
+                        {currentTitle}
+                      </h2>
+                      <p className="text-xs font-mono mt-1" style={{ color: T.mutedLight }}>
+                        Mã: {artifact.id} {exhibitId ? `(Mã DB: #${exhibitId})` : ""}
+                      </p>
+                    </div>
+                    <StatusBadge status={artifact.status} />
+                  </div>
 
-            {artifact.audioUrl && (
-              <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(200,155,69,0.04)", border: `1px solid ${T.border}` }}>
-                <p className="mb-2 text-sm font-semibold flex items-center gap-2" style={{ color: T.primaryDark }}>
-                  <span>🔊</span> Nghe thử hướng dẫn âm thanh
-                </p>
-                <audio controls src={artifact.audioUrl} className="w-full max-w-md" />
-              </div>
-            )}
+                  <dl className="space-y-2 text-sm">
+                    <InfoRow label={ARTIFACT_LABELS.category!} value={artifact.category} />
+                    <InfoRow label={ARTIFACT_LABELS.era!} value={artifact.era} />
+                    <InfoRow label={ARTIFACT_LABELS.location!} value={artifact.location} />
+                    <ActiveRow label={ARTIFACT_LABELS.qrLinked!} value={artifact.qrLinked} />
+                    <ActiveRow label={ARTIFACT_LABELS.arModelStatus!} value={artifact.arModelStatus} />
+                    <ActiveRow label={ARTIFACT_LABELS.audio!} value={currentAudioUrl ? "Active" : "Inactive"} />
+                  </dl>
+
+                  <p className="mt-2 text-sm leading-relaxed" style={{ color: T.muted }}>
+                    <span style={{ color: T.mutedLight }}>{ARTIFACT_LABELS.description}: </span>
+                    {currentDesc}
+                  </p>
+
+                  {currentAudioUrl && (
+                    <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(200,155,69,0.04)", border: `1px solid ${T.border}` }}>
+                      <p className="mb-2 text-sm font-semibold flex items-center gap-2" style={{ color: T.primaryDark }}>
+                        <span>🔊</span> Nghe thử hướng dẫn âm thanh ({activeTab === "vi" ? "Tiếng Việt" : "English"})
+                      </p>
+                      <audio key={currentAudioUrl} controls src={currentAudioUrl} className="w-full max-w-md" />
+                    </div>
+                  )}
+                </>
+              );
+            })()}
 
             {(arAssets.length > 0 || artifact.arOverlayUrl || artifact.arMarkerUrl) && (
               <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(79,125,74,0.04)", border: `1px solid ${T.border}` }}>

@@ -39,6 +39,7 @@ export function UpdateArtifactForm({
   initialTagIds,
   initialMapId,
   initialRoomId,
+  initialTranslations = [],
 }: {
   artifact: Artifact;
   museumId: number;
@@ -54,18 +55,30 @@ export function UpdateArtifactForm({
   initialTagIds?: number[];
   initialMapId?: number | null;
   initialRoomId?: number | null;
+  initialTranslations?: Array<{
+    languageCode: string;
+    title: string;
+    description?: string | null;
+    audioUrl?: string | null;
+  }>;
 }) {
   const router = useRouter();
   const imageRef = useRef<HTMLInputElement>(null);
   const arRef = useRef<HTMLInputElement>(null);
-  const audioRef = useRef<HTMLInputElement>(null);
+  const audioRefVi = useRef<HTMLInputElement>(null);
+  const audioRefEn = useRef<HTMLInputElement>(null);
 
-  const [title, setTitle] = useState(artifact.name);
+  const translationVi = initialTranslations?.find((t) => t.languageCode === "vi");
+  const translationEn = initialTranslations?.find((t) => t.languageCode === "en");
+
+  const [titleVi, setTitleVi] = useState(translationVi?.title ?? artifact.name);
+  const [titleEn, setTitleEn] = useState(translationEn?.title ?? "");
+  const [descriptionVi, setDescriptionVi] = useState(translationVi?.description ?? artifact.description);
+  const [descriptionEn, setDescriptionEn] = useState(translationEn?.description ?? "");
+
   const [exhibitCode, setExhibitCode] = useState(
     /^EX-\d+$/i.test(artifact.id) ? "" : artifact.id,
   );
-  const [description, setDescription] = useState(artifact.description);
-  const [languageCode, setLanguageCode] = useState("vi");
   const [categoryId, setCategoryId] = useState(
     initialCategoryId != null ? String(initialCategoryId) : "",
   );
@@ -90,7 +103,12 @@ export function UpdateArtifactForm({
       ? artifact.arOverlayUrl
       : null
   );
-  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [audioFileVi, setAudioFileVi] = useState<File | null>(null);
+  const [audioFileEn, setAudioFileEn] = useState<File | null>(null);
+
+  const existingAudioVi = translationVi?.audioUrl ?? null;
+  const existingAudioEn = translationEn?.audioUrl ?? null;
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -111,7 +129,7 @@ export function UpdateArtifactForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    const validation = validateCreateArtifact({ name: title });
+    const validation = validateCreateArtifact({ name: titleVi.trim() || titleEn.trim() });
     if (!validation.valid) {
       setError(getFirstValidationError(validation));
       return;
@@ -126,6 +144,24 @@ export function UpdateArtifactForm({
     setIsSubmitting(true);
 
     try {
+      const translationsPayload = [];
+      if (titleVi.trim()) {
+        translationsPayload.push({
+          exhibitId,
+          languageCode: "vi",
+          title: titleVi.trim(),
+          description: descriptionVi.trim() || undefined,
+        });
+      }
+      if (titleEn.trim()) {
+        translationsPayload.push({
+          exhibitId,
+          languageCode: "en",
+          title: titleEn.trim(),
+          description: descriptionEn.trim() || undefined,
+        });
+      }
+
       await updateExhibit(exhibitId, {
         museumId,
         categoryId: categoryId ? Number(categoryId) : undefined,
@@ -138,18 +174,13 @@ export function UpdateArtifactForm({
           era: era.trim() || undefined,
           historicalEvent: historicalEvent.trim() || undefined,
         },
-        translations: [
-          {
-            exhibitId,
-            languageCode,
-            title: title.trim(),
-            description: description.trim() || undefined,
-          },
-        ],
+        translations: translationsPayload,
       });
 
-      if (imageFile) await uploadExhibitImage(exhibitId, imageFile, title.trim());
-      if (audioFile) await uploadExhibitAudio(exhibitId, languageCode, audioFile);
+      const displayTitle = titleVi.trim() || titleEn.trim() || artifact.name;
+      if (imageFile) await uploadExhibitImage(exhibitId, imageFile, displayTitle);
+      if (audioFileVi) await uploadExhibitAudio(exhibitId, "vi", audioFileVi);
+      if (audioFileEn) await uploadExhibitAudio(exhibitId, "en", audioFileEn);
       if (arFile) {
         const arType = arFile.type.startsWith("image/") ? "OverlayImage" : "Model3D";
         await uploadArAsset(exhibitId, arType, arFile);
@@ -234,34 +265,51 @@ export function UpdateArtifactForm({
                 }
               }}
             />
-            <UploadBox
+             <UploadBox
               label={
-                audioFile?.name ??
-                (artifact.audioUrl
-                  ? `✓ Âm thanh: ${fileNameFromUrl(artifact.audioUrl)}`
-                  : artifact.audio === "Active"
-                    ? "✓ Hướng dẫn âm thanh đang hoạt động (Nhấp để đổi)"
-                    : "Hướng dẫn âm thanh")
+                audioFileVi?.name ??
+                (existingAudioVi
+                  ? `✓ Audio VI: ${fileNameFromUrl(existingAudioVi)}`
+                  : "Audio Tiếng Việt")
               }
-              onClick={() => audioRef.current?.click()}
+              onClick={() => audioRefVi.current?.click()}
             />
             <input
-              ref={audioRef}
+              ref={audioRefVi}
               type="file"
               accept="audio/*"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) setAudioFile(file);
+                if (file) setAudioFileVi(file);
+              }}
+            />
+            <UploadBox
+              label={
+                audioFileEn?.name ??
+                (existingAudioEn
+                  ? `✓ Audio EN: ${fileNameFromUrl(existingAudioEn)}`
+                  : "Audio Tiếng Anh")
+              }
+              onClick={() => audioRefEn.current?.click()}
+            />
+            <input
+              ref={audioRefEn}
+              type="file"
+              accept="audio/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) setAudioFileEn(file);
               }}
             />
           </div>
 
           <div className="flex-1 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Tiêu đề *" value={title} onChange={setTitle} placeholder="Tiêu đề hiện vật" />
+              <Field label="Tiêu đề (Tiếng Việt) *" value={titleVi} onChange={setTitleVi} placeholder="Tiêu đề tiếng Việt" />
+              <Field label="Tiêu đề (English)" value={titleEn} onChange={setTitleEn} placeholder="English title" />
               <Field label="Mã hiện vật" value={exhibitCode} onChange={setExhibitCode} placeholder="CAT-001" />
-              <Field label="Ngôn ngữ" value={languageCode} onChange={setLanguageCode} placeholder="vi" />
               <SelectField
                 label="Danh mục"
                 value={categoryId}
@@ -303,17 +351,32 @@ export function UpdateArtifactForm({
                 placeholder="Không bắt buộc"
               />
             </div>
-            <div>
-              <label className="mb-1.5 block text-sm" style={{ color: T.muted }}>
-                Mô tả
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
-                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-sm" style={{ color: T.muted }}>
+                  Mô tả (Tiếng Việt)
+                </label>
+                <textarea
+                  value={descriptionVi}
+                  onChange={(e) => setDescriptionVi(e.target.value)}
+                  rows={4}
+                  className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
+                  style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm" style={{ color: T.muted }}>
+                  Mô tả (English)
+                </label>
+                <textarea
+                  value={descriptionEn}
+                  onChange={(e) => setDescriptionEn(e.target.value)}
+                  rows={4}
+                  className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
+                  style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                />
+              </div>
+            </div>
             </div>
             {tags.length > 0 && (
               <div>

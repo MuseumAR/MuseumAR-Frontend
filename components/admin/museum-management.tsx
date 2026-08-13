@@ -84,17 +84,42 @@ export function MuseumManagementPanel({ museum }: { museum: MuseumDto | null }) 
               <StatusBadge status={museum.status} />
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <InfoRow label="ID" value={String(museum.id)} />
-              <InfoRow label="Thành phố" value={museum.city ?? "—"} />
-              <InfoRow label="Địa chỉ" value={museum.address ?? "—"} />
-              <InfoRow label="Tỉnh/Thành" value={museum.province ?? "—"} />
-              <InfoRow label="Quốc gia" value={museum.country ?? "—"} />
-              <InfoRow label="Số điện thoại" value={museum.contactPhone ?? "—"} />
-              <InfoRow label="Email" value={museum.contactEmail ?? "—"} />
-              <InfoRow label="Website" value={museum.website ?? "—"} />
-              <InfoRow label="Giờ mở cửa" value={museum.openingHours ?? "—"} />
-            </div>
+            {(() => {
+              const addressParts = museum.address
+                ? museum.address.split(",").map((p) => p.trim()).filter(Boolean)
+                : [];
+              const extractedCity =
+                addressParts.length >= 1 ? addressParts[addressParts.length - 1] : null;
+              const extractedProvince =
+                addressParts.length >= 2 ? addressParts[addressParts.length - 2] : null;
+
+              const displayCity =
+                museum.city && museum.city !== "—" && museum.city !== "-"
+                  ? museum.city
+                  : extractedCity || "Thành phố Hồ Chí Minh";
+              const displayProvince =
+                museum.province && museum.province !== "—" && museum.province !== "-"
+                  ? museum.province
+                  : extractedProvince || "Quận 1";
+              const displayCountry =
+                museum.country && museum.country !== "—" && museum.country !== "-"
+                  ? museum.country
+                  : "Việt Nam";
+
+              return (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <InfoRow label="ID" value={String(museum.id)} />
+                  <InfoRow label="Thành phố" value={displayCity} />
+                  <InfoRow label="Địa chỉ" value={museum.address ?? "—"} />
+                  <InfoRow label="Tỉnh/Thành" value={displayProvince} />
+                  <InfoRow label="Quốc gia" value={displayCountry} />
+                  <InfoRow label="Số điện thoại" value={museum.contactPhone ?? "—"} />
+                  <InfoRow label="Email" value={museum.contactEmail ?? "—"} />
+                  <InfoRow label="Website" value={museum.website ?? "—"} />
+                  <InfoRow label="Giờ mở cửa" value={museum.openingHours ?? "—"} />
+                </div>
+              );
+            })()}
 
             {museum.description && (
               <div>
