@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Plus, Download, FileArchive, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
+import { getApiUrl } from "@/services/api-client";
 import { generatePackageEntry } from "@/services/content-manager/offline-package.service";
 import type { OfflinePackageDto } from "@/types/api";
 
@@ -21,9 +22,12 @@ function getPackageDownloadUrl(packageUrl?: string | null) {
   if (packageUrl.startsWith("http://") || packageUrl.startsWith("https://")) {
     return packageUrl;
   }
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:7225";
   const cleanPath = packageUrl.startsWith("/") ? packageUrl : `/${packageUrl}`;
-  return `${apiUrl}${cleanPath}`;
+  try {
+    return getApiUrl(cleanPath);
+  } catch {
+    return "#";
+  }
 }
 
 export function OfflinePackagesPanel({

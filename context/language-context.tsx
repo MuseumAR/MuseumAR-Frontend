@@ -60,6 +60,18 @@ const UI_DICTIONARY: Record<Language, Record<string, string>> = {
     "cta.title_part2": "thế giới cổ đại?",
     "cta.desc": "Hàng ngàn du khách đang trải nghiệm lịch sử và di sản văn hóa qua thực tế ảo tăng cường.",
     "cta.signin": "Đăng nhập",
+
+    "about.tagline": "Giới thiệu",
+    "about.title": "Về MuseumAR",
+    "about.desc": "MuseumAR là nền tảng tham quan bảo tàng lịch sử kết hợp hướng dẫn âm thanh và thực tế ảo tăng cường. Khách có thể mua vé trực tuyến, khám phá hiện vật qua mô hình 3D và nghe thuyết minh ngay trên điện thoại.",
+    "about.mission": "Chúng tôi giúp bảo tàng kể chuyện lịch sử sống động hơn — từ cổng vào, đến từng hiện vật, đến hành trình AR trong không gian trưng bày.",
+    "about.audio_title": "Hướng dẫn âm thanh",
+    "about.audio_desc": "Nghe thuyết minh tại từng hiện vật và khu trưng bày, chọn ngôn ngữ phù hợp và theo nhịp tham quan của riêng bạn.",
+    "about.ar_title": "Trải nghiệm AR",
+    "about.ar_desc": "Xem mô hình 3D, lớp phủ lịch sử và phục dựng không gian ngay trên điện thoại khi đứng trước hiện vật thật.",
+    "about.ticket_title": "Vé trực tuyến",
+    "about.ticket_desc": "Mua vé tham quan, nhận mã QR và check-in tại bảo tàng mà không phải xếp hàng mua vé giấy.",
+
     "footer.copyright": "© 2026 MuseumAR · Nền tảng Bảo tàng Thực tế ảo Tăng cường",
 
     "tickets.tagline": "Vé tham quan",
@@ -158,6 +170,18 @@ const UI_DICTIONARY: Record<Language, Record<string, string>> = {
     "cta.title_part2": "the ancient world?",
     "cta.desc": "Join thousands of visitors experiencing history and cultural heritage through immersive augmented reality.",
     "cta.signin": "Sign In",
+
+    "about.tagline": "About",
+    "about.title": "About MuseumAR",
+    "about.desc": "MuseumAR is a historical museum platform that combines audio guides with augmented reality. Visitors can buy tickets online, explore artifacts in 3D, and listen to commentary on their phone.",
+    "about.mission": "We help museums tell history more vividly — from the entrance, to each artifact, to the AR journey through the galleries.",
+    "about.audio_title": "Audio guide",
+    "about.audio_desc": "Listen to commentary at each artifact and gallery, choose your language, and follow the visit at your own pace.",
+    "about.ar_title": "AR experience",
+    "about.ar_desc": "See 3D models, historical overlays, and reconstructed spaces on your phone while standing in front of the real object.",
+    "about.ticket_title": "Online tickets",
+    "about.ticket_desc": "Buy admission tickets, receive a QR code, and check in at the museum without waiting in a ticket line.",
+
     "footer.copyright": "© 2026 MuseumAR · Augmented Reality Museum Platform",
 
     "tickets.tagline": "Tickets",
