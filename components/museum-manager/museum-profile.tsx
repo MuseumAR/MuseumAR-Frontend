@@ -12,7 +12,7 @@ export function MuseumProfileView({ profile }: { profile: MuseumProfile | null }
           style={{ background: T.surface, border: `1px solid ${T.border}` }}
         >
           <p className="text-sm" style={{ color: T.muted }}>
-            Museum profile is not available yet.
+            Museum profile is not available.
           </p>
         </div>
       </div>

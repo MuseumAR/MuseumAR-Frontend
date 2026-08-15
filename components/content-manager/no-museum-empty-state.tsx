@@ -14,8 +14,8 @@ export function ContentNoMuseumState() {
         No museum assigned
       </h2>
       <p className="mt-2 max-w-md text-sm" style={{ color: T.muted }}>
-        Content Manager works on artifacts for an existing museum. Ask a System Admin or Museum
-        Manager to register a museum first.
+        Content Manager works with artifacts for an existing museum. Ask a System Admin
+        or Museum Manager to register a museum first.
       </p>
     </div>
   );

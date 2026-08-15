@@ -302,12 +302,8 @@ export type MuseumMapDto = {
   id: number;
   museumId: number;
   mapImageUrl: string;
-  /**
-   * BE maps entity MapName → MapType on the DTO.
-   * Seeded maps often put the display name here (e.g. "Bản đồ Tầng trệt").
-   */
+  /** Stored separately on BE (e.g. "floor", "wing") */
   mapType: string;
-  /** Not on current BE MuseumMapDto — optional if payload expands */
   floorNumber?: number;
   mapName?: string | null;
 };
@@ -315,6 +311,32 @@ export type MuseumMapDto = {
 export type CreateMuseumMapDto = {
   museumId: number;
   mapType: string;
+  mapName?: string;
+  floorNumber?: number;
+};
+
+export type MapPoiDto = {
+  id: number;
+  mapId: number;
+  poiType: string;
+  locationX: number;
+  locationY: number;
+  description?: string | null;
+};
+
+export type CreateMapPoiDto = {
+  mapId: number;
+  poiType: string;
+  locationX: number;
+  locationY: number;
+  description?: string | null;
+};
+
+export type UpdateMapPoiDto = {
+  poiType?: string | null;
+  locationX?: number | null;
+  locationY?: number | null;
+  description?: string | null;
 };
 
 // ─── Tour route ───────────────────────────────────────────────────────────────
@@ -373,6 +395,7 @@ export type CreateTourRouteDto = {
 
 export type UpdateTourRouteDto = {
   name?: string | null;
+  description?: string | null;
   estimatedDurationMinutes?: number | null;
   ageGroupId?: number | null;
   exhibitionId?: number | null;
@@ -421,6 +444,16 @@ export type TicketTypeDto = {
 
 export type CreateTicketTypeDto = {
   museumId: number;
+  exhibitionId?: number | null;
+  name: string;
+  nameEn?: string | null;
+  price: number;
+  description?: string | null;
+  descriptionEn?: string | null;
+  isActive?: boolean;
+};
+
+export type UpdateTicketTypeDto = {
   exhibitionId?: number | null;
   name: string;
   nameEn?: string | null;
@@ -480,10 +513,7 @@ export type TicketDto = {
   status: string;
 };
 
-/**
- * Proposed BE contract — GET /api/ticketing/my-tickets/{id}
- * (not implemented on BE yet; FE uses mock detail for UX / handoff)
- */
+/** GET /api/ticketing/my-tickets/{id} */
 export type TicketDetailDto = {
   id: number;
   ticketCode: string;
@@ -750,6 +780,8 @@ export type CreateTagDto = {
 export type WaypointDto = {
   id: string;
   museumId: number;
+  /** Present after BE AddMapIdToWaypoint; may be 0/null for legacy rows */
+  mapId?: number | null;
   floorNumber: number;
   locationX: number;
   locationY: number;
@@ -816,7 +848,7 @@ export type NavigationInstructionDto = {
   action: string;
   distance: number;
   floorNumber: number;
-  waypointId: number;
+  waypointId: string;
 };
 
 export type NavigationRouteResponseDto = {

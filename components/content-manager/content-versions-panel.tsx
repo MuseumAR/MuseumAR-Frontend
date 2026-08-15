@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Info, Plus } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
+import { labelStatus } from "@/lib/status-labels";
 import {
   createVersionEntry,
 } from "@/services/content-manager/content-version.service";
@@ -26,7 +27,7 @@ export function ContentVersionsPanel({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!versionNumber.trim()) {
-      setError("Version number is required.");
+      setError("Please enter a version number.");
       return;
     }
     setError(null);
@@ -50,7 +51,7 @@ export function ContentVersionsPanel({
       setDescription("");
       setShowForm(false);
     } catch (err) {
-      setError(getDisplayError(err, "Unable to create content version."));
+      setError(getDisplayError(err, "Could not create content version."));
     } finally {
       setIsSubmitting(false);
     }
@@ -65,8 +66,8 @@ export function ContentVersionsPanel({
         <Info className="mt-0.5 h-5 w-5 shrink-0" style={{ color: T.primaryDark }} />
         <div className="space-y-1 text-sm" style={{ color: T.muted }}>
           <p style={{ color: T.text }}>
-            <strong>Content version</strong> marks a snapshot of museum content
-            (exhibits, media, AR assets, etc.).
+            <strong>Content Versions</strong> mark a snapshot of museum content
+            (artifacts, media, AR assets, etc.).
           </p>
           <p>
             Create a version, note the returned <strong>ID</strong>, then open{" "}
@@ -87,7 +88,7 @@ export function ContentVersionsPanel({
           <span className="font-semibold" style={{ color: T.text }}>
             {versions.length}
           </span>
-          {` version${versions.length === 1 ? "" : "s"} total`}
+          {` versions`}
         </p>
         <button
           type="button"
@@ -140,7 +141,7 @@ export function ContentVersionsPanel({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                placeholder="e.g. First release with Dong Son exhibits"
+                placeholder="e.g. First release with Dong Son artifacts"
                 className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
               />
@@ -170,7 +171,7 @@ export function ContentVersionsPanel({
       >
         {versions.length === 0 ? (
           <p className="px-8 py-16 text-center text-sm" style={{ color: T.muted }}>
-            No content versions found. Create one to get started.
+            No content versions yet. Create a version to get started.
           </p>
         ) : (
           <table className="w-full text-left text-sm">
@@ -205,7 +206,7 @@ export function ContentVersionsPanel({
                         color: T.primaryDark,
                       }}
                     >
-                      {item.status}
+                      {labelStatus(item.status)}
                     </span>
                   </td>
                   <td

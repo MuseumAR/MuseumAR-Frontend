@@ -46,7 +46,7 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
-      setError("Museum name is required.");
+      setError("Please enter the museum name.");
       return;
     }
 
@@ -80,7 +80,7 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
       router.push("/museum-manager/museum-profile");
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Unable to update museum."));
+      setError(getDisplayError(err, "Could not update museum."));
     } finally {
       setIsSubmitting(false);
     }
@@ -96,7 +96,7 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
         <span>←</span> Back to profile
       </Link>
       <h1 className="mb-8 text-3xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-        Update Museum
+        Update museum
       </h1>
 
       <form
@@ -112,11 +112,11 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
             style={{ borderColor: T.border, background: "rgba(200,155,69,0.08)", color: T.muted }}
           >
             {imagePreview ? (
-              <img src={imagePreview} alt="preview" className="h-full w-full object-cover" />
+              <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" />
             ) : (
               <>
                 <p className="text-sm">Choose museum image</p>
-                <p className="text-xs" style={{ color: T.mutedLight }}>below 20mb</p>
+                <p className="text-xs" style={{ color: T.mutedLight }}>under 20MB</p>
               </>
             )}
           </button>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { labelStatus } from "@/lib/status-labels";
 import type { TicketTypeDto, TicketPromotionDto } from "@/types/api";
 import { Tag, Eye, X } from "lucide-react";
 import {
@@ -65,7 +66,7 @@ export function TicketTypeManagementPanel({
           <span className="font-semibold" style={{ color: T.text }}>
             {ticketTypes.length}
           </span>
-          {` ticket type${ticketTypes.length === 1 ? "" : "s"}`}
+          {` ticket types`}
           {museumName ? (
             <span style={{ color: T.mutedLight }}>{` · ${museumName}`}</span>
           ) : null}
@@ -144,7 +145,7 @@ export function TicketTypeManagementPanel({
                             color: ticket.status === "Approved" ? T.success : T.primaryDark,
                           }}
                         >
-                          {ticket.status}
+                          {labelStatus(ticket.status)}
                         </span>
                       </td>
                       <td className="px-5 py-4">
@@ -185,11 +186,11 @@ export function TicketTypeManagementPanel({
                 <div className="mx-5 mb-5 mt-3 rounded-2xl p-5 space-y-4" style={{ background: "rgba(220,38,38,0.03)", border: "1px solid rgba(220,38,38,0.15)" }}>
                   <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: T.text }}>
                     <Tag className="h-4 w-4" style={{ color: "#B91C1C" }} />
-                    Promotions for &quot;{ticket.name}&quot; (View Only)
+                    Promotions for &quot;{ticket.name}&quot; (View only)
                   </h3>
 
                   {loadingPromos ? (
-                    <p className="text-xs animate-pulse" style={{ color: T.muted }}>Loading promotions...</p>
+                    <p className="text-xs animate-pulse" style={{ color: T.muted }}>Loading promotions…</p>
                   ) : promotions.length === 0 ? (
                     <p className="text-xs" style={{ color: T.muted }}>No promotions yet.</p>
                   ) : (
@@ -234,7 +235,7 @@ export function TicketTypeManagementPanel({
                                 type="button"
                                 onClick={() => handleViewDetail(promo.id)}
                                 className="rounded-lg p-1.5 transition-opacity hover:opacity-70 text-indigo-600 hover:bg-indigo-50"
-                                title="View Details"
+                                title="View details"
                                 disabled={loadingDetailId === promo.id}
                               >
                                 {loadingDetailId === promo.id ? (
@@ -269,7 +270,7 @@ export function TicketTypeManagementPanel({
             <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: T.border }}>
               <h3 className="text-lg font-bold flex items-center gap-2" style={{ fontFamily: cinzel, color: T.text }}>
                 <Tag className="h-5 w-5" style={{ color: "#B91C1C" }} />
-                Promotion Details (Admin)
+                Promotion details (Admin)
               </h3>
               <button
                 type="button"
@@ -289,14 +290,14 @@ export function TicketTypeManagementPanel({
 
               {viewingPromoDetail.nameEn && (
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>English Name</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>English name</span>
                   <span className="text-base" style={{ color: T.text }}>{viewingPromoDetail.nameEn}</span>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Discount Value</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Discount value</span>
                   <span className="text-base font-bold text-red-600">
                     {viewingPromoDetail.discountType === "Percentage"
                       ? `${viewingPromoDetail.discountValue}%`
@@ -306,20 +307,20 @@ export function TicketTypeManagementPanel({
                 <div>
                   <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Type</span>
                   <span className="text-base" style={{ color: T.text }}>
-                    {viewingPromoDetail.discountType === "Percentage" ? "Percentage Off (%)" : "Fixed Amount Off"}
+                    {viewingPromoDetail.discountType}
                   </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Start Date</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Start date</span>
                   <span className="text-base" style={{ color: T.text }}>
                     {new Date(viewingPromoDetail.startDate).toLocaleDateString("vi-VN")}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>End Date</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>End date</span>
                   <span className="text-base" style={{ color: T.text }}>
                     {new Date(viewingPromoDetail.endDate).toLocaleDateString("vi-VN")}
                   </span>
@@ -329,13 +330,13 @@ export function TicketTypeManagementPanel({
               <div>
                 <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Description</span>
                 <p className="mt-0.5 leading-relaxed" style={{ color: T.text }}>
-                  {viewingPromoDetail.description || <span className="italic" style={{ color: T.mutedLight }}>No description</span>}
+                  {viewingPromoDetail.description || <span className="italic" style={{ color: T.mutedLight }}>No description yet</span>}
                 </p>
               </div>
 
               {viewingPromoDetail.descriptionEn && (
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>English Description</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>English description</span>
                   <p className="mt-0.5 leading-relaxed" style={{ color: T.text }}>{viewingPromoDetail.descriptionEn}</p>
                 </div>
               )}
@@ -350,7 +351,7 @@ export function TicketTypeManagementPanel({
                       color: viewingPromoDetail.isActive ? T.success : "#8B3A3A",
                     }}
                   >
-                    {viewingPromoDetail.isActive ? "🟢 Active" : "⏸ Paused / Inactive"}
+                    {viewingPromoDetail.isActive ? "🟢 Active" : "⏸ Paused"}
                   </span>
                 </div>
                 <button

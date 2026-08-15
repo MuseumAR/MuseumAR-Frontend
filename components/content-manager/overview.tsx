@@ -10,8 +10,8 @@ import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 const QUICK_LINKS = [
   { href: "/content-manager/artifact", label: "Artifacts" },
   { href: "/content-manager/exhibition", label: "Exhibitions" },
-  { href: "/content-manager/content-versions", label: "Versions" },
-  { href: "/content-manager/offline-packages", label: "Packages" },
+  { href: "/content-manager/content-versions", label: "Content Versions" },
+  { href: "/content-manager/offline-packages", label: "Offline Packages" },
   { href: "/content-manager/maps-routes", label: "Maps & Routes" },
 ];
 
@@ -29,13 +29,13 @@ export async function ContentManagerOverview() {
             Content Manager
           </p>
           <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-            Content Dashboard
+            Content dashboard
           </h2>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
-          <StatCard label="Total Artifacts" value={stats.total} icon="layers" watermark="scroll" />
+          <StatCard label="Total artifacts" value={stats.total} icon="layers" watermark="scroll" />
           <StatCard label="Published" value={stats.published} icon="box" watermark="column" />
-          <StatCard label="Draft" value={stats.draft} icon="layers" watermark="vase" />
+          <StatCard label="Drafts" value={stats.draft} icon="layers" watermark="vase" />
           <StatCard label="With AR" value={stats.withAr} icon="box" watermark="map" />
           <StatCard label="With QR" value={stats.withQr} icon="qrCode" watermark="scroll" />
         </div>

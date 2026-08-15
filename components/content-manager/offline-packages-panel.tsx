@@ -5,6 +5,8 @@ import { useState } from "react";
 import { Plus, Download, FileArchive, CheckCircle2, Clock, AlertTriangle } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
+import { labelStatus } from "@/lib/status-labels";
+import { getApiUrl } from "@/services/api-client";
 import { generatePackageEntry } from "@/services/content-manager/offline-package.service";
 import type { OfflinePackageDto } from "@/types/api";
 
@@ -21,9 +23,12 @@ function getPackageDownloadUrl(packageUrl?: string | null) {
   if (packageUrl.startsWith("http://") || packageUrl.startsWith("https://")) {
     return packageUrl;
   }
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:7225";
   const cleanPath = packageUrl.startsWith("/") ? packageUrl : `/${packageUrl}`;
-  return `${apiUrl}${cleanPath}`;
+  try {
+    return getApiUrl(cleanPath);
+  } catch {
+    return "#";
+  }
 }
 
 export function OfflinePackagesPanel({
@@ -41,7 +46,7 @@ export function OfflinePackagesPanel({
     e.preventDefault();
     const vid = Number(versionId);
     if (!versionId.trim() || Number.isNaN(vid)) {
-      setError("Vui lòng nhập ID phiên bản nội dung hợp lệ.");
+      setError("Please enter a valid content version ID.");
       return;
     }
     setError(null);
@@ -52,7 +57,7 @@ export function OfflinePackagesPanel({
       setVersionId("");
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Không thể tạo gói Offline."));
+      setError(getDisplayError(err, "Could not create offline package."));
     } finally {
       setIsSubmitting(false);
     }
@@ -66,7 +71,7 @@ export function OfflinePackagesPanel({
             Offline Packages ({packages.length})
           </h2>
           <p className="text-xs mt-0.5" style={{ color: T.mutedLight }}>
-            Quản lý và tải các gói đóng gói dữ liệu nén (.zip) phục vụ truy cập ngoại tuyến trên Mobile
+            Manage and download compressed data packages (.zip) for offline access on mobile
           </p>
         </div>
 
@@ -80,20 +85,20 @@ export function OfflinePackagesPanel({
           }}
         >
           <Plus className="h-4 w-4" />
-          + Tạo gói Offline mới
+          + Create offline package
         </button>
       </div>
 
       {showForm && (
         <form onSubmit={handleSubmit} className="max-w-md rounded-3xl p-6 shadow-sm" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
-          <h3 className="text-sm font-bold mb-3" style={{ color: T.primaryDark }}>Tạo gói Offline ZIP mới</h3>
+          <h3 className="text-sm font-bold mb-3" style={{ color: T.primaryDark }}>Create new offline ZIP package</h3>
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold" style={{ color: T.muted }}>ID Phiên bản nội dung (Content Version ID) *</label>
+            <label className="block text-xs font-semibold" style={{ color: T.muted }}>Content version ID *</label>
             <input
               type="number"
               min="1"
               required
-              placeholder="Ví dụ: 1, 2, 3..."
+              placeholder="e.g. 1, 2, 3..."
               value={versionId}
               onChange={(e) => setVersionId(e.target.value)}
               className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
@@ -108,10 +113,10 @@ export function OfflinePackagesPanel({
               className="rounded-xl px-4 py-2 text-xs font-semibold"
               style={{ border: `1px solid ${T.border}`, color: T.text }}
             >
-              Hủy
+              Cancel
             </button>
             <button type="submit" disabled={isSubmitting} className="rounded-xl px-5 py-2 text-xs font-semibold disabled:opacity-50" style={{ background: T.primary, color: T.surface }}>
-              {isSubmitting ? "Đang đóng gói ZIP…" : "Bắt đầu tạo"}
+              {isSubmitting ? "Packaging ZIP…" : "Start creating"}
             </button>
           </div>
         </form>
@@ -120,14 +125,14 @@ export function OfflinePackagesPanel({
       <div className="overflow-hidden rounded-3xl shadow-sm" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
         {packages.length === 0 ? (
           <div className="px-8 py-16 text-center text-sm font-medium" style={{ color: T.muted }}>
-            Chưa có gói Offline nào. Bấm nút phía trên để tạo gói dữ liệu nén ZIP mới!
+            No offline packages yet. Use the button above to create a new ZIP data package.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[700px] text-left text-sm">
               <thead>
                 <tr style={{ borderBottom: `1px solid ${T.border}`, background: "rgba(245,230,200,0.35)" }}>
-                  {["Mã Gói", "Version", "Trạng thái", "Dung lượng", "Ảnh / Audio / 3D", "Ngày tạo", "Hành động"].map((h) => (
+                  {["Package ID", "Version", "Status", "Size", "Images / Audio / 3D", "Created", "Actions"].map((h) => (
                     <th key={h} className="px-5 py-4 font-semibold text-xs uppercase tracking-wider" style={{ color: T.mutedLight }}>
                       {h}
                     </th>
@@ -170,7 +175,7 @@ export function OfflinePackagesPanel({
                           ) : (
                             <AlertTriangle className="h-3.5 w-3.5" />
                           )}
-                          {pkg.status || "—"}
+                          {labelStatus(pkg.status) || "—"}
                         </span>
                       </td>
                       <td className="px-5 py-4 font-mono text-xs font-medium" style={{ color: T.text }}>
@@ -178,7 +183,7 @@ export function OfflinePackagesPanel({
                       </td>
                       <td className="px-5 py-4 text-xs" style={{ color: T.muted }}>
                         <div className="flex flex-col gap-0.5">
-                          <span>📷 Ảnh: {pkg.imageCount ?? 0}</span>
+                          <span>📷 Images: {pkg.imageCount ?? 0}</span>
                           <span>🔊 Audio: {pkg.audioCount ?? 0}</span>
                           <span>🧊 3D AR: {pkg.arassetCount ?? 0}</span>
                         </div>
@@ -200,11 +205,11 @@ export function OfflinePackagesPanel({
                             }}
                           >
                             <Download className="h-3.5 w-3.5" />
-                            Tải về file ZIP
+                            Download ZIP
                           </a>
                         ) : (
                           <span className="text-xs italic" style={{ color: T.mutedLight }}>
-                            {pkg.status === "Building" ? "Đang xử lý…" : "Không có sẵn"}
+                            {pkg.status === "Building" ? "Processing…" : "Not available"}
                           </span>
                         )}
                       </td>

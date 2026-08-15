@@ -4,7 +4,9 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { labelStatus } from "@/lib/status-labels";
 import { getDisplayError } from "@/lib/validation";
+import { SuccessBanner, useSuccessToast } from "@/components/shared/success-banner";
 import {
   categoryDisplayName,
   createCategoryEntry,
@@ -65,7 +67,7 @@ export function TaxonomyManagementPanel({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <p className="text-sm" style={{ fontFamily: cinzel, color: T.muted }}>
           <span className="font-semibold" style={{ color: T.text }}>{count}</span>
-          {` ${tab.replace("-", " ")}`}
+          {` ${TABS.find((item) => item.id === tab)?.label.toLowerCase() ?? ""}`}
         </p>
         <div className="flex flex-wrap gap-2">
           {TABS.map((item) => {
@@ -119,6 +121,7 @@ function CategoriesTab({
   const [parentId, setParentId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const { success, showSuccess } = useSuccessToast();
 
   function openCreate() {
     setEditing(null);
@@ -181,6 +184,7 @@ function CategoriesTab({
       if (editing) await updateCategoryEntry(editing.id, payload);
       else await createCategoryEntry(payload);
       setShowForm(false);
+      showSuccess(editing ? "Category updated." : "Category created.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to save category."));
@@ -193,6 +197,7 @@ function CategoriesTab({
     if (!confirm("Delete this category?")) return;
     try {
       await deleteCategoryEntry(id);
+      showSuccess("Category deleted.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to delete category."));
@@ -206,13 +211,14 @@ function CategoriesTab({
       onToggle={() => setShowForm((v) => !v)}
       createLabel="Create category"
       error={error}
+      success={success}
     >
       {showForm && (
         <FormCard title={editing ? "Edit category" : "New category"}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Name (VI) *">
-                <Input value={nameVi} onChange={setNameVi} placeholder="Hiện vật khảo cổ" />
+                <Input value={nameVi} onChange={setNameVi} placeholder="Archaeological artifacts" />
               </Field>
               <Field label="Name (EN)">
                 <Input value={nameEn} onChange={setNameEn} placeholder="Archaeology" />
@@ -225,8 +231,8 @@ function CategoriesTab({
                   value={status}
                   onChange={setStatus}
                   options={[
-                    { value: "Active", label: "Active" },
-                    { value: "Inactive", label: "Inactive" },
+                    { value: "Active", label: labelStatus("Active") },
+                    { value: "Inactive", label: labelStatus("Inactive") },
                   ]}
                 />
               </Field>
@@ -253,11 +259,11 @@ function CategoriesTab({
 
       <DataTable
         empty="No categories yet."
-        headers={["ID", "Name", "Status", "Sort", ""]}
+        headers={["ID", "Name", "Status", "Sort order", ""]}
         rows={categories.map((item) => [
           String(item.id),
           categoryDisplayName(item),
-          item.status,
+          labelStatus(item.status),
           String(item.sortOrder),
           <RowActions
             key={item.id}
@@ -280,69 +286,46 @@ function ThemesTab({
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<ThemeDto | null>(null);
-  const [nameVi, setNameVi] = useState("");
-  const [nameEn, setNameEn] = useState("");
-  const [descriptionVi, setDescriptionVi] = useState("");
-  const [descriptionEn, setDescriptionEn] = useState("");
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const { success, showSuccess } = useSuccessToast();
 
   function openCreate() {
     setEditing(null);
-    setNameVi("");
-    setNameEn("");
-    setDescriptionVi("");
-    setDescriptionEn("");
+    setName("");
+    setDescription("");
     setError(null);
     setShowForm(true);
   }
 
   function openEdit(item: ThemeDto) {
-    const vi = item.translations?.find((t) => t.languageCode === "vi");
-    const en = item.translations?.find((t) => t.languageCode === "en");
     setEditing(item);
-    setNameVi(vi?.themeName ?? item.themeName);
-    setNameEn(en?.themeName ?? "");
-    setDescriptionVi(vi?.description ?? item.description ?? "");
-    setDescriptionEn(en?.description ?? "");
+    setName(item.themeName);
+    setDescription(item.description ?? "");
     setError(null);
     setShowForm(true);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!nameVi.trim()) {
-      setError("Vietnamese theme name is required.");
+    if (!name.trim()) {
+      setError("Theme name is required.");
       return;
     }
     setBusy(true);
     setError(null);
     try {
-      const translations = [
-        {
-          themeId: editing?.id ?? 0,
-          languageCode: "vi",
-          themeName: nameVi.trim(),
-          description: descriptionVi.trim() || undefined,
-        },
-      ];
-      if (nameEn.trim()) {
-        translations.push({
-          themeId: editing?.id ?? 0,
-          languageCode: "en",
-          themeName: nameEn.trim(),
-          description: descriptionEn.trim() || undefined,
-        });
-      }
       const payload = {
         museumId: museumId ?? editing?.museumId ?? undefined,
-        themeName: nameVi.trim(),
-        description: descriptionVi.trim() || undefined,
-        translations,
+        themeName: name.trim(),
+        description: description.trim() || undefined,
       };
       if (editing) await updateThemeEntry(editing.id, payload);
       else await createThemeEntry(payload);
       setShowForm(false);
+      showSuccess(editing ? "Theme updated." : "Theme created.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to save theme."));
@@ -355,6 +338,7 @@ function ThemesTab({
     if (!confirm("Delete this theme?")) return;
     try {
       await deleteThemeEntry(id);
+      showSuccess("Theme deleted.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to delete theme."));
@@ -368,22 +352,17 @@ function ThemesTab({
       onToggle={() => setShowForm((v) => !v)}
       createLabel="Create theme"
       error={error}
+      success={success}
     >
       {showForm && (
         <FormCard title={editing ? "Edit theme" : "New theme"}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Name (VI) *">
-                <Input value={nameVi} onChange={setNameVi} placeholder="Kháng chiến" />
+              <Field label="Theme name *">
+                <Input value={name} onChange={setName} placeholder="Resistance" />
               </Field>
-              <Field label="Name (EN)">
-                <Input value={nameEn} onChange={setNameEn} placeholder="Resistance war" />
-              </Field>
-              <Field label="Description (VI)">
-                <Input value={descriptionVi} onChange={setDescriptionVi} placeholder="Optional" />
-              </Field>
-              <Field label="Description (EN)">
-                <Input value={descriptionEn} onChange={setDescriptionEn} placeholder="Optional" />
+              <Field label="Description">
+                <Input value={description} onChange={setDescription} placeholder="Optional" />
               </Field>
             </div>
             <FormActions busy={busy} onCancel={() => setShowForm(false)} />
@@ -417,6 +396,7 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
   const [sortOrder, setSortOrder] = useState("0");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const { success, showSuccess } = useSuccessToast();
 
   function openCreate() {
     setEditing(null);
@@ -447,6 +427,7 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
       if (editing) await updateTagGroupEntry(editing.id, payload);
       else await createTagGroupEntry(payload);
       setShowForm(false);
+      showSuccess(editing ? "Tag group updated." : "Tag group created.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to save tag group."));
@@ -459,6 +440,7 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
     if (!confirm("Delete this tag group?")) return;
     try {
       await deleteTagGroupEntry(id);
+      showSuccess("Tag group deleted.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to delete tag group."));
@@ -472,13 +454,14 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
       onToggle={() => setShowForm((v) => !v)}
       createLabel="Create tag group"
       error={error}
+      success={success}
     >
       {showForm && (
         <FormCard title={editing ? "Edit tag group" : "New tag group"}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Group name *">
-                <Input value={name} onChange={setName} placeholder="Era" />
+                <Input value={name} onChange={setName} placeholder="Period" />
               </Field>
               <Field label="Sort order">
                 <Input value={sortOrder} onChange={setSortOrder} type="number" />
@@ -491,7 +474,7 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
 
       <DataTable
         empty="No tag groups yet."
-        headers={["ID", "Name", "Sort", ""]}
+        headers={["ID", "Name", "Sort order", ""]}
         rows={tagGroups.map((item) => [
           String(item.id),
           item.groupName,
@@ -522,19 +505,18 @@ function TagsTab({
 
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<TagDto | null>(null);
-  const [nameVi, setNameVi] = useState("");
-  const [nameEn, setNameEn] = useState("");
+  const [name, setName] = useState("");
   const [tagGroupId, setTagGroupId] = useState(
     tagGroups[0] ? String(tagGroups[0].id) : "",
   );
   const [sortOrder, setSortOrder] = useState("0");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const { success, showSuccess } = useSuccessToast();
 
   function openCreate() {
     setEditing(null);
-    setNameVi("");
-    setNameEn("");
+    setName("");
     setTagGroupId(tagGroups[0] ? String(tagGroups[0].id) : "");
     setSortOrder("0");
     setError(null);
@@ -542,11 +524,8 @@ function TagsTab({
   }
 
   function openEdit(item: TagDto) {
-    const vi = item.translations?.find((t) => t.languageCode === "vi");
-    const en = item.translations?.find((t) => t.languageCode === "en");
     setEditing(item);
-    setNameVi(vi?.tagName ?? item.tagName);
-    setNameEn(en?.tagName ?? "");
+    setName(item.tagName);
     setTagGroupId(String(item.tagGroupId));
     setSortOrder(String(item.sortOrder ?? 0));
     setError(null);
@@ -555,36 +534,22 @@ function TagsTab({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!nameVi.trim() || !tagGroupId) {
-      setError("Vietnamese tag name and group are required.");
+    if (!name.trim() || !tagGroupId) {
+      setError("Tag name and group are required.");
       return;
     }
     setBusy(true);
     setError(null);
     try {
-      const translations = [
-        {
-          tagId: editing?.id ?? 0,
-          languageCode: "vi",
-          tagName: nameVi.trim(),
-        },
-      ];
-      if (nameEn.trim()) {
-        translations.push({
-          tagId: editing?.id ?? 0,
-          languageCode: "en",
-          tagName: nameEn.trim(),
-        });
-      }
       const payload = {
         tagGroupId: Number(tagGroupId),
-        tagName: nameVi.trim(),
+        tagName: name.trim(),
         sortOrder: Number(sortOrder) || 0,
-        translations,
       };
       if (editing) await updateTagEntry(editing.id, payload);
       else await createTagEntry(payload);
       setShowForm(false);
+      showSuccess(editing ? "Tag updated." : "Tag created.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to save tag."));
@@ -597,6 +562,7 @@ function TagsTab({
     if (!confirm("Delete this tag?")) return;
     try {
       await deleteTagEntry(id);
+      showSuccess("Tag deleted.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to delete tag."));
@@ -610,22 +576,20 @@ function TagsTab({
       onToggle={() => setShowForm((v) => !v)}
       createLabel="Create tag"
       error={error}
+      success={success}
       disableCreate={tagGroups.length === 0}
     >
       {tagGroups.length === 0 && (
         <p className="text-sm" style={{ color: T.muted }}>
-          Create a tag group first before adding tags.
+          Create a tag group before adding tags.
         </p>
       )}
       {showForm && (
         <FormCard title={editing ? "Edit tag" : "New tag"}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Name (VI) *">
-                <Input value={nameVi} onChange={setNameVi} placeholder="Nhà Nguyễn" />
-              </Field>
-              <Field label="Name (EN)">
-                <Input value={nameEn} onChange={setNameEn} placeholder="Nguyễn dynasty" />
+              <Field label="Tag name *">
+                <Input value={name} onChange={setName} placeholder="Nguyen dynasty" />
               </Field>
               <Field label="Tag group *">
                 <Select
@@ -648,7 +612,7 @@ function TagsTab({
 
       <DataTable
         empty="No tags yet."
-        headers={["ID", "Name", "Group", "Sort", ""]}
+        headers={["ID", "Name", "Group", "Sort order", ""]}
         rows={tags.map((item) => [
           String(item.id),
           item.tagName,
@@ -671,6 +635,7 @@ function Section({
   onToggle,
   createLabel,
   error,
+  success,
   disableCreate,
   children,
 }: {
@@ -680,6 +645,7 @@ function Section({
   onToggle: () => void;
   createLabel: string;
   error: string | null;
+  success?: string | null;
   disableCreate?: boolean;
   children: React.ReactNode;
 }) {
@@ -717,6 +683,7 @@ function Section({
         )}
       </div>
 
+      <SuccessBanner message={success ?? null} />
       {error && (
         <p
           className="rounded-xl px-4 py-3 text-sm"

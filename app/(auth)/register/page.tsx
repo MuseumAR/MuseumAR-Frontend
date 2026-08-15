@@ -51,9 +51,9 @@ const EXHIBITS = [
     x: "5%",
     y: "38%",
     catalog: "CAT · №0247",
-    name: "Egyptian Sarcophagus",
-    period: "3000 BC · Cairo",
-    status: "AR Model Available",
+    name: "Quan tài Ai Cập cổ đại",
+    period: "3000 TCN · Cairo",
+    status: "Có mô hình AR",
     delay: 0.9,
   },
   {
@@ -61,9 +61,9 @@ const EXHIBITS = [
     x: "60%",
     y: "20%",
     catalog: "CAT · №0391",
-    name: "Ionic Capital",
-    period: "480 BC · Athens",
-    status: "3D Scan Complete",
+    name: "Đầu cột Ionic",
+    period: "480 TCN · Athens",
+    status: "Quét 3D hoàn tất",
     delay: 1.1,
   },
   {
@@ -71,17 +71,17 @@ const EXHIBITS = [
     x: "64%",
     y: "65%",
     catalog: "CAT · №0158",
-    name: "Roman Mosaic",
-    period: "200 AD · Rome",
-    status: "Reconstructed",
+    name: "Tranh khảm La Mã",
+    period: "200 SCN · Rome",
+    status: "Đã phục dựng",
     delay: 1.3,
   },
 ];
 
 const BENEFITS = [
-  "Explore 500+ Historical Artifacts",
-  "Access Immersive AR Experiences",
-  "Visit 50+ Partner Museums Worldwide",
+  "Khám phá hơn 500 hiện vật lịch sử",
+  "Trải nghiệm AR sống động",
+  "Tham quan hơn 50 bảo tàng đối tác",
 ];
 
 // ── Controlled input ──────────────────────────────────────────────────────────
@@ -169,9 +169,9 @@ export default function RegisterPage() {
         email: email.trim(),
         password,
       });
-      router.push("/login");
+      router.push(`/verify-email?email=${encodeURIComponent(email.trim())}`);
     } catch (err) {
-      setError(getDisplayError(err, "Registration failed. Please try again."));
+      setError(getDisplayError(err, "Đăng ký thất bại. Vui lòng thử lại."));
     } finally {
       setIsSubmitting(false);
     }
@@ -200,7 +200,7 @@ export default function RegisterPage() {
         }}
       >
         <ArrowLeft className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" />
-        Back to Home
+        Về trang chủ
       </Link>
 
       {/* ══ LEFT HERO 60% ══════════════════════════════════════════════════ */}
@@ -305,7 +305,7 @@ export default function RegisterPage() {
           >
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: C.primary }} />
             <span className="text-[11px] font-medium tracking-[0.2em]" style={{ color: "rgba(245,230,200,0.85)" }}>
-              AUGMENTED REALITY · MUSEUM PLATFORM
+              THỰC TẾ ẢO TĂNG CƯỜNG · NỀN TẢNG BẢO TÀNG
             </span>
           </motion.div>
 
@@ -319,7 +319,7 @@ export default function RegisterPage() {
               <div className="mb-5 flex items-center gap-3">
                 <div className="h-px w-8" style={{ background: "rgba(200,155,60,0.55)" }} />
                 <span className="text-[10px] tracking-[0.3em] uppercase" style={{ color: "rgba(200,155,60,0.70)" }}>
-                  Est. 2026
+                  Thành lập 2026
                 </span>
               </div>
 
@@ -327,9 +327,9 @@ export default function RegisterPage() {
                 className="text-5xl font-bold leading-[1.08] tracking-wide text-white xl:text-6xl"
                 style={{ fontFamily: CINZEL }}
               >
-                Step Into
+                Bước vào
                 <br />
-                <span style={{ color: C.primary }}>History</span>
+                <span style={{ color: C.primary }}>Lịch sử</span>
               </h1>
             </motion.div>
 
@@ -353,8 +353,7 @@ export default function RegisterPage() {
               className="max-w-[380px] text-sm leading-relaxed"
               style={{ color: "rgba(245,230,200,0.68)" }}
             >
-              Explore historical artifacts and cultural heritage through immersive
-              augmented reality experiences.
+              Khám phá hiện vật lịch sử và di sản văn hóa qua trải nghiệm thực tế ảo tăng cường.
             </motion.p>
 
             <motion.div
@@ -363,7 +362,7 @@ export default function RegisterPage() {
               transition={{ delay: 0.62 }}
               className="mt-7 flex flex-wrap gap-2"
             >
-              {["500+ Artifacts", "50+ Museums", "Live AR Tours"].map((pill) => (
+              {["500+ hiện vật", "50+ bảo tàng", "Tour AR trực tiếp"].map((pill) => (
                 <div
                   key={pill}
                   className="rounded-full px-3 py-1.5 text-[11px]"
@@ -429,7 +428,7 @@ export default function RegisterPage() {
                   MUSEUM<span style={{ color: C.primary }}>AR</span>
                 </p>
                 <p className="text-[9px] tracking-widest uppercase" style={{ color: C.mutedLight }}>
-                  Cultural Heritage Platform
+                  Nền tảng di sản văn hóa
                 </p>
               </div>
             </div>
@@ -442,10 +441,10 @@ export default function RegisterPage() {
                 className="text-xl font-bold tracking-wide leading-snug"
                 style={{ fontFamily: CINZEL, color: C.text }}
               >
-                Create Your Account
+                Tạo tài khoản
               </h2>
               <p className="mt-1.5 text-sm" style={{ color: C.muted }}>
-                Begin your journey through history and augmented reality.
+                Bắt đầu hành trình khám phá lịch sử và thực tế ảo tăng cường.
               </p>
             </div>
 
@@ -456,7 +455,7 @@ export default function RegisterPage() {
                 name="fullName"
                 value={fullName}
                 onChange={setFullName}
-                placeholder="Full Name"
+                placeholder="Họ và tên"
                 icon={User}
                 disabled={isSubmitting}
               />
@@ -465,7 +464,7 @@ export default function RegisterPage() {
                 name="email"
                 value={email}
                 onChange={setEmail}
-                placeholder="Email address"
+                placeholder="Địa chỉ email"
                 icon={Mail}
                 disabled={isSubmitting}
               />
@@ -474,7 +473,7 @@ export default function RegisterPage() {
                 name="password"
                 value={password}
                 onChange={setPassword}
-                placeholder="Password"
+                placeholder="Mật khẩu"
                 icon={Lock}
                 disabled={isSubmitting}
                 suffix={
@@ -495,7 +494,7 @@ export default function RegisterPage() {
                 name="confirmPassword"
                 value={confirmPassword}
                 onChange={setConfirmPassword}
-                placeholder="Confirm Password"
+                placeholder="Xác nhận mật khẩu"
                 icon={Lock}
                 disabled={isSubmitting}
                 suffix={
@@ -531,7 +530,7 @@ export default function RegisterPage() {
                     letterSpacing: "0.10em",
                   }}
                 >
-                  {isSubmitting ? "Creating..." : "Create Account"}
+                  {isSubmitting ? "Đang tạo..." : "Tạo tài khoản"}
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </motion.div>
@@ -569,9 +568,9 @@ export default function RegisterPage() {
 
             {/* Footer link */}
             <p className="mt-5 text-center text-xs" style={{ color: C.muted }}>
-              Already have an account?{" "}
+              Đã có tài khoản?{" "}
               <Link href="/login" className="font-medium transition-colors hover:opacity-70" style={{ color: C.primary }}>
-                Sign In
+                Đăng nhập
               </Link>
             </p>
           </div>

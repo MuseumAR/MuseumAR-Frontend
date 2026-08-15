@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { labelStatus } from "@/lib/status-labels";
 import {
   getDisplayError,
   getFirstValidationError,
@@ -34,12 +35,11 @@ export function UpdateArtifactForm({
   initialCategoryId,
   initialAgeGroupId,
   initialEra,
-  initialEraEn,
   initialHistoricalEvent,
-  initialHistoricalEventEn,
   initialTagIds,
   initialMapId,
   initialRoomId,
+  initialTranslations = [],
 }: {
   artifact: Artifact;
   museumId: number;
@@ -51,24 +51,34 @@ export function UpdateArtifactForm({
   initialCategoryId?: number | null;
   initialAgeGroupId?: number | null;
   initialEra?: string;
-  initialEraEn?: string;
   initialHistoricalEvent?: string;
-  initialHistoricalEventEn?: string;
   initialTagIds?: number[];
   initialMapId?: number | null;
   initialRoomId?: number | null;
+  initialTranslations?: Array<{
+    languageCode: string;
+    title: string;
+    description?: string | null;
+    audioUrl?: string | null;
+  }>;
 }) {
   const router = useRouter();
   const imageRef = useRef<HTMLInputElement>(null);
   const arRef = useRef<HTMLInputElement>(null);
-  const audioRef = useRef<HTMLInputElement>(null);
+  const audioRefVi = useRef<HTMLInputElement>(null);
+  const audioRefEn = useRef<HTMLInputElement>(null);
 
-  const [title, setTitle] = useState(artifact.name);
+  const translationVi = initialTranslations?.find((t) => t.languageCode === "vi");
+  const translationEn = initialTranslations?.find((t) => t.languageCode === "en");
+
+  const [titleVi, setTitleVi] = useState(translationVi?.title ?? artifact.name);
+  const [titleEn, setTitleEn] = useState(translationEn?.title ?? "");
+  const [descriptionVi, setDescriptionVi] = useState(translationVi?.description ?? artifact.description);
+  const [descriptionEn, setDescriptionEn] = useState(translationEn?.description ?? "");
+
   const [exhibitCode, setExhibitCode] = useState(
     /^EX-\d+$/i.test(artifact.id) ? "" : artifact.id,
   );
-  const [description, setDescription] = useState(artifact.description);
-  const [languageCode, setLanguageCode] = useState("vi");
   const [categoryId, setCategoryId] = useState(
     initialCategoryId != null ? String(initialCategoryId) : "",
   );
@@ -76,9 +86,7 @@ export function UpdateArtifactForm({
     initialAgeGroupId != null ? String(initialAgeGroupId) : "",
   );
   const [era, setEra] = useState(initialEra ?? "");
-  const [eraEn, setEraEn] = useState(initialEraEn ?? "");
   const [historicalEvent, setHistoricalEvent] = useState(initialHistoricalEvent ?? "");
-  const [historicalEventEn, setHistoricalEventEn] = useState(initialHistoricalEventEn ?? "");
   const [mapId, setMapId] = useState(initialMapId != null ? String(initialMapId) : "");
   const [roomId, setRoomId] = useState(initialRoomId != null ? String(initialRoomId) : "");
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>(initialTagIds ?? []);
@@ -95,7 +103,12 @@ export function UpdateArtifactForm({
       ? artifact.arOverlayUrl
       : null
   );
-  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [audioFileVi, setAudioFileVi] = useState<File | null>(null);
+  const [audioFileEn, setAudioFileEn] = useState<File | null>(null);
+
+  const existingAudioVi = translationVi?.audioUrl ?? null;
+  const existingAudioEn = translationEn?.audioUrl ?? null;
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -116,14 +129,14 @@ export function UpdateArtifactForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    const validation = validateCreateArtifact({ name: title });
+    const validation = validateCreateArtifact({ name: titleVi.trim() || titleEn.trim() });
     if (!validation.valid) {
       setError(getFirstValidationError(validation));
       return;
     }
 
     if (!exhibitId || Number.isNaN(exhibitId)) {
-      setError("Unable to find this artifact.");
+      setError("Could not find this artifact.");
       return;
     }
 
@@ -131,6 +144,24 @@ export function UpdateArtifactForm({
     setIsSubmitting(true);
 
     try {
+      const translationsPayload = [];
+      if (titleVi.trim()) {
+        translationsPayload.push({
+          exhibitId,
+          languageCode: "vi",
+          title: titleVi.trim(),
+          description: descriptionVi.trim() || undefined,
+        });
+      }
+      if (titleEn.trim()) {
+        translationsPayload.push({
+          exhibitId,
+          languageCode: "en",
+          title: titleEn.trim(),
+          description: descriptionEn.trim() || undefined,
+        });
+      }
+
       await updateExhibit(exhibitId, {
         museumId,
         categoryId: categoryId ? Number(categoryId) : undefined,
@@ -141,22 +172,15 @@ export function UpdateArtifactForm({
         exhibitMetadata: {
           ageGroupId: ageGroupId ? Number(ageGroupId) : undefined,
           era: era.trim() || undefined,
-          eraEn: eraEn.trim() || undefined,
           historicalEvent: historicalEvent.trim() || undefined,
-          historicalEventEn: historicalEventEn.trim() || undefined,
         },
-        translations: [
-          {
-            exhibitId,
-            languageCode,
-            title: title.trim(),
-            description: description.trim() || undefined,
-          },
-        ],
+        translations: translationsPayload,
       });
 
-      if (imageFile) await uploadExhibitImage(exhibitId, imageFile, title.trim());
-      if (audioFile) await uploadExhibitAudio(exhibitId, languageCode, audioFile);
+      const displayTitle = titleVi.trim() || titleEn.trim() || artifact.name;
+      if (imageFile) await uploadExhibitImage(exhibitId, imageFile, displayTitle);
+      if (audioFileVi) await uploadExhibitAudio(exhibitId, "vi", audioFileVi);
+      if (audioFileEn) await uploadExhibitAudio(exhibitId, "en", audioFileEn);
       if (arFile) {
         const arType = arFile.type.startsWith("image/") ? "OverlayImage" : "Model3D";
         await uploadArAsset(exhibitId, arType, arFile);
@@ -166,7 +190,7 @@ export function UpdateArtifactForm({
       router.push(`/content-manager/artifact/${artifact.id}`);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Unable to update artifact."));
+      setError(getDisplayError(err, "Could not update artifact."));
     } finally {
       setIsSubmitting(false);
     }
@@ -184,7 +208,7 @@ export function UpdateArtifactForm({
 
       <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-3xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-          Update Artifact
+          Update artifact
         </h1>
         <StatusBadge status={artifact.status} />
       </div>
@@ -219,7 +243,7 @@ export function UpdateArtifactForm({
                 (artifact.arOverlayUrl
                   ? `✓ AR: ${fileNameFromUrl(artifact.arOverlayUrl)}`
                   : artifact.arModelStatus === "Active"
-                    ? "✓ AR asset active (Click to change)"
+                    ? "✓ AR asset is active (Click to replace)"
                     : "AR asset (Image/3D)")
               }
               preview={arPreview}
@@ -241,34 +265,51 @@ export function UpdateArtifactForm({
                 }
               }}
             />
-            <UploadBox
+             <UploadBox
               label={
-                audioFile?.name ??
-                (artifact.audioUrl
-                  ? `✓ Audio: ${fileNameFromUrl(artifact.audioUrl)}`
-                  : artifact.audio === "Active"
-                    ? "✓ Audio guide active (Click to change)"
-                    : "Audio guide")
+                audioFileVi?.name ??
+                (existingAudioVi
+                  ? `✓ Audio VI: ${fileNameFromUrl(existingAudioVi)}`
+                  : "Vietnamese audio")
               }
-              onClick={() => audioRef.current?.click()}
+              onClick={() => audioRefVi.current?.click()}
             />
             <input
-              ref={audioRef}
+              ref={audioRefVi}
               type="file"
               accept="audio/*"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) setAudioFile(file);
+                if (file) setAudioFileVi(file);
+              }}
+            />
+            <UploadBox
+              label={
+                audioFileEn?.name ??
+                (existingAudioEn
+                  ? `✓ Audio EN: ${fileNameFromUrl(existingAudioEn)}`
+                  : "English audio")
+              }
+              onClick={() => audioRefEn.current?.click()}
+            />
+            <input
+              ref={audioRefEn}
+              type="file"
+              accept="audio/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) setAudioFileEn(file);
               }}
             />
           </div>
 
           <div className="flex-1 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Title *" value={title} onChange={setTitle} placeholder="Artifact title" />
+              <Field label="Title (Vietnamese) *" value={titleVi} onChange={setTitleVi} placeholder="Vietnamese title" />
+              <Field label="Title (English)" value={titleEn} onChange={setTitleEn} placeholder="English title" />
               <Field label="Artifact code" value={exhibitCode} onChange={setExhibitCode} placeholder="CAT-001" />
-              <Field label="Language" value={languageCode} onChange={setLanguageCode} placeholder="vi" />
               <SelectField
                 label="Category"
                 value={categoryId}
@@ -290,11 +331,11 @@ export function UpdateArtifactForm({
                 }}
                 options={maps.map((m) => ({
                   value: String(m.id),
-                  label: `${m.floorNumber != null ? `Tầng ${m.floorNumber}` : "Tầng"}${m.mapName ? ` (${m.mapName})` : ""}`,
+                  label: `${m.floorNumber != null ? `Floor ${m.floorNumber}` : "Floor"}${m.mapName ? ` (${m.mapName})` : ""}`,
                 }))}
               />
               <SelectField
-                label="Official Museum Room"
+                label="Exhibition room"
                 value={roomId}
                 onChange={setRoomId}
                 options={availableRooms.map((r) => ({
@@ -302,32 +343,39 @@ export function UpdateArtifactForm({
                   label: `${r.roomCode} - ${r.roomName}`,
                 }))}
               />
-              <Field label="Era (VI)" value={era} onChange={setEra} placeholder="vd. Nhà Nguyễn" />
-              <Field label="Era (EN)" value={eraEn} onChange={setEraEn} placeholder="e.g. Nguyễn dynasty" />
+              <Field label="Era" value={era} onChange={setEra} placeholder="e.g. Nguyen dynasty" />
               <Field
-                label="Historical event (VI)"
+                label="Historical event"
                 value={historicalEvent}
                 onChange={setHistoricalEvent}
                 placeholder="Optional"
               />
-              <Field
-                label="Historical event (EN)"
-                value={historicalEventEn}
-                onChange={setHistoricalEventEn}
-                placeholder="Optional"
-              />
             </div>
-            <div>
-              <label className="mb-1.5 block text-sm" style={{ color: T.muted }}>
-                Description
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
-                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-sm" style={{ color: T.muted }}>
+                  Description (Vietnamese)
+                </label>
+                <textarea
+                  value={descriptionVi}
+                  onChange={(e) => setDescriptionVi(e.target.value)}
+                  rows={4}
+                  className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
+                  style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm" style={{ color: T.muted }}>
+                  Description (English)
+                </label>
+                <textarea
+                  value={descriptionEn}
+                  onChange={(e) => setDescriptionEn(e.target.value)}
+                  rows={4}
+                  className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
+                  style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                />
+              </div>
             </div>
             {tags.length > 0 && (
               <div>
@@ -487,7 +535,7 @@ function StatusBadge({ status }: { status: Artifact["status"] }) {
       className="rounded-full px-3 py-1 text-xs font-medium"
       style={{ background: s.bg, color: s.color }}
     >
-      {status}
+      {labelStatus(status)}
     </span>
   );
 }

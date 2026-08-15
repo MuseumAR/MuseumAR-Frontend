@@ -7,8 +7,11 @@ import { CheckCircle2, ArrowLeft, Loader2, QrCode, ShieldCheck } from "lucide-re
 import { Navbar } from "@/components/shared/navbar";
 import { useAuth } from "@/context/auth-context";
 import { formatDateTimeVi, formatVnd } from "@/lib/format";
+import { labelStatus } from "@/lib/status-labels";
+import { getDisplayError } from "@/lib/validation";
 import { checkInTicket, getTicketDetail } from "@/services/visitor/ticketing.service";
 import type { TicketDetailDto } from "@/types/api";
+import { useLanguage } from "@/context/language-context";
 
 const C = {
   bg: "#F5E6C8",
@@ -38,8 +41,12 @@ export function TicketDetailPanel() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { language, t } = useLanguage();
+  const ticketId = Number(params.id);
+  const idValid = Number.isFinite(ticketId);
   const [detail, setDetail] = useState<TicketDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [checkInLoading, setCheckInLoading] = useState(false);
   const [checkInSuccess, setCheckInSuccess] = useState(false);
   const [checkInError, setCheckInError] = useState<string | null>(null);
@@ -54,26 +61,28 @@ export function TicketDetailPanel() {
     }
 
     const id = Number(params.id);
-    if (!Number.isFinite(id)) {
-      setDetail(null);
-      setLoading(false);
-      return;
-    }
+    if (!Number.isFinite(id)) return;
 
     let cancelled = false;
-    (async () => {
-      setLoading(true);
-      const res = await getTicketDetail(id);
-      if (!cancelled) {
+    getTicketDetail(id, language)
+      .then((res) => {
+        if (cancelled) return;
         setDetail(res);
-        setLoading(false);
-      }
-    })();
+        setLoadError(null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setDetail(null);
+        setLoadError(getDisplayError(err, t("mytickets.error_detail")));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isAuthenticated, params.id, router]);
+  }, [authLoading, isAuthenticated, params.id, router, language, t]);
 
   const handleSelfCheckIn = async () => {
     if (!detail || !detail.ticketCode) return;
@@ -89,9 +98,7 @@ export function TicketDetailPanel() {
         setCheckInError(res.message || "Check-in không thành công.");
       }
     } catch (err: unknown) {
-      console.error("Failed to self check-in:", err);
-      const errMsg = err instanceof Error ? err.message : "Check-in thất bại. Vui lòng thử lại.";
-      setCheckInError(errMsg);
+      setCheckInError(getDisplayError(err, "Check-in thất bại. Vé có thể đã dùng, hết hạn, hoặc mã không hợp lệ."));
     } finally {
       setCheckInLoading(false);
     }
@@ -114,7 +121,7 @@ export function TicketDetailPanel() {
           Vé của tôi
         </Link>
 
-        {authLoading || loading ? (
+        {authLoading || (isAuthenticated && idValid && loading) ? (
           <div
             className="flex items-center justify-center gap-2 rounded-3xl py-24 text-sm"
             style={{
@@ -126,16 +133,53 @@ export function TicketDetailPanel() {
             <Loader2 className="h-4 w-4 animate-spin" />
             Đang tải chi tiết…
           </div>
-        ) : !detail ? (
+        ) : loadError ? (
           <div
             className="rounded-3xl px-8 py-16 text-center text-sm"
+            style={{
+              background: C.surface,
+              border: `1px solid ${C.border}`,
+              color: "#8B3A3A",
+            }}
+            role="alert"
+          >
+            <p>{loadError}</p>
+            <Link
+              href="/tickets/mine"
+              className="mt-6 inline-flex rounded-full px-5 py-2.5 text-sm font-medium"
+              style={{
+                background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
+                color: C.surface,
+              }}
+            >
+              Về vé của tôi
+            </Link>
+          </div>
+        ) : !detail ? (
+          <div
+            className="rounded-3xl px-8 py-16 text-center"
             style={{
               background: C.surface,
               border: `1px solid ${C.border}`,
               color: C.muted,
             }}
           >
-            Không tìm thấy vé.
+            <p className="text-sm font-medium" style={{ color: C.text }}>
+              Không tìm thấy vé
+            </p>
+            <p className="mt-2 text-sm">
+              Vé không tồn tại, không thuộc tài khoản này, hoặc đã bị xóa.
+            </p>
+            <Link
+              href="/tickets/mine"
+              className="mt-6 inline-flex rounded-full px-5 py-2.5 text-sm font-medium"
+              style={{
+                background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
+                color: C.surface,
+              }}
+            >
+              Về vé của tôi
+            </Link>
           </div>
         ) : (
           <article
@@ -177,19 +221,7 @@ export function TicketDetailPanel() {
                     : "#8B2626",
                 }}
               >
-                {isUsed ? (
-                  <>
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Đã Check-in vào cổng (Used)
-                  </>
-                ) : isPaidOrActive ? (
-                  <>
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Đã thanh toán (Sẵn sàng vào cổng)
-                  </>
-                ) : (
-                  detail.status
-                )}
+                    {labelStatus(detail.status)}
               </span>
             </header>
 
@@ -205,7 +237,7 @@ export function TicketDetailPanel() {
               >
                 <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
                 <div>
-                  <strong>Check-in thành công!</strong> Vé của bạn đã chuyển sang trạng thái <em>Đã sử dụng</em>. Vui lòng xuất trình màn hình này cho nhân viên bảo tàng để vào cổng.
+                  <strong>Check-in thành công!</strong> Vé của bạn đã chuyển sang trạng thái <em>{labelStatus(detail.status)}</em>. Vui lòng xuất trình màn hình này cho nhân viên bảo tàng để vào cổng.
                 </div>
               </div>
             )}
@@ -279,7 +311,7 @@ export function TicketDetailPanel() {
               </h2>
               <dl className="grid gap-4 sm:grid-cols-2">
                 <Field label="Mã vé" value={detail.ticketCode} />
-                <Field label="Trạng thái" value={detail.status} />
+                <Field label="Trạng thái" value={labelStatus(detail.status)} />
                 <Field
                   label="Ngày mua"
                   value={formatDateTimeVi(detail.purchaseDate)}
@@ -352,7 +384,7 @@ export function TicketDetailPanel() {
                 />
                 <Field
                   label="Thanh toán"
-                  value={detail.order.paymentStatus}
+                  value={labelStatus(detail.order.paymentStatus)}
                 />
                 <Field
                   label="Phương thức"
@@ -377,29 +409,42 @@ export function TicketDetailPanel() {
                 Mã QR Vé
               </h2>
               <div
-                className="flex flex-col items-start gap-3 rounded-2xl p-4 sm:flex-row sm:items-center"
+                className="rounded-2xl p-5 text-center"
                 style={{
                   background: C.bg,
                   border: `1px solid ${C.border}`,
                 }}
               >
-                <div
-                  className="flex h-20 w-20 items-center justify-center rounded-xl"
-                  style={{
-                    background: C.surface,
-                    border: `1px dashed ${C.border}`,
-                  }}
+                {detail.qrCodeData &&
+                (detail.qrCodeData.startsWith("http") ||
+                  detail.qrCodeData.startsWith("data:image")) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={detail.qrCodeData}
+                    alt="Mã QR check-in"
+                    className="mx-auto h-44 w-44 rounded-xl object-contain"
+                    style={{ background: "#fff", border: `1px solid ${C.border}` }}
+                  />
+                ) : (
+                  <div
+                    className="mx-auto flex h-28 w-28 items-center justify-center rounded-xl"
+                    style={{
+                      background: C.surface,
+                      border: `1px dashed ${C.border}`,
+                    }}
+                  >
+                    <QrCode className="h-14 w-14" style={{ color: C.primary }} />
+                  </div>
+                )}
+                <p className="mt-4 text-sm font-medium" style={{ color: C.text }}>
+                  Đưa mã này cho cổng khi check-in
+                </p>
+                <p
+                  className="mt-2 break-all font-mono text-lg font-semibold tracking-wide"
+                  style={{ color: C.text }}
                 >
-                  <QrCode className="h-10 w-10" style={{ color: C.primary }} />
-                </div>
-                <div>
-                  <p className="text-sm font-medium" style={{ color: C.text }}>
-                    Mã Check-in QR
-                  </p>
-                  <p className="mt-1 font-mono text-xs break-all" style={{ color: C.muted }}>
-                    {detail.qrCodeData || "—"}
-                  </p>
-                </div>
+                  {detail.qrCodeData || detail.ticketCode || "—"}
+                </p>
               </div>
             </section>
           </article>

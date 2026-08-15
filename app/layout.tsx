@@ -11,8 +11,8 @@ const beVietnam = Be_Vietnam_Pro({
 });
 
 export const metadata: Metadata = {
-  title: "Museum AR Management",
-  description: "Museum AR Management Dashboard",
+  title: "MuseumAR",
+  description: "Nền tảng tham quan bảo tàng với hướng dẫn âm thanh và thực tế ảo tăng cường",
 };
 
 export default function RootLayout({

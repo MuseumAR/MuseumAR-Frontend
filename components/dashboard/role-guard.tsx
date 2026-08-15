@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import { getHomePathForRole, type DashboardRole } from "@/lib/roles";
+import { getHomePathForRole, canonicalRoleName, type DashboardRole } from "@/lib/roles";
+import { currentPathForNext, loginUrl } from "@/lib/login-redirect";
 
 function DashboardLoading() {
   return (
@@ -32,20 +33,21 @@ export function RoleGuard({
   const router = useRouter();
   const { user, isAuthenticated, isLoading } = useAuth();
 
-  const hasAccess = isAuthenticated && user?.roleName === allowedRole;
+  const role = canonicalRoleName(user?.roleName ?? "");
+  const hasAccess = isAuthenticated && role === allowedRole;
 
   useEffect(() => {
     if (isLoading) return;
 
     if (!isAuthenticated) {
-      router.replace("/login");
+      router.replace(loginUrl(currentPathForNext()));
       return;
     }
 
-    if (user && user.roleName !== allowedRole) {
+    if (user && role !== allowedRole) {
       router.replace(getHomePathForRole(user.roleName));
     }
-  }, [isLoading, isAuthenticated, user, allowedRole, router]);
+  }, [isLoading, isAuthenticated, user, role, allowedRole, router]);
 
   if (isLoading || !hasAccess) {
     return <DashboardLoading />;

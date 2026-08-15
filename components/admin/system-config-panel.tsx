@@ -61,7 +61,7 @@ export function SystemConfigPanel({ configs }: { configs: SystemConfigDto[] }) {
         <span className="font-semibold" style={{ color: T.text }}>
           {configs.length}
         </span>
-        {` configuration${configs.length === 1 ? "" : "s"}`}
+        {` configs`}
       </p>
 
       {error && (
@@ -80,7 +80,7 @@ export function SystemConfigPanel({ configs }: { configs: SystemConfigDto[] }) {
             style={{ background: T.surface, border: `1px solid ${T.border}` }}
           >
             <p className="text-sm" style={{ color: T.muted }}>
-              No system configurations returned from the API.
+              No system configuration from the API yet.
             </p>
           </div>
         ) : (
@@ -121,7 +121,7 @@ export function SystemConfigPanel({ configs }: { configs: SystemConfigDto[] }) {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Config value
+                    Configuration value
                   </label>
                   <input
                     value={config.draftValue}

@@ -45,7 +45,7 @@ export default function ResetPasswordPage() {
       setDone(true);
       setTimeout(() => router.push("/login"), 2000);
     } catch (err) {
-      setError(getDisplayError(err, "Unable to reset password. Please try again."));
+      setError(getDisplayError(err, "Không đặt lại được mật khẩu. Vui lòng thử lại."));
     } finally {
       setIsSubmitting(false);
     }
@@ -53,16 +53,16 @@ export default function ResetPasswordPage() {
 
   return (
     <AuthPageShell
-      title="Reset Password"
+      title="Đặt lại mật khẩu"
       subtitle={
         done
-          ? "Your password has been updated. Redirecting to sign in..."
-          : "Enter the reset token from your email and choose a new password."
+          ? "Mật khẩu đã được cập nhật. Đang chuyển tới trang đăng nhập..."
+          : "Nhập mã từ email và chọn mật khẩu mới."
       }
       footer={
         <p className="text-center text-xs" style={{ color: AUTH_C.muted }}>
           <Link href="/forgot-password" className="font-medium hover:opacity-70" style={{ color: AUTH_C.primary }}>
-            Request a new reset link
+            Yêu cầu liên kết mới
           </Link>
         </p>
       }
@@ -76,7 +76,7 @@ export default function ResetPasswordPage() {
             color: AUTH_C.muted,
           }}
         >
-          Password reset successful.
+          Đặt lại mật khẩu thành công.
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -85,7 +85,7 @@ export default function ResetPasswordPage() {
             name="token"
             value={token}
             onChange={setToken}
-            placeholder="Reset token"
+            placeholder="Mã đặt lại"
             icon={KeyRound}
             disabled={isSubmitting}
           />
@@ -94,7 +94,7 @@ export default function ResetPasswordPage() {
             name="newPassword"
             value={newPassword}
             onChange={setNewPassword}
-            placeholder="New password"
+            placeholder="Mật khẩu mới"
             icon={Lock}
             disabled={isSubmitting}
             suffix={
@@ -113,7 +113,7 @@ export default function ResetPasswordPage() {
             name="confirmPassword"
             value={confirmPassword}
             onChange={setConfirmPassword}
-            placeholder="Confirm new password"
+            placeholder="Xác nhận mật khẩu mới"
             icon={Lock}
             disabled={isSubmitting}
             suffix={
@@ -133,7 +133,10 @@ export default function ResetPasswordPage() {
               className="rounded-xl px-3 py-2 text-xs"
               style={{ background: "rgba(180,40,40,0.08)", color: "#8B2E2E" }}
             >
-              {error}
+              {error}{" "}
+              <Link href="/forgot-password" className="font-semibold underline underline-offset-2">
+                Gửi lại email
+              </Link>
             </p>
           )}
 
@@ -150,7 +153,7 @@ export default function ResetPasswordPage() {
                 letterSpacing: "0.12em",
               }}
             >
-              {isSubmitting ? "Updating..." : "Reset Password"}
+              {isSubmitting ? "Đang cập nhật..." : "Đặt lại mật khẩu"}
               <ArrowRight className="h-4 w-4" />
             </button>
           </motion.div>

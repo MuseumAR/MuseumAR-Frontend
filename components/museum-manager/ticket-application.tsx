@@ -10,6 +10,7 @@ import type { ExhibitionDto, TicketPromotionDto } from "@/types/api";
 import {
   createTicketTypeEntryForManager,
   publishTicketTypeEntryForManager,
+  deleteTicketTypeEntryForManager,
 } from "@/services/museum-manager/ticket.service";
 import {
   getManagerTicketPromotions,
@@ -24,6 +25,8 @@ import {
   getFirstValidationError,
   validateCreateTicketType,
 } from "@/lib/validation";
+import { labelStatus } from "@/lib/status-labels";
+import { SuccessBanner, useSuccessToast } from "@/components/shared/success-banner";
 
 export function TicketApplicationTable({
   tickets,
@@ -45,6 +48,7 @@ export function TicketApplicationTable({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPublishing, setIsPublishing] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
+  const { success, showSuccess } = useSuccessToast();
   const [exhibitions, setExhibitions] = useState<ExhibitionDto[]>([]);
 
   // Promotion states
@@ -129,9 +133,10 @@ export function TicketApplicationTable({
       setDescription("");
       setDescriptionEn("");
       setExhibitionId("");
+      showSuccess("Ticket type created.");
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Unable to create ticket type. Please try again."));
+      setError(getDisplayError(err, "Could not create ticket type. Please try again."));
     } finally {
       setIsSubmitting(false);
     }
@@ -146,11 +151,29 @@ export function TicketApplicationTable({
 
     try {
       await publishTicketTypeEntryForManager(numericId);
+      showSuccess("Ticket type published.");
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Unable to publish ticket type. Please try again."));
+      setError(getDisplayError(err, "Could not publish ticket type. Please try again."));
     } finally {
       setIsPublishing((prev) => ({ ...prev, [ticketId]: false }));
+    }
+  }
+
+  async function handleDeleteTicket(ticketId: string) {
+    if (!confirm("Are you sure you want to delete/deactivate this ticket type?")) {
+      return;
+    }
+    const numericId = getTicketTypeNumericId(ticketId);
+    if (Number.isNaN(numericId)) return;
+
+    setError(null);
+    try {
+      await deleteTicketTypeEntryForManager(numericId);
+      showSuccess("Ticket type deleted.");
+      router.refresh();
+    } catch (err) {
+      setError(getDisplayError(err, "Could not delete ticket type."));
     }
   }
 
@@ -207,9 +230,10 @@ export function TicketApplicationTable({
         await createManagerTicketPromotion(numericId, payload);
       }
       cancelEditPromotion();
+      showSuccess(editingPromoId != null ? "Promotion updated." : "Promotion created.");
       await loadPromotions(ticketId);
     } catch (err) {
-      setPromoError(getDisplayError(err, `Unable to ${editingPromoId != null ? "update" : "create"} promotion.`));
+      setPromoError(getDisplayError(err, editingPromoId != null ? "Could not update promotion." : "Could not create promotion."));
     } finally {
       setPromoSubmitting(false);
     }
@@ -222,22 +246,24 @@ export function TicketApplicationTable({
 
     try {
       await deleteManagerTicketPromotion(promotionId);
-      // Nếu đang sửa chính promotion vừa xoá thì reset form edit
+      // Reset the edit form if the promotion being edited was just deleted
       if (editingPromoId === promotionId) {
         cancelEditPromotion();
       }
+      showSuccess("Promotion deleted.");
       await loadPromotions(ticketId);
     } catch (err) {
-      setError(getDisplayError(err, "Unable to delete promotion."));
+      setError(getDisplayError(err, "Could not delete promotion."));
     }
   }
 
   async function handleTogglePromotion(ticketId: string, promotionId: number, currentActive: boolean) {
     try {
       await toggleManagerTicketPromotion(promotionId, !currentActive);
+      showSuccess(currentActive ? "Promotion deactivated." : "Promotion activated.");
       await loadPromotions(ticketId);
     } catch (err) {
-      setError(getDisplayError(err, "Unable to toggle promotion."));
+      setError(getDisplayError(err, "Could not change promotion status."));
     }
   }
 
@@ -247,7 +273,7 @@ export function TicketApplicationTable({
       const detail = await getManagerTicketPromotionDetail(promotionId);
       setViewingPromo(detail);
     } catch (err) {
-      setError(getDisplayError(err, "Unable to load promotion details."));
+      setError(getDisplayError(err, "Could not load promotion details."));
     } finally {
       setLoadingDetailPromoId(null);
     }
@@ -260,7 +286,7 @@ export function TicketApplicationTable({
           <span className="font-semibold" style={{ color: T.text }}>
             {tickets.length}
           </span>
-          {` ticket type${tickets.length === 1 ? "" : "s"}`}
+          {` ticket types`}
           {museumName ? (
             <span style={{ color: T.mutedLight }}>{` · ${museumName}`}</span>
           ) : null}
@@ -285,7 +311,7 @@ export function TicketApplicationTable({
           className="rounded-2xl px-4 py-3 text-sm"
           style={{ background: "rgba(200,155,69,0.10)", color: T.muted }}
         >
-          Museum profile is required before adding ticket types.
+          A museum profile is required before adding ticket types.
         </p>
       )}
 
@@ -338,7 +364,7 @@ export function TicketApplicationTable({
                 className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
               >
-                <option value="">Museum-wide (All exhibitions)</option>
+                <option value="">Whole museum (All exhibitions)</option>
                 {exhibitions.map((ex) => (
                   <option key={ex.id} value={ex.id}>{ex.name || `Exhibition #${ex.id}`}</option>
                 ))}
@@ -349,7 +375,7 @@ export function TicketApplicationTable({
               <input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional description"
+                placeholder="Description (optional)"
                 className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
               />
@@ -385,6 +411,7 @@ export function TicketApplicationTable({
         </form>
       )}
 
+      <SuccessBanner message={success} />
       {error && (
         <p className="rounded-xl px-3 py-2 text-sm" style={{ background: "rgba(180,40,40,0.08)", color: "#8B2E2E" }}>
           {error}
@@ -425,7 +452,7 @@ export function TicketApplicationTable({
                           color: ticket.status === "Active" ? T.success : T.primaryDark,
                         }}
                       >
-                        {ticket.status}
+                        {labelStatus(ticket.status)}
                       </span>
                     </td>
                     <td className="px-5 py-4">
@@ -441,6 +468,44 @@ export function TicketApplicationTable({
                             {isPublishing[ticket.id] ? "Publishing…" : "Publish"}
                           </button>
                         )}
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/museum-manager/ticket-application/${ticket.id.replace("TK-", "")}`)}
+                          className="inline-flex items-center gap-1 rounded-xl px-3 py-1 text-xs font-medium transition-opacity hover:opacity-90"
+                          style={{
+                            border: "1px solid rgba(79,70,229,0.20)",
+                            background: "rgba(79,70,229,0.08)",
+                            color: "#4F46E5",
+                          }}
+                        >
+                          <Eye className="h-3 w-3" />
+                          Detail
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/museum-manager/ticket-application/${ticket.id.replace("TK-", "")}?edit=true`)}
+                          className="inline-flex items-center gap-1 rounded-xl px-3 py-1 text-xs font-medium transition-opacity hover:opacity-90"
+                          style={{
+                            border: `1px solid ${T.border}`,
+                            background: T.bg,
+                            color: T.text,
+                          }}
+                        >
+                          <Edit2 className="h-3 w-3" />
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTicket(ticket.id)}
+                          className="inline-flex items-center gap-1 rounded-xl px-3 py-1 text-xs font-medium transition-opacity hover:opacity-90 text-red-600 hover:bg-red-50"
+                          style={{
+                            border: "1px solid rgba(220,38,38,0.20)",
+                            background: "rgba(220,38,38,0.08)",
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Delete
+                        </button>
                         <button
                           type="button"
                           onClick={() => {
@@ -516,13 +581,13 @@ export function TicketApplicationTable({
                                     color: isCurrentlyActive ? T.success : isExpired ? "#8B3A3A" : T.primaryDark,
                                   }}
                                 >
-                                  {isCurrentlyActive ? "🟢 Active" : isExpired ? "⏰ Expired" : promo.isActive ? "⏳ Scheduled" : "⏸ Paused"}
+                                  {isCurrentlyActive ? `🟢 ${labelStatus("Active")}` : isExpired ? `⏰ ${labelStatus("Expired")}` : promo.isActive ? `⏳ ${labelStatus("Scheduled")}` : `⏸ ${labelStatus("Paused")}`}
                                 </span>
                               </div>
                               <p className="mt-0.5" style={{ color: T.muted }}>
                                 {promo.discountType === "Percentage" ? `${promo.discountValue}% off` : `${promo.discountValue.toLocaleString()} VND off`}
                                 {" · "}
-                                {start.toLocaleDateString("vi-VN")} → {end.toLocaleDateString("vi-VN")}
+                                {start.toLocaleDateString("en-US")} → {end.toLocaleDateString("en-US")}
                               </p>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
@@ -530,7 +595,7 @@ export function TicketApplicationTable({
                                 type="button"
                                 onClick={() => handleViewDetail(promo.id)}
                                 className="rounded-lg p-1.5 transition-opacity hover:opacity-70 text-indigo-600 hover:bg-indigo-50"
-                                title="View Details"
+                                title="View details"
                                 disabled={loadingDetailPromoId === promo.id}
                               >
                                 {loadingDetailPromoId === promo.id ? (
@@ -559,7 +624,7 @@ export function TicketApplicationTable({
                                 type="button"
                                 onClick={() => handleTogglePromotion(ticket.id, promo.id, promo.isActive)}
                                 className="rounded-lg p-1.5 transition-opacity hover:opacity-70"
-                                title={promo.isActive ? "Deactivate" : "Activate"}
+                                title={promo.isActive ? "Turn off" : "Turn on"}
                                 style={{ color: promo.isActive ? T.success : T.muted }}
                               >
                                 {promo.isActive ? <Power className="h-4 w-4" /> : <PowerOff className="h-4 w-4" />}
@@ -583,37 +648,37 @@ export function TicketApplicationTable({
                           onClick={cancelEditPromotion}
                           className="inline-flex items-center gap-1 text-[10px] font-bold text-stone-500 hover:text-stone-700 bg-stone-100 rounded-md px-1.5 py-0.5"
                         >
-                          <X className="h-3 w-3" /> Cancel Edit
+                          <X className="h-3 w-3" /> Cancel edit
                         </button>
                       )}
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-1">
-                        <label className="block text-xs" style={{ color: T.muted }}>Promotion Name *</label>
+                        <label className="block text-xs" style={{ color: T.muted }}>Promotion name *</label>
                         <input
                           value={promoName}
                           onChange={(e) => setPromoName(e.target.value)}
-                          placeholder="Giảm giá Quốc Khánh 2/9"
+                          placeholder="National Day 2/9 discount"
                           required
                           className="w-full rounded-lg px-3 py-2 text-xs outline-none"
                           style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="block text-xs" style={{ color: T.muted }}>Discount Type *</label>
+                        <label className="block text-xs" style={{ color: T.muted }}>Discount type *</label>
                         <select
                           value={promoDiscountType}
                           onChange={(e) => setPromoDiscountType(e.target.value as "Percentage" | "FixedAmount")}
                           className="w-full rounded-lg px-3 py-2 text-xs outline-none"
                           style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                         >
-                          <option value="Percentage">Percentage (%)</option>
-                          <option value="FixedAmount">Fixed Amount (VND)</option>
+                          <option value="Percentage">Percentage</option>
+                          <option value="FixedAmount">FixedAmount</option>
                         </select>
                       </div>
                       <div className="space-y-1">
                         <label className="block text-xs" style={{ color: T.muted }}>
-                          Discount Value * {promoDiscountType === "Percentage" ? "(0–100%)" : "(VND)"}
+                          Discount value * {promoDiscountType === "Percentage" ? "(0–100%)" : "(VND)"}
                         </label>
                         <input
                           type="number" min="0"
@@ -632,13 +697,13 @@ export function TicketApplicationTable({
                         <input
                           value={promoDescription}
                           onChange={(e) => setPromoDescription(e.target.value)}
-                          placeholder="Nhân dịp Quốc Khánh 2/9"
+                          placeholder="For National Day 2/9"
                           className="w-full rounded-lg px-3 py-2 text-xs outline-none"
                           style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="block text-xs" style={{ color: T.muted }}>Start Date *</label>
+                        <label className="block text-xs" style={{ color: T.muted }}>Start date *</label>
                         <input
                           type="date" value={promoStartDate}
                           onChange={(e) => setPromoStartDate(e.target.value)}
@@ -648,7 +713,7 @@ export function TicketApplicationTable({
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="block text-xs" style={{ color: T.muted }}>End Date *</label>
+                        <label className="block text-xs" style={{ color: T.muted }}>End date *</label>
                         <input
                           type="date" value={promoEndDate}
                           onChange={(e) => setPromoEndDate(e.target.value)}
@@ -672,7 +737,7 @@ export function TicketApplicationTable({
                         className="rounded-lg px-5 py-1.5 text-xs font-medium disabled:opacity-50"
                         style={{ background: "linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)", color: "#FFF" }}
                       >
-                        {promoSubmitting ? "Saving…" : (editingPromoId != null ? "Save Changes" : "Create Promotion")}
+                        {promoSubmitting ? "Saving…" : (editingPromoId != null ? "Save changes" : "Create promotion")}
                       </button>
                     </div>
                   </form>
@@ -696,7 +761,7 @@ export function TicketApplicationTable({
             <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: T.border }}>
               <h3 className="text-lg font-bold flex items-center gap-2" style={{ fontFamily: cinzel, color: T.text }}>
                 <Tag className="h-5 w-5" style={{ color: "#B91C1C" }} />
-                Promotion Details
+                Promotion details
               </h3>
               <button
                 type="button"
@@ -716,14 +781,14 @@ export function TicketApplicationTable({
 
               {viewingPromo.nameEn && (
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>English Name</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>English name</span>
                   <span className="text-base" style={{ color: T.text }}>{viewingPromo.nameEn}</span>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Discount Value</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Discount value</span>
                   <span className="text-base font-bold text-red-600">
                     {viewingPromo.discountType === "Percentage"
                       ? `${viewingPromo.discountValue}%`
@@ -733,22 +798,22 @@ export function TicketApplicationTable({
                 <div>
                   <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Type</span>
                   <span className="text-base" style={{ color: T.text }}>
-                    {viewingPromo.discountType === "Percentage" ? "Percentage Off (%)" : "Fixed Amount Off"}
+                    {viewingPromo.discountType}
                   </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Start Date</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Start date</span>
                   <span className="text-base" style={{ color: T.text }}>
-                    {new Date(viewingPromo.startDate).toLocaleDateString("vi-VN")}
+                    {new Date(viewingPromo.startDate).toLocaleDateString("en-US")}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>End Date</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>End date</span>
                   <span className="text-base" style={{ color: T.text }}>
-                    {new Date(viewingPromo.endDate).toLocaleDateString("vi-VN")}
+                    {new Date(viewingPromo.endDate).toLocaleDateString("en-US")}
                   </span>
                 </div>
               </div>
@@ -762,7 +827,7 @@ export function TicketApplicationTable({
 
               {viewingPromo.descriptionEn && (
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>English Description</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>English description</span>
                   <p className="mt-0.5 leading-relaxed" style={{ color: T.text }}>{viewingPromo.descriptionEn}</p>
                 </div>
               )}
@@ -777,7 +842,7 @@ export function TicketApplicationTable({
                       color: viewingPromo.isActive ? T.success : "#8B3A3A",
                     }}
                   >
-                    {viewingPromo.isActive ? "🟢 Active" : "⏸ Paused / Inactive"}
+                    {viewingPromo.isActive ? `🟢 ${labelStatus("Active")}` : `⏸ ${labelStatus("Paused")}`}
                   </span>
                 </div>
                 <button

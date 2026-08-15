@@ -39,25 +39,26 @@ export function CreateExhibitForm({
   const router = useRouter();
   const imageRef = useRef<HTMLInputElement>(null);
   const arRef = useRef<HTMLInputElement>(null);
-  const audioRef = useRef<HTMLInputElement>(null);
+  const audioRefVi = useRef<HTMLInputElement>(null);
+  const audioRefEn = useRef<HTMLInputElement>(null);
 
-  const [title, setTitle] = useState("");
+  const [titleVi, setTitleVi] = useState("");
+  const [titleEn, setTitleEn] = useState("");
   const [exhibitCode, setExhibitCode] = useState("");
-  const [description, setDescription] = useState("");
-  const [languageCode, setLanguageCode] = useState("vi");
+  const [descriptionVi, setDescriptionVi] = useState("");
+  const [descriptionEn, setDescriptionEn] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [ageGroupId, setAgeGroupId] = useState("");
   const [era, setEra] = useState("");
-  const [eraEn, setEraEn] = useState("");
   const [historicalEvent, setHistoricalEvent] = useState("");
-  const [historicalEventEn, setHistoricalEventEn] = useState("");
   const [mapId, setMapId] = useState("");
   const [roomId, setRoomId] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [arFile, setArFile] = useState<File | null>(null);
-  const [audioFile, setAudioFile] = useState<File | null>(null);
+  const [audioFileVi, setAudioFileVi] = useState<File | null>(null);
+  const [audioFileEn, setAudioFileEn] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -83,7 +84,7 @@ export function CreateExhibitForm({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const validation = validateCreateArtifact({ name: title });
+    const validation = validateCreateArtifact({ name: titleVi.trim() || titleEn.trim() });
     if (!validation.valid) {
       setError(getFirstValidationError(validation));
       return;
@@ -93,6 +94,24 @@ export function CreateExhibitForm({
     setIsSubmitting(true);
 
     try {
+      const translationsPayload = [];
+      if (titleVi.trim()) {
+        translationsPayload.push({
+          exhibitId: 0,
+          languageCode: "vi",
+          title: titleVi.trim(),
+          description: descriptionVi.trim() || undefined,
+        });
+      }
+      if (titleEn.trim()) {
+        translationsPayload.push({
+          exhibitId: 0,
+          languageCode: "en",
+          title: titleEn.trim(),
+          description: descriptionEn.trim() || undefined,
+        });
+      }
+
       const res = await createExhibit({
         museumId,
         categoryId: categoryId ? Number(categoryId) : undefined,
@@ -103,24 +122,17 @@ export function CreateExhibitForm({
         exhibitMetadata: {
           ageGroupId: ageGroupId ? Number(ageGroupId) : undefined,
           era: era.trim() || undefined,
-          eraEn: eraEn.trim() || undefined,
           historicalEvent: historicalEvent.trim() || undefined,
-          historicalEventEn: historicalEventEn.trim() || undefined,
         },
-        translations: [
-          {
-            exhibitId: 0,
-            languageCode,
-            title: title.trim(),
-            description: description.trim() || undefined,
-          },
-        ],
+        translations: translationsPayload,
       });
 
-      const exhibitId = typeof res === "object" && res && "id" in res ? (res as any).id : (res as unknown as number);
+      const exhibitId = res.id;
 
-      if (imageFile) await uploadExhibitImage(exhibitId, imageFile, title);
-      if (audioFile) await uploadExhibitAudio(exhibitId, languageCode, audioFile);
+      const displayTitle = titleVi.trim() || titleEn.trim() || "Artifact";
+      if (imageFile) await uploadExhibitImage(exhibitId, imageFile, displayTitle);
+      if (audioFileVi) await uploadExhibitAudio(exhibitId, "vi", audioFileVi);
+      if (audioFileEn) await uploadExhibitAudio(exhibitId, "en", audioFileEn);
       if (arFile) {
         const arType = arFile.type.startsWith("image/") ? "OverlayImage" : "Model3D";
         await uploadArAsset(exhibitId, arType, arFile);
@@ -132,7 +144,7 @@ export function CreateExhibitForm({
       router.push("/content-manager/artifact");
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Unable to create artifact."));
+      setError(getDisplayError(err, "Could not create artifact."));
     } finally {
       setIsSubmitting(false);
     }
@@ -144,7 +156,7 @@ export function CreateExhibitForm({
         <span>←</span> Back to artifacts
       </Link>
       <h1 className="mb-8 text-3xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-        Create Artifact
+        Create artifact
       </h1>
 
       <form
@@ -170,18 +182,23 @@ export function CreateExhibitForm({
               const file = e.target.files?.[0];
               if (file) setArFile(file);
             }} />
-            <UploadBox label={audioFile?.name ?? "Audio guide"} onClick={() => audioRef.current?.click()} />
-            <input ref={audioRef} type="file" accept="audio/*" className="hidden" onChange={(e) => {
+            <UploadBox label={audioFileVi?.name ?? "Vietnamese audio"} onClick={() => audioRefVi.current?.click()} />
+            <input ref={audioRefVi} type="file" accept="audio/*" className="hidden" onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) setAudioFile(file);
+              if (file) setAudioFileVi(file);
+            }} />
+            <UploadBox label={audioFileEn?.name ?? "English audio"} onClick={() => audioRefEn.current?.click()} />
+            <input ref={audioRefEn} type="file" accept="audio/*" className="hidden" onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) setAudioFileEn(file);
             }} />
           </div>
 
           <div className="flex-1 space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Title *" value={title} onChange={setTitle} placeholder="Artifact title" />
+              <Field label="Title (Vietnamese) *" value={titleVi} onChange={setTitleVi} placeholder="Vietnamese title" />
+              <Field label="Title (English)" value={titleEn} onChange={setTitleEn} placeholder="English title" />
               <Field label="Artifact code" value={exhibitCode} onChange={setExhibitCode} placeholder="CAT-001" />
-              <Field label="Language" value={languageCode} onChange={setLanguageCode} placeholder="vi" />
               <SelectField
                 label="Category"
                 value={categoryId}
@@ -203,11 +220,11 @@ export function CreateExhibitForm({
                 }}
                 options={maps.map((m) => ({
                   value: String(m.id),
-                  label: `${m.floorNumber != null ? `Tầng ${m.floorNumber}` : "Tầng"}${m.mapName ? ` (${m.mapName})` : ""}`,
+                  label: `${m.floorNumber != null ? `Floor ${m.floorNumber}` : "Floor"}${m.mapName ? ` (${m.mapName})` : ""}`,
                 }))}
               />
               <SelectField
-                label="Official Museum Room"
+                label="Exhibition room"
                 value={roomId}
                 onChange={setRoomId}
                 options={availableRooms.map((r) => ({
@@ -215,30 +232,35 @@ export function CreateExhibitForm({
                   label: `${r.roomCode} - ${r.roomName}`,
                 }))}
               />
-              <Field label="Era (VI)" value={era} onChange={setEra} placeholder="vd. Nhà Nguyễn" />
-              <Field label="Era (EN)" value={eraEn} onChange={setEraEn} placeholder="e.g. Nguyễn dynasty" />
+              <Field label="Era" value={era} onChange={setEra} placeholder="e.g. Nguyen dynasty" />
               <Field
-                label="Historical event (VI)"
+                label="Historical event"
                 value={historicalEvent}
                 onChange={setHistoricalEvent}
                 placeholder="Optional"
               />
-              <Field
-                label="Historical event (EN)"
-                value={historicalEventEn}
-                onChange={setHistoricalEventEn}
-                placeholder="Optional"
-              />
             </div>
-            <div>
-              <label className="mb-1.5 block text-sm" style={{ color: T.muted }}>Description</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
-                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-sm" style={{ color: T.muted }}>Description (Vietnamese)</label>
+                <textarea
+                  value={descriptionVi}
+                  onChange={(e) => setDescriptionVi(e.target.value)}
+                  rows={4}
+                  className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
+                  style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-sm" style={{ color: T.muted }}>Description (English)</label>
+                <textarea
+                  value={descriptionEn}
+                  onChange={(e) => setDescriptionEn(e.target.value)}
+                  rows={4}
+                  className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
+                  style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                />
+              </div>
             </div>
             {tags.length > 0 && (
               <div>

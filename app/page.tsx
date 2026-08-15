@@ -1,11 +1,15 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { motion, useInView } from "framer-motion";
-import { BookOpen, Compass, Landmark, ArrowRight, ChevronRight } from "lucide-react";
+import { BookOpen, Compass, Landmark, ArrowRight, ChevronRight, Headphones, Scan, Ticket } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Navbar } from "@/components/shared/navbar";
+import { StableLabel } from "@/components/shared/stable-label";
+import { useAuth } from "@/context/auth-context";
 import { useLanguage } from "@/context/language-context";
+import { getHomePathForRole, isDashboardRole } from "@/lib/roles";
 
 // ── Tokens ───────────────────────────────────────────────────────────────────
 
@@ -23,70 +27,6 @@ const C = {
 };
 
 // ── Data ─────────────────────────────────────────────────────────────────────
-
-const EXHIBIT_LABELS = [
-  {
-    id: 1,
-    x: "6%",
-    y: "42%",
-    catalog: "CAT · №0247",
-    name: "Egyptian Sarcophagus",
-    period: "3000 BC · Cairo",
-    status: "AR Model Available",
-    delay: 1.1,
-  },
-  {
-    id: 2,
-    x: "70%",
-    y: "22%",
-    catalog: "CAT · №0391",
-    name: "Ionic Capital",
-    period: "480 BC · Athens",
-    status: "3D Scan Complete",
-    delay: 1.3,
-  },
-  {
-    id: 3,
-    x: "74%",
-    y: "64%",
-    catalog: "CAT · №0158",
-    name: "Roman Mosaic",
-    period: "200 AD · Rome",
-    status: "Reconstructed",
-    delay: 1.5,
-  },
-];
-
-const FEATURES = [
-  {
-    roman: "I",
-    icon: Landmark,
-    title: "Interactive AR Tours",
-    description:
-      "Walk through reconstructed ancient sites with real-time AR overlays that reveal historical context layer by layer.",
-  },
-  {
-    roman: "II",
-    icon: BookOpen,
-    title: "3D Artifact Visualization",
-    description:
-      "Examine priceless artifacts from every angle with photorealistic 3D models sourced from museum archives worldwide.",
-  },
-  {
-    roman: "III",
-    icon: Compass,
-    title: "Historical Reconstruction",
-    description:
-      "Experience lost civilizations and ancient landmarks digitally restored to their original grandeur through AR technology.",
-  },
-];
-
-const STATS = [
-  { value: "10,000+", label: "Annual Visitors" },
-  { value: "500+", label: "Archived Artifacts" },
-  { value: "50+", label: "Partner Museums" },
-  { value: "95%", label: "Visitor Satisfaction" },
-];
 
 // ── Decorative helpers ────────────────────────────────────────────────────────
 
@@ -130,11 +70,41 @@ function fadeUp(delay = 0) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function LandingPage() {
+  const router = useRouter();
   const { t } = useLanguage();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const featuresRef = useRef(null);
   const statsRef = useRef(null);
   const featuresInView = useInView(featuresRef, { once: true, margin: "-60px" });
   const statsInView = useInView(statsRef, { once: true, margin: "-60px" });
+
+  useEffect(() => {
+    if (authLoading || !isAuthenticated || !user) return;
+    if (isDashboardRole(user.roleName)) {
+      router.replace(getHomePathForRole(user.roleName));
+    }
+  }, [authLoading, isAuthenticated, user, router]);
+
+  useEffect(() => {
+    document.documentElement.classList.add("homepage-lock");
+    document.body.classList.add("homepage-lock");
+    return () => {
+      document.documentElement.classList.remove("homepage-lock");
+      document.body.classList.remove("homepage-lock");
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash) {
+      const targetId = window.location.hash.substring(1);
+      setTimeout(() => {
+        const el = document.getElementById(targetId);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 100);
+    }
+  }, []);
 
   const exhibitCards = [
     {
@@ -143,7 +113,7 @@ export default function LandingPage() {
       y: "42%",
       catalog: "CAT · №0247",
       name: t("hero.ex1_name"),
-      period: "3000 BC · Cairo",
+      period: t("hero.ex1_period"),
       status: t("hero.ex1_status"),
       delay: 1.1,
     },
@@ -153,7 +123,7 @@ export default function LandingPage() {
       y: "22%",
       catalog: "CAT · №0391",
       name: t("hero.ex2_name"),
-      period: "480 BC · Athens",
+      period: t("hero.ex2_period"),
       status: t("hero.ex2_status"),
       delay: 1.3,
     },
@@ -163,7 +133,7 @@ export default function LandingPage() {
       y: "64%",
       catalog: "CAT · №0158",
       name: t("hero.ex3_name"),
-      period: "200 AD · Rome",
+      period: t("hero.ex3_period"),
       status: t("hero.ex3_status"),
       delay: 1.5,
     },
@@ -197,8 +167,26 @@ export default function LandingPage() {
     { value: "95%", label: t("stat4.label") },
   ];
 
+  const aboutItems = [
+    {
+      icon: Headphones,
+      title: t("about.audio_title"),
+      description: t("about.audio_desc"),
+    },
+    {
+      icon: Scan,
+      title: t("about.ar_title"),
+      description: t("about.ar_desc"),
+    },
+    {
+      icon: Ticket,
+      title: t("about.ticket_title"),
+      description: t("about.ticket_desc"),
+    },
+  ];
+
   return (
-    <div style={{ background: C.bg, color: C.text }}>
+    <div className="homepage-scroll" style={{ background: C.bg, color: C.text }}>
       <Navbar />
 
       {/* ══ HERO ═══════════════════════════════════════════════════════════ */}
@@ -363,14 +351,14 @@ export default function LandingPage() {
                   fontFamily: "inherit",
                 }}
               >
-                {t("hero.buy_tickets")}
-                <ArrowRight className="h-4 w-4" />
+                <StableLabel k="hero.buy_tickets" />
+                <ArrowRight className="h-4 w-4 shrink-0" />
               </Link>
             </motion.div>
 
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
               <Link
-                href="#collections"
+                href="#about"
                 className="flex items-center gap-2.5 rounded-full px-8 py-3.5 text-sm font-medium transition-all"
                 style={{
                   background: "rgba(255,248,231,0.10)",
@@ -385,45 +373,19 @@ export default function LandingPage() {
                   (e.currentTarget as HTMLElement).style.background = "rgba(255,248,231,0.10)";
                 }}
               >
-                <BookOpen className="h-4 w-4" />
-                {t("hero.view_collection")}
+                <BookOpen className="h-4 w-4 shrink-0" />
+                <StableLabel k="hero.learn_more" />
               </Link>
             </motion.div>
           </motion.div>
         </div>
-
-        {/* Scroll cue */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.6 }}
-          className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1.5"
-        >
-          <motion.div
-            animate={{ y: [0, 5, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <div
-              className="h-7 w-px"
-              style={{
-                background: "linear-gradient(180deg, rgba(200,155,60,0.7) 0%, transparent 100%)",
-              }}
-            />
-          </motion.div>
-          <span
-            className="text-[9px] tracking-[0.25em] uppercase"
-            style={{ color: "rgba(200,155,60,0.6)" }}
-          >
-            Scroll
-          </span>
-        </motion.div>
       </section>
 
       {/* ══ FEATURES ═══════════════════════════════════════════════════════ */}
       <section
         ref={featuresRef}
         id="collections"
-        className="px-6 py-28"
+        className="scroll-mt-24 px-6 py-28"
         style={{ background: C.surface }}
       >
         {/* Top decorative rule */}
@@ -527,7 +489,7 @@ export default function LandingPage() {
                     className="mt-6 flex items-center gap-1.5 text-xs font-medium transition-all"
                     style={{ color: C.primary }}
                   >
-                    {t("feat.explore")}
+                    <StableLabel k="feat.explore" />
                     <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                   </div>
                 </motion.div>
@@ -546,7 +508,7 @@ export default function LandingPage() {
       <section
         ref={statsRef}
         id="museums"
-        className="px-6 py-24"
+        className="scroll-mt-24 px-6 py-24"
         style={{ background: C.accent }}
       >
         <div className="mx-auto max-w-5xl">
@@ -606,16 +568,96 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ══ CTA ════════════════════════════════════════════════════════════ */}
-      <section id="about" className="px-6 py-24" style={{ background: C.surface }}>
+      {/* ══ ABOUT ══════════════════════════════════════════════════════════ */}
+      <section
+        id="about"
+        className="scroll-mt-24 px-6 py-24"
+        style={{ background: C.surface }}
+      >
         <div className="mx-auto max-w-6xl">
           <OrnamentalRule className="mb-16" />
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="mb-14 text-center"
+          >
+            <p
+              className="mb-3 text-xs font-medium tracking-[0.3em] uppercase"
+              style={{ color: C.primary }}
+            >
+              {t("about.tagline")}
+            </p>
+            <h2
+              className="text-4xl font-bold leading-snug md:text-5xl"
+              style={{
+                fontFamily: "var(--font-be-vietnam), system-ui, sans-serif",
+                color: C.text,
+              }}
+            >
+              {t("about.title")}
+            </h2>
+            <p
+              className="mx-auto mt-5 max-w-2xl text-sm leading-relaxed md:text-base"
+              style={{ color: C.muted }}
+            >
+              {t("about.desc")}
+            </p>
+            <p
+              className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed"
+              style={{ color: C.muted }}
+            >
+              {t("about.mission")}
+            </p>
+          </motion.div>
+
+          <div className="mb-16 grid gap-6 md:grid-cols-3">
+            {aboutItems.map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <motion.div
+                  key={item.title}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 + i * 0.1 }}
+                  className="relative overflow-hidden rounded-2xl p-8"
+                  style={{
+                    background: C.bg,
+                    border: `1px solid ${C.border}`,
+                  }}
+                >
+                  <div
+                    className="mb-5 flex h-11 w-11 items-center justify-center rounded-xl"
+                    style={{
+                      background: "rgba(200,155,60,0.12)",
+                      border: "1px solid rgba(200,155,60,0.28)",
+                    }}
+                  >
+                    <Icon className="h-5 w-5" style={{ color: C.primary }} />
+                  </div>
+                  <h3
+                    className="mb-3 text-lg font-semibold"
+                    style={{
+                      fontFamily: "var(--font-be-vietnam), system-ui, sans-serif",
+                      color: C.text,
+                    }}
+                  >
+                    {item.title}
+                  </h3>
+                  <p className="text-sm leading-relaxed" style={{ color: C.muted }}>
+                    {item.description}
+                  </p>
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
 
         <motion.div
           initial={{ opacity: 0, y: 24 }}
-          animate={statsInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.4, duration: 0.65 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.65 }}
           className="relative mx-auto max-w-2xl overflow-hidden rounded-3xl p-12 text-center"
           style={{
             background: C.bg,
@@ -662,8 +704,8 @@ export default function LandingPage() {
                   boxShadow: "0 4px 20px rgba(166,124,45,0.35)",
                 }}
               >
-                {t("hero.buy_tickets")}
-                <ArrowRight className="h-4 w-4" />
+                <StableLabel k="hero.buy_tickets" />
+                <ArrowRight className="h-4 w-4 shrink-0" />
               </Link>
             </motion.div>
             <Link
@@ -682,7 +724,7 @@ export default function LandingPage() {
                 (e.currentTarget as HTMLElement).style.borderColor = C.border;
               }}
             >
-              {t("cta.signin")}
+              <StableLabel k="cta.signin" />
             </Link>
           </div>
         </motion.div>

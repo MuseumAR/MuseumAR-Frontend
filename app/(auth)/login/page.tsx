@@ -7,19 +7,8 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { useAuth } from "@/context/auth-context";
-import { getHomePathForRole, login, loginWithGoogle } from "@/services/auth";
-import {
-  getDisplayError,
-  getFirstValidationError,
-  validateLogin,
-} from "@/lib/validation";
-
-function resolvePostLoginPath(roleName: string, next: string | null) {
-  if (next && next.startsWith("/") && !next.startsWith("//")) {
-    return next;
-  }
-  return getHomePathForRole(roleName);
-}
+import { getPostLoginPath, login, loginWithGoogle } from "@/services/auth";
+import { getDisplayError, getFirstValidationError, validateLogin } from "@/lib/validation";
 
 function readNextParam() {
   if (typeof window === "undefined") return null;
@@ -65,9 +54,9 @@ const EXHIBITS = [
     x: "5%",
     y: "38%",
     catalog: "CAT · №0247",
-    name: "Egyptian Sarcophagus",
-    period: "3000 BC · Cairo",
-    status: "AR Model Available",
+    name: "Quan tài Ai Cập cổ đại",
+    period: "3000 TCN · Cairo",
+    status: "Có mô hình AR",
     delay: 0.9,
   },
   {
@@ -75,9 +64,9 @@ const EXHIBITS = [
     x: "60%",
     y: "20%",
     catalog: "CAT · №0391",
-    name: "Ionic Capital",
-    period: "480 BC · Athens",
-    status: "3D Scan Complete",
+    name: "Đầu cột Ionic",
+    period: "480 TCN · Athens",
+    status: "Quét 3D hoàn tất",
     delay: 1.1,
   },
   {
@@ -85,9 +74,9 @@ const EXHIBITS = [
     x: "64%",
     y: "65%",
     catalog: "CAT · №0158",
-    name: "Roman Mosaic",
-    period: "200 AD · Rome",
-    status: "Reconstructed",
+    name: "Tranh khảm La Mã",
+    period: "200 SCN · Rome",
+    status: "Đã phục dựng",
     delay: 1.3,
   },
 ];
@@ -158,7 +147,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user) {
-      router.replace(resolvePostLoginPath(user.roleName, readNextParam()));
+      router.replace(getPostLoginPath(user.roleName, readNextParam()));
     }
   }, [isAuthenticated, isLoading, router, user]);
 
@@ -167,9 +156,9 @@ export default function LoginPage() {
     setIsGoogleLoading(true);
     try {
       const result = await loginWithGoogle({ idToken });
-      router.push(resolvePostLoginPath(result.roleName, readNextParam()));
+      router.replace(getPostLoginPath(result.roleName, readNextParam()));
     } catch (err) {
-      setError(getDisplayError(err, "Google sign-in failed. Please try again."));
+      setError(getDisplayError(err, "Đăng nhập Google thất bại. Vui lòng thử lại."));
     } finally {
       setIsGoogleLoading(false);
     }
@@ -189,9 +178,9 @@ export default function LoginPage() {
 
     try {
       const result = await login({ email: email.trim(), password });
-      router.push(resolvePostLoginPath(result.roleName, readNextParam()));
+      router.replace(getPostLoginPath(result.roleName, readNextParam()));
     } catch (err) {
-      setError(getDisplayError(err, "Login failed. Please try again."));
+      setError(getDisplayError(err, "Đăng nhập thất bại. Vui lòng thử lại."));
     } finally {
       setIsSubmitting(false);
     }
@@ -220,7 +209,7 @@ export default function LoginPage() {
         }}
       >
         <ArrowLeft className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" />
-        Back to Home
+        Về trang chủ
       </Link>
 
       {/* ══ LEFT HERO 60% ══════════════════════════════════════════════════ */}
@@ -325,7 +314,7 @@ export default function LoginPage() {
           >
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: C.primary }} />
             <span className="text-[11px] font-medium tracking-[0.2em]" style={{ color: "rgba(245,230,200,0.85)" }}>
-              AUGMENTED REALITY · MUSEUM PLATFORM
+              THỰC TẾ ẢO TĂNG CƯỜNG · NỀN TẢNG BẢO TÀNG
             </span>
           </motion.div>
 
@@ -340,7 +329,7 @@ export default function LoginPage() {
               <div className="mb-5 flex items-center gap-3">
                 <div className="h-px w-8" style={{ background: "rgba(200,155,60,0.55)" }} />
                 <span className="text-[10px] tracking-[0.3em] uppercase" style={{ color: "rgba(200,155,60,0.70)" }}>
-                  Est. 2026
+                  Thành lập 2026
                 </span>
               </div>
 
@@ -348,9 +337,9 @@ export default function LoginPage() {
                 className="text-5xl font-bold leading-[1.08] tracking-wide text-white xl:text-6xl"
                 style={{ fontFamily: CINZEL }}
               >
-                Step Into
+                Bước vào
                 <br />
-                <span style={{ color: C.primary }}>History</span>
+                <span style={{ color: C.primary }}>Lịch sử</span>
               </h1>
             </motion.div>
 
@@ -374,8 +363,7 @@ export default function LoginPage() {
               className="max-w-[380px] text-sm leading-relaxed"
               style={{ color: "rgba(245,230,200,0.68)" }}
             >
-              Explore historical artifacts and cultural heritage through immersive
-              augmented reality experiences.
+              Khám phá hiện vật lịch sử và di sản văn hóa qua trải nghiệm thực tế ảo tăng cường.
             </motion.p>
 
             {/* Feature pills */}
@@ -385,7 +373,7 @@ export default function LoginPage() {
               transition={{ delay: 0.62 }}
               className="mt-7 flex flex-wrap gap-2"
             >
-              {["500+ Artifacts", "50+ Museums", "Live AR Tours"].map((pill) => (
+              {["500+ hiện vật", "50+ bảo tàng", "Tour AR trực tiếp"].map((pill) => (
                 <div
                   key={pill}
                   className="rounded-full px-3 py-1.5 text-[11px]"
@@ -451,7 +439,7 @@ export default function LoginPage() {
                   MUSEUM<span style={{ color: C.primary }}>AR</span>
                 </p>
                 <p className="text-[9px] tracking-widest uppercase" style={{ color: C.mutedLight }}>
-                  Cultural Heritage Platform
+                  Nền tảng di sản văn hóa
                 </p>
               </div>
             </div>
@@ -464,10 +452,10 @@ export default function LoginPage() {
                 className="text-2xl font-bold tracking-wide"
                 style={{ fontFamily: CINZEL, color: C.text }}
               >
-                Welcome Back
+                Chào mừng trở lại
               </h2>
               <p className="mt-1.5 text-sm" style={{ color: C.muted }}>
-                Sign in to continue your historical journey
+                Đăng nhập để tiếp tục hành trình khám phá lịch sử
               </p>
             </div>
 
@@ -478,7 +466,7 @@ export default function LoginPage() {
                 name="email"
                 value={email}
                 onChange={setEmail}
-                placeholder="Email address"
+                placeholder="Địa chỉ email"
                 icon={Mail}
                 disabled={isBusy}
               />
@@ -487,7 +475,7 @@ export default function LoginPage() {
                 name="password"
                 value={password}
                 onChange={setPassword}
-                placeholder="Password"
+                placeholder="Mật khẩu"
                 icon={Lock}
                 disabled={isBusy}
                 suffix={
@@ -511,9 +499,16 @@ export default function LoginPage() {
               )}
 
               {/* Forgot */}
-              <div className="flex justify-end">
+              <div className="flex justify-between gap-3">
+                <Link
+                  href={email.trim() ? `/verify-email?email=${encodeURIComponent(email.trim())}` : "/verify-email"}
+                  className="text-xs transition-colors hover:opacity-70"
+                  style={{ color: C.primary }}
+                >
+                  Xác thực email
+                </Link>
                 <Link href="/forgot-password" className="text-xs transition-colors hover:opacity-70" style={{ color: C.primary }}>
-                  Forgot Password?
+                  Quên mật khẩu?
                 </Link>
               </div>
 
@@ -531,7 +526,7 @@ export default function LoginPage() {
                     letterSpacing: "0.12em",
                   }}
                 >
-                  {isSubmitting ? "Signing In..." : isGoogleLoading ? "Signing in with Google..." : "Sign In"}
+                  {isSubmitting ? "Đang đăng nhập..." : isGoogleLoading ? "Đang đăng nhập Google..." : "Đăng nhập"}
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </motion.div>
@@ -540,7 +535,7 @@ export default function LoginPage() {
             <div className="my-5">
               <OrnamentalRule />
               <p className="mt-3 text-center text-[11px] uppercase tracking-[0.2em]" style={{ color: C.mutedLight }}>
-                or continue with
+                hoặc tiếp tục với
               </p>
             </div>
             <GoogleSignInButton
@@ -574,15 +569,15 @@ export default function LoginPage() {
                   (e.currentTarget as HTMLElement).style.borderColor = C.border;
                 }}
               >
-                Create New Account
+                Tạo tài khoản mới
               </Link>
             </motion.div>
 
             {/* Footer */}
             <p className="mt-6 text-center text-[11px]" style={{ color: "rgba(109,90,69,0.45)" }}>
-              By signing in you agree to our{" "}
+              Khi đăng nhập, bạn đồng ý với{" "}
               <Link href="#" className="underline-offset-2 hover:underline" style={{ color: C.mutedLight }}>
-                Terms of Service
+                Điều khoản sử dụng
               </Link>
             </p>
           </div>

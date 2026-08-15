@@ -5,9 +5,12 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Loader2, Ticket } from "lucide-react";
 import { Navbar } from "@/components/shared/navbar";
+import { StableLabel } from "@/components/shared/stable-label";
 import { useAuth } from "@/context/auth-context";
 import { useLanguage } from "@/context/language-context";
 import { formatDateTimeVi } from "@/lib/format";
+import { labelStatus } from "@/lib/status-labels";
+import { getDisplayError } from "@/lib/validation";
 import { listMyTickets } from "@/services/visitor/ticketing.service";
 import type { TicketDto } from "@/types/api";
 
@@ -26,9 +29,10 @@ export function MyTicketsPanel() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [tickets, setTickets] = useState<TicketDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const purchased = searchParams.get("purchased") === "1";
 
   useEffect(() => {
@@ -40,20 +44,25 @@ export function MyTicketsPanel() {
     }
 
     let cancelled = false;
-    (async () => {
-      setLoading(true);
-      // UI mock store only — skips my-tickets API (same VisitorId bug).
-      const list = await listMyTickets();
-      if (!cancelled) {
+    listMyTickets(language)
+      .then((list) => {
+        if (cancelled) return;
         setTickets(list);
-        setLoading(false);
-      }
-    })();
+        setError(null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(getDisplayError(err, t("mytickets.error_load")));
+        setTickets([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isAuthenticated, router]);
+  }, [authLoading, isAuthenticated, router, language, t]);
 
   return (
     <div className="min-h-screen" style={{ background: C.bg }}>
@@ -67,13 +76,13 @@ export function MyTicketsPanel() {
             style={{ color: C.muted }}
           >
             <ArrowLeft className="h-4 w-4" />
-            {t("mytickets.back_to_shop")}
+            <StableLabel k="mytickets.back_to_shop" />
           </Link>
           <p
             className="mb-2 text-xs font-medium uppercase tracking-[0.2em]"
             style={{ color: C.primary }}
           >
-            My tickets
+            {t("mytickets.title")}
           </p>
           <h1
             className="text-3xl font-semibold tracking-tight sm:text-4xl"
@@ -111,6 +120,18 @@ export function MyTicketsPanel() {
             <Loader2 className="h-4 w-4 animate-spin" />
             {t("mytickets.loading")}
           </div>
+        ) : error ? (
+          <div
+            className="rounded-3xl px-8 py-16 text-center text-sm"
+            style={{
+              background: C.surface,
+              border: `1px solid ${C.border}`,
+              color: "#8B3A3A",
+            }}
+            role="alert"
+          >
+            {error}
+          </div>
         ) : tickets.length === 0 ? (
           <div
             className="rounded-3xl px-8 py-16 text-center"
@@ -131,7 +152,7 @@ export function MyTicketsPanel() {
                 color: C.surface,
               }}
             >
-              {t("mytickets.buy_now")}
+              <StableLabel k="mytickets.buy_now" />
             </Link>
           </div>
         ) : (
@@ -197,7 +218,7 @@ export function MyTicketsPanel() {
                             color: "#2F5D3A",
                           }}
                         >
-                          {ticket.status}
+                          {labelStatus(ticket.status)}
                         </span>
                       </td>
                       <td className="px-5 py-4 text-right">
@@ -206,7 +227,7 @@ export function MyTicketsPanel() {
                           className="text-sm font-medium transition-opacity hover:opacity-80"
                           style={{ color: C.secondary }}
                         >
-                          {t("mytickets.view_details")}
+                          <StableLabel k="mytickets.view_details" />
                         </Link>
                       </td>
                     </tr>

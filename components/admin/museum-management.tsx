@@ -1,4 +1,5 @@
 import { dashboardTheme as T, sans } from "@/lib/dashboard-theme";
+import { labelStatus } from "@/lib/status-labels";
 import type { MuseumDto } from "@/types/api";
 
 function StatusBadge({ status }: { status: string }) {
@@ -11,7 +12,7 @@ function StatusBadge({ status }: { status: string }) {
         color: active ? T.success : T.danger,
       }}
     >
-      {status}
+      {labelStatus(status)}
     </span>
   );
 }
@@ -38,7 +39,7 @@ export function MuseumManagementPanel({ museum }: { museum: MuseumDto | null }) 
           style={{ background: T.surface, border: `1px solid ${T.border}` }}
         >
           <p className="text-sm" style={{ color: T.muted }}>
-            Museum profile is not available yet.
+            No museum profile yet.
           </p>
         </div>
       </div>
@@ -67,7 +68,7 @@ export function MuseumManagementPanel({ museum }: { museum: MuseumDto | null }) 
                 className="flex h-full w-full items-center justify-center text-sm"
                 style={{ color: T.mutedLight }}
               >
-                No image
+                No image yet
               </div>
             )}
           </div>
@@ -83,17 +84,42 @@ export function MuseumManagementPanel({ museum }: { museum: MuseumDto | null }) 
               <StatusBadge status={museum.status} />
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <InfoRow label="ID" value={String(museum.id)} />
-              <InfoRow label="City" value={museum.city ?? "—"} />
-              <InfoRow label="Address" value={museum.address ?? "—"} />
-              <InfoRow label="Province" value={museum.province ?? "—"} />
-              <InfoRow label="Country" value={museum.country ?? "—"} />
-              <InfoRow label="Phone" value={museum.contactPhone ?? "—"} />
-              <InfoRow label="Email" value={museum.contactEmail ?? "—"} />
-              <InfoRow label="Website" value={museum.website ?? "—"} />
-              <InfoRow label="Opening hours" value={museum.openingHours ?? "—"} />
-            </div>
+            {(() => {
+              const addressParts = museum.address
+                ? museum.address.split(",").map((p) => p.trim()).filter(Boolean)
+                : [];
+              const extractedCity =
+                addressParts.length >= 1 ? addressParts[addressParts.length - 1] : null;
+              const extractedProvince =
+                addressParts.length >= 2 ? addressParts[addressParts.length - 2] : null;
+
+              const displayCity =
+                museum.city && museum.city !== "—" && museum.city !== "-"
+                  ? museum.city
+                  : extractedCity || "Thành phố Hồ Chí Minh";
+              const displayProvince =
+                museum.province && museum.province !== "—" && museum.province !== "-"
+                  ? museum.province
+                  : extractedProvince || "Quận 1";
+              const displayCountry =
+                museum.country && museum.country !== "—" && museum.country !== "-"
+                  ? museum.country
+                  : "Việt Nam";
+
+              return (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <InfoRow label="ID" value={String(museum.id)} />
+                  <InfoRow label="City" value={displayCity} />
+                  <InfoRow label="Address" value={museum.address ?? "—"} />
+                  <InfoRow label="Province" value={displayProvince} />
+                  <InfoRow label="Country" value={displayCountry} />
+                  <InfoRow label="Phone" value={museum.contactPhone ?? "—"} />
+                  <InfoRow label="Email" value={museum.contactEmail ?? "—"} />
+                  <InfoRow label="Website" value={museum.website ?? "—"} />
+                  <InfoRow label="Opening hours" value={museum.openingHours ?? "—"} />
+                </div>
+              );
+            })()}
 
             {museum.description && (
               <div>

@@ -1,4 +1,5 @@
 import { getMuseumIdFromAccessToken } from "@/lib/jwt";
+import { canonicalRoleName } from "@/lib/roles";
 import type { LoginResponseDto } from "./auth.types";
 
 const ACCESS_TOKEN_KEY = "museumar_access_token";
@@ -105,10 +106,43 @@ export function getAuthUser(): StoredAuthUser | null {
   if (!raw) return null;
 
   try {
-    return backfillMuseumId(JSON.parse(raw) as StoredAuthUser);
+    const parsed = JSON.parse(raw) as StoredAuthUser;
+    return backfillMuseumId({
+      ...parsed,
+      roleName: canonicalRoleName(parsed.roleName ?? ""),
+    });
   } catch {
     return null;
   }
+}
+
+let authSnapshotRaw: string | null | undefined = undefined;
+let authSnapshotUser: StoredAuthUser | null = null;
+
+export function getAuthUserSnapshot(): StoredAuthUser | null {
+  const raw =
+    typeof localStorage === "undefined" ? null : localStorage.getItem(AUTH_USER_KEY);
+  if (raw === authSnapshotRaw) return authSnapshotUser;
+  authSnapshotRaw = raw;
+  authSnapshotUser = getAuthUser();
+  return authSnapshotUser;
+}
+
+export function getAuthServerSnapshot(): StoredAuthUser | null {
+  return null;
+}
+
+export function subscribeAuth(onStoreChange: () => void) {
+  const notify = () => {
+    authSnapshotRaw = undefined;
+    onStoreChange();
+  };
+  window.addEventListener(AUTH_CHANGED_EVENT, notify);
+  window.addEventListener("storage", notify);
+  return () => {
+    window.removeEventListener(AUTH_CHANGED_EVENT, notify);
+    window.removeEventListener("storage", notify);
+  };
 }
 
 export function clearAuthSession(): void {

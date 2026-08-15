@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
+import { labelStatus } from "@/lib/status-labels";
 import { createExhibitionEntry, uploadExhibitionImage } from "@/services/content-manager/exhibition.service";
 import { createThemeEntry } from "@/services/content-manager";
 import type { ExhibitionDto, ThemeDto } from "@/types/api";
@@ -25,7 +26,7 @@ function StatusBadge({ status }: { status: string }) {
         color: active ? T.success : inactive ? T.primaryDark : T.muted,
       }}
     >
-      {status}
+      {labelStatus(status)}
     </span>
   );
 }
@@ -57,13 +58,13 @@ export function ExhibitionPanel({
     setIsSubmitting(true);
 
     if (!name.trim()) {
-      setError("Exhibition Name is required.");
+      setError("Please enter an exhibition name.");
       setIsSubmitting(false);
       return;
     }
 
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-      setError("End date must be after or equal to Start date.");
+      setError("End date must be on or after the start date.");
       setIsSubmitting(false);
       return;
     }
@@ -82,7 +83,7 @@ export function ExhibitionPanel({
             const newTheme = await createThemeEntry({ themeName: trimmedTheme });
             finalThemeId = newTheme.id;
           } catch (err) {
-            setError("Failed to create new theme.");
+            setError("Could not create a new theme.");
             setIsSubmitting(false);
             return;
           }
@@ -112,7 +113,7 @@ export function ExhibitionPanel({
       setThumbnailFile(null);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Unable to create exhibition."));
+      setError(getDisplayError(err, "Could not create exhibition."));
     } finally {
       setIsSubmitting(false);
     }
@@ -125,7 +126,7 @@ export function ExhibitionPanel({
           <span className="font-semibold" style={{ color: T.text }}>
             {exhibitions.length}
           </span>
-          {` exhibition${exhibitions.length === 1 ? "" : "s"}`}
+          {` exhibitions`}
         </p>
         <button
           type="button"
@@ -148,11 +149,11 @@ export function ExhibitionPanel({
           style={{ background: T.surface, border: `1px solid ${T.border}` }}
         >
           <div className="space-y-1.5">
-            <label className="block text-sm" style={{ color: T.muted }}>Exhibition Name</label>
+            <label className="block text-sm" style={{ color: T.muted }}>Exhibition name</label>
             <input
               type="text"
               required
-              placeholder="e.g., Saigon Nature and Archaeology Exhibition"
+              placeholder="e.g. Nature and Archaeology of Saigon"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
@@ -163,7 +164,7 @@ export function ExhibitionPanel({
           <div className="space-y-1.5">
             <label className="block text-sm" style={{ color: T.muted }}>Description</label>
             <textarea
-              placeholder="Provide a detailed description of the exhibition..."
+              placeholder="Enter a detailed description of the exhibition..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
@@ -186,7 +187,7 @@ export function ExhibitionPanel({
               <input
                 type="text"
                 list="theme-suggestions"
-                placeholder="Select or type new..."
+                placeholder="Select or type a new theme..."
                 value={themeInput}
                 onChange={(e) => setThemeInput(e.target.value)}
                 className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
@@ -201,13 +202,13 @@ export function ExhibitionPanel({
             <div className="space-y-1.5">
               <label className="block text-sm" style={{ color: T.muted }}>Status</label>
               <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-                <option value="Ended">Ended</option>
+                <option value="Active">{labelStatus("Active")}</option>
+                <option value="Inactive">{labelStatus("Inactive")}</option>
+                <option value="Ended">{labelStatus("Ended")}</option>
               </select>
             </div>
             <div className="space-y-1.5 sm:col-span-2 lg:col-span-4">
-              <label className="block text-sm" style={{ color: T.muted }}>Thumbnail Image</label>
+              <label className="block text-sm" style={{ color: T.muted }}>Thumbnail</label>
               <input
                 type="file"
                 accept="image/*"

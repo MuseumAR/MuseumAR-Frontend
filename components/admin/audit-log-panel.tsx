@@ -59,7 +59,7 @@ export function AuditLogPanel() {
         if (!cancelled) setData(result);
       } catch (err) {
         if (!cancelled) {
-          setError(getDisplayError(err, "Unable to load audit logs."));
+          setError(getDisplayError(err, "Unable to load system logs."));
           setData(null);
         }
       } finally {
@@ -106,7 +106,7 @@ export function AuditLogPanel() {
         <span className="font-semibold" style={{ color: T.text }}>
           {totalItems}
         </span>
-        {` audit log${totalItems === 1 ? "" : "s"}`}
+        {` system logs`}
       </p>
 
       <form
@@ -191,13 +191,13 @@ export function AuditLogPanel() {
         {loading ? (
           <div className="px-8 py-16 text-center">
             <p className="text-sm" style={{ color: T.muted }}>
-              Loading audit logs…
+              Loading system logs…
             </p>
           </div>
         ) : items.length === 0 ? (
           <div className="px-8 py-16 text-center">
             <p className="text-sm" style={{ color: T.muted }}>
-              No audit logs found.
+              No system logs found.
             </p>
           </div>
         ) : (
@@ -241,7 +241,7 @@ export function AuditLogPanel() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm" style={{ color: T.muted }}>
-            Page {page} of {totalPages}
+            Page {page} / {totalPages}
           </p>
           <div className="flex gap-2">
             <button
@@ -252,7 +252,7 @@ export function AuditLogPanel() {
               style={{ border: `1px solid ${T.border}`, color: T.text, background: T.surface }}
             >
               <ChevronLeft className="h-4 w-4" />
-              Prev
+              Previous
             </button>
             <button
               type="button"
@@ -349,7 +349,7 @@ function LogRow({
                 <DetailBlock label="New values" value={log.newValues} />
               )}
               {log.userAgent && (
-                <DetailBlock label="User agent" value={log.userAgent} />
+                <DetailBlock label="User-Agent" value={log.userAgent} />
               )}
             </div>
           </td>

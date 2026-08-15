@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
+import { SuccessBanner, useSuccessToast } from "@/components/shared/success-banner";
+import { labelStatus } from "@/lib/status-labels";
 import {
   deleteExhibition,
   updateExhibition,
@@ -33,7 +35,7 @@ function StatusBadge({ status }: { status: string }) {
         color: active ? T.success : inactive ? T.primaryDark : T.muted,
       }}
     >
-      {status}
+      {labelStatus(status)}
     </span>
   );
 }
@@ -63,6 +65,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
   const [selectedExhibitId, setSelectedExhibitId] = useState<number | "">("");
   const [isAssigning, setIsAssigning] = useState(false);
   const [assignError, setAssignError] = useState<string | null>(null);
+  const { success, showSuccess } = useSuccessToast();
 
   const loadExhibitsData = async () => {
     setLoadingExhibits(true);
@@ -81,7 +84,19 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
   };
 
   useEffect(() => {
-    loadExhibitsData();
+    let cancelled = false;
+    Promise.all([
+      getExhibitsByExhibition(exhibition.id).catch(() => [] as ExhibitDto[]),
+      getExhibits().catch(() => [] as ExhibitDto[]),
+    ]).then(([linked, all]) => {
+      if (cancelled) return;
+      setExhibitsInExhibition(linked);
+      setAllMuseumExhibits(all);
+      setLoadingExhibits(false);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [exhibition.id]);
 
   const handleAssignExhibit = async () => {
@@ -92,32 +107,34 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
       await assignExhibitsToExhibition(exhibition.id, [Number(selectedExhibitId)]);
       setSelectedExhibitId("");
       setShowAddModal(false);
+      showSuccess("Artifact assigned to this exhibition.");
       await loadExhibitsData();
     } catch (err) {
-      setAssignError(getDisplayError(err, "Không thể gán hiện vật vào triển lãm."));
+      setAssignError(getDisplayError(err, "Could not assign artifact to exhibition."));
     } finally {
       setIsAssigning(false);
     }
   };
 
   const handleRemoveExhibit = async (exhibitId: number) => {
-    if (!confirm("Bạn có chắc chắn muốn gỡ hiện vật này khỏi triển lãm?")) return;
+    if (!confirm("Remove this artifact from the exhibition?")) return;
     try {
       await removeExhibitFromExhibition(exhibition.id, exhibitId);
+      showSuccess("Artifact removed from this exhibition.");
       await loadExhibitsData();
     } catch (err) {
-      alert(getDisplayError(err, "Không thể gỡ hiện vật."));
+      alert(getDisplayError(err, "Could not remove artifact."));
     }
   };
 
   async function handleDelete() {
-    if (!confirm("Are you sure you want to delete this exhibition?")) return;
+    if (!confirm("Delete this exhibition?")) return;
     try {
       await deleteExhibition(exhibition.id);
       router.push("/content-manager/exhibition");
       router.refresh();
     } catch (err) {
-      alert(getDisplayError(err, "Unable to delete exhibition."));
+      alert(getDisplayError(err, "Could not delete exhibition."));
     }
   }
 
@@ -127,13 +144,13 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
     setIsSubmitting(true);
 
     if (!name.trim()) {
-      setError("Exhibition Name is required.");
+      setError("Please enter an exhibition name.");
       setIsSubmitting(false);
       return;
     }
 
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-      setError("End date must be after or equal to Start date.");
+      setError("End date must be on or after the start date.");
       setIsSubmitting(false);
       return;
     }
@@ -154,9 +171,10 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
       }
 
       setShowEdit(false);
+      showSuccess("Exhibition updated.");
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Unable to update exhibition."));
+      setError(getDisplayError(err, "Could not update exhibition."));
     } finally {
       setIsSubmitting(false);
     }
@@ -178,6 +196,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
       </Link>
 
       <div className="space-y-6">
+        <SuccessBanner message={success} />
         {/* Exhibition Metadata Header Card */}
         <div
           className="rounded-3xl p-6"
@@ -186,12 +205,12 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
           {showEdit ? (
             <form onSubmit={handleUpdate} className="space-y-4">
               <h3 className="text-lg font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-                Edit Exhibition
+                Edit exhibition
               </h3>
               {error && <p className="text-sm" style={{ color: "#8B2E2E" }}>{error}</p>}
               
               <div className="space-y-1.5">
-                <label className="block text-sm" style={{ color: T.muted }}>Exhibition Name</label>
+                <label className="block text-sm" style={{ color: T.muted }}>Exhibition name</label>
                 <input
                   type="text"
                   required
@@ -225,13 +244,13 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                 <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>Status</label>
                   <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}>
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                    <option value="Ended">Ended</option>
+                    <option value="Active">{labelStatus("Active")}</option>
+                    <option value="Inactive">{labelStatus("Inactive")}</option>
+                    <option value="Ended">{labelStatus("Ended")}</option>
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-sm" style={{ color: T.muted }}>New Thumbnail Image</label>
+                  <label className="block text-sm" style={{ color: T.muted }}>New thumbnail</label>
                   <input
                     type="file"
                     accept="image/*"
@@ -246,7 +265,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                   Cancel
                 </button>
                 <button type="submit" disabled={isSubmitting} className="rounded-xl px-5 py-2 text-sm font-medium disabled:opacity-50" style={{ background: T.primary, color: T.surface }}>
-                  {isSubmitting ? "Saving…" : "Save Changes"}
+                  {isSubmitting ? "Saving…" : "Save changes"}
                 </button>
               </div>
             </form>
@@ -267,7 +286,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                     className="flex h-full w-full items-center justify-center text-sm"
                     style={{ color: T.mutedLight }}
                   >
-                    No thumbnail
+                    No image yet
                   </div>
                 )}
               </div>
@@ -312,7 +331,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
 
                 <dl className="grid gap-3 text-sm sm:grid-cols-2 mt-4 pt-4 border-t" style={{ borderColor: T.border }}>
                   <InfoRow label="Museum ID" value={String(exhibition.museumId)} />
-                  <InfoRow label="Status" value={exhibition.status} />
+                  <InfoRow label="Status" value={labelStatus(exhibition.status)} />
                   <InfoRow label="Start date" value={formatDate(exhibition.startDate)} />
                   <InfoRow label="End date" value={formatDate(exhibition.endDate)} />
                 </dl>
@@ -329,10 +348,10 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
               <h3 className="text-lg font-bold" style={{ fontFamily: cinzel, color: T.primaryDark }}>
-                Danh sách Hiện vật trong Triển lãm ({exhibitsInExhibition.length})
+                Artifacts in this exhibition ({exhibitsInExhibition.length})
               </h3>
               <p className="text-xs" style={{ color: T.mutedLight }}>
-                Quản lý các hiện vật được trưng bày trong đợt triển lãm này
+                Links artifacts to this event. Floor / Room (map and AR location) is not changed here.
               </p>
             </div>
 
@@ -345,25 +364,25 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
               className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold shadow-sm transition-opacity hover:opacity-90"
               style={{ background: T.primary, color: T.surface }}
             >
-              + Gán thêm hiện vật vào Triển lãm
+              + Assign artifact to exhibition
             </button>
           </div>
 
           {loadingExhibits ? (
             <div className="py-8 text-center text-xs font-medium" style={{ color: T.muted }}>
-              Đang tải danh sách hiện vật...
+              Loading artifacts...
             </div>
           ) : exhibitsInExhibition.length === 0 ? (
             <div
               className="rounded-2xl py-8 text-center text-xs font-medium"
               style={{ background: T.bg, color: T.muted }}
             >
-              Chưa có hiện vật nào được gán vào triển lãm này. Bấm nút phía trên để bắt đầu gán hiện vật!
+              No artifacts assigned to this exhibition yet. Use the button above to assign artifacts.
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {exhibitsInExhibition.map((ex) => {
-                const title = ex.translations?.[0]?.title || `Hiện vật #${ex.id}`;
+                const title = ex.translations?.[0]?.title || `Artifact #${ex.id}`;
                 const code = ex.exhibitCode || `EX-${ex.id}`;
                 return (
                   <div
@@ -392,7 +411,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                         {title}
                       </h4>
                       <p className="text-[11px] font-mono mt-0.5" style={{ color: T.mutedLight }}>
-                        Mã: {code}
+                        Code: {code}
                       </p>
                       {ex.roomName && (
                         <p className="text-[10px] mt-0.5" style={{ color: T.success }}>
@@ -406,7 +425,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                       onClick={() => handleRemoveExhibit(ex.id)}
                       className="rounded-lg p-1.5 text-xs font-medium transition-colors hover:bg-red-50"
                       style={{ color: T.danger }}
-                      title="Gỡ khỏi triển lãm"
+                      title="Remove from exhibition"
                     >
                       ✕
                     </button>
@@ -426,10 +445,17 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
             style={{ background: T.surface, border: `1px solid ${T.border}` }}
           >
             <h3 className="text-base font-bold mb-2" style={{ color: T.primaryDark }}>
-              Gán Hiện vật vào Triển lãm
+              Assign artifact to exhibition
             </h3>
-            <p className="text-xs mb-4" style={{ color: T.mutedLight }}>
-              Chọn một hiện vật trong kho bảo tàng để gán vào triển lãm &ldquo;{exhibition.name || `#${exhibition.id}`}&rdquo;
+            <p className="text-xs mb-3" style={{ color: T.mutedLight }}>
+              Choose an artifact from the museum to assign to &ldquo;{exhibition.name || `#${exhibition.id}`}&rdquo;
+            </p>
+            <p
+              className="mb-4 rounded-xl px-3 py-2.5 text-xs leading-relaxed"
+              style={{ background: "rgba(200,155,69,0.12)", color: T.primaryDark }}
+            >
+              This only attaches the artifact to the exhibition. It does not move it on the map.
+              If the piece was physically relocated, update Floor / Room on the artifact edit page so map and AR stay correct.
             </p>
 
             {assignError && (
@@ -441,11 +467,11 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text }}>
-                  Chọn Hiện vật:
+                  Select artifact:
                 </label>
                 {unassignedExhibits.length === 0 ? (
                   <p className="text-xs italic py-2" style={{ color: T.muted }}>
-                    Tất cả hiện vật trong bảo tàng đã được gán vào triển lãm này.
+                    All museum artifacts are already assigned to this exhibition.
                   </p>
                 ) : (
                   <select
@@ -454,9 +480,9 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                     className="w-full rounded-xl px-3.5 py-2.5 text-xs outline-none"
                     style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                   >
-                    <option value="">-- Chọn hiện vật --</option>
+                    <option value="">-- Select artifact --</option>
                     {unassignedExhibits.map((ex) => {
-                      const title = ex.translations?.[0]?.title || `Exhibit #${ex.id}`;
+                      const title = ex.translations?.[0]?.title || `Artifact #${ex.id}`;
                       const code = ex.exhibitCode || `EX-${ex.id}`;
                       return (
                         <option key={ex.id} value={ex.id}>
@@ -466,6 +492,18 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                     })}
                   </select>
                 )}
+                {selectedExhibitId ? (
+                  <p className="mt-2 text-xs" style={{ color: T.muted }}>
+                    <Link
+                      href={`/content-manager/artifact/${selectedExhibitId}/edit`}
+                      className="font-semibold underline-offset-2 hover:underline"
+                      style={{ color: T.primaryDark }}
+                    >
+                      Edit Floor / Room
+                    </Link>
+                    {" "}for this artifact if it changed location.
+                  </p>
+                ) : null}
               </div>
 
               <div className="flex justify-end gap-2.5 pt-2">
@@ -475,7 +513,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                   className="rounded-xl px-4 py-2 text-xs font-semibold"
                   style={{ border: `1px solid ${T.border}`, color: T.text }}
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   type="button"
@@ -484,7 +522,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                   className="rounded-xl px-4 py-2 text-xs font-semibold disabled:opacity-50"
                   style={{ background: T.primary, color: T.surface }}
                 >
-                  {isAssigning ? "Đang gán…" : "Xác nhận gán"}
+                  {isAssigning ? "Assigning…" : "Confirm assign"}
                 </button>
               </div>
             </div>

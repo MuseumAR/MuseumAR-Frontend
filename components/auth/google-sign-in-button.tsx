@@ -84,7 +84,7 @@ function GoogleButtonFace({
       }}
     >
       <GoogleIcon />
-      <span>{loading ? "Signing in with Google..." : "Continue with Google"}</span>
+      <span>{loading ? "Đang đăng nhập Google..." : "Tiếp tục với Google"}</span>
     </div>
   );
 }
@@ -103,10 +103,12 @@ export function GoogleSignInButton({
   const callbackRef = useRef(onCredential);
   const [gsiReady, setGsiReady] = useState(false);
   const [hovered, setHovered] = useState(false);
-
-  callbackRef.current = onCredential;
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim();
   const isInteractive = Boolean(clientId) && gsiReady && !disabled && !loading;
+
+  useEffect(() => {
+    callbackRef.current = onCredential;
+  }, [onCredential]);
 
   useEffect(() => {
     if (!clientId || !overlayRef.current) return;

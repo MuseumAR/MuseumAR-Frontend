@@ -1,9 +1,9 @@
 import { apiGetAuth } from "@/services/api-client";
+import { normalizeMuseumDashboardDto } from "@/lib/normalize-dto";
 import type { MuseumDashboardDto } from "@/types/api";
 
 export function getMuseumDashboard(accessToken?: string | null) {
-  return apiGetAuth<MuseumDashboardDto>(
-    "/api/MuseumManager/dashboard",
-    accessToken,
+  return apiGetAuth<unknown>("/api/MuseumManager/dashboard", accessToken).then(
+    normalizeMuseumDashboardDto,
   );
 }

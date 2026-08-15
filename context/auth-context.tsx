@@ -4,16 +4,17 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
 import {
   AUTH_CHANGED_EVENT,
-  getAuthUser,
+  getAuthServerSnapshot,
+  getAuthUserSnapshot,
   logout as logoutService,
+  subscribeAuth,
   type StoredAuthUser,
 } from "@/services/auth";
 
@@ -27,34 +28,32 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+const hydrateSubscribe = () => () => {};
+const getClientHydrated = () => true;
+const getServerHydrated = () => false;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [user, setUser] = useState<StoredAuthUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const user = useSyncExternalStore(
+    subscribeAuth,
+    getAuthUserSnapshot,
+    getAuthServerSnapshot,
+  );
+  const isClient = useSyncExternalStore(
+    hydrateSubscribe,
+    getClientHydrated,
+    getServerHydrated,
+  );
+  const isLoading = !isClient;
 
   const refresh = useCallback(() => {
-    setUser(getAuthUser());
-    setIsLoading(false);
+    window.dispatchEvent(new Event(AUTH_CHANGED_EVENT));
   }, []);
-
-  useEffect(() => {
-    refresh();
-
-    const onAuthChanged = () => refresh();
-    window.addEventListener(AUTH_CHANGED_EVENT, onAuthChanged);
-    window.addEventListener("storage", onAuthChanged);
-
-    return () => {
-      window.removeEventListener(AUTH_CHANGED_EVENT, onAuthChanged);
-      window.removeEventListener("storage", onAuthChanged);
-    };
-  }, [refresh]);
 
   const logout = useCallback(async () => {
     await logoutService();
-    refresh();
     router.push("/");
-  }, [refresh, router]);
+  }, [router]);
 
   const value = useMemo(
     () => ({

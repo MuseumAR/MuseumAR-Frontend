@@ -1,3 +1,5 @@
+import { repairDisplayText } from "@/lib/repair-text";
+
 /** Pick first defined value among alternate API keys (camelCase / PascalCase / acronym). */
 export function pickField<T = unknown>(
   raw: Record<string, unknown>,
@@ -21,7 +23,7 @@ function pickStr(
 ): string | null | undefined {
   const v = pickField<unknown>(raw, ...keys);
   if (v == null) return v as null | undefined;
-  return String(v);
+  return repairDisplayText(String(v));
 }
 
 function pickNum(
@@ -80,11 +82,8 @@ export function normalizeExhibitDto(raw: unknown): import("@/types/api").Exhibit
       ? {
           ageGroupId: pickNum(meta, "ageGroupId", "AgeGroupId") ?? null,
           era: pickStr(meta, "era", "Era") ?? null,
-          eraEn: pickStr(meta, "eraEn", "EraEn") ?? null,
           historicalEvent:
             pickStr(meta, "historicalEvent", "HistoricalEvent") ?? null,
-          historicalEventEn:
-            pickStr(meta, "historicalEventEn", "HistoricalEventEn") ?? null,
         }
       : null,
     translations: (Array.isArray(translationsRaw) ? translationsRaw : []).map(
@@ -94,7 +93,7 @@ export function normalizeExhibitDto(raw: unknown): import("@/types/api").Exhibit
           id: pickNum(tr, "id", "Id") ?? null,
           exhibitId: Number(pickField(tr, "exhibitId", "ExhibitId") ?? 0),
           languageCode: String(pickField(tr, "languageCode", "LanguageCode") ?? "vi"),
-          title: String(pickField(tr, "title", "Title") ?? ""),
+          title: pickStr(tr, "title", "Title") ?? "",
           description: pickStr(tr, "description", "Description") ?? null,
           audioUrl: pickStr(tr, "audioUrl", "AudioUrl") ?? null,
           audioDuration: pickNum(tr, "audioDuration", "AudioDuration") ?? null,
@@ -107,23 +106,56 @@ export function normalizeExhibitDto(raw: unknown): import("@/types/api").Exhibit
 /** Slim BE MuseumDto + optional profile fields if present on payload. */
 export function normalizeMuseumDto(raw: unknown): import("@/types/api").MuseumDto {
   const o = asRecord(raw);
+  const address = pickStr(o, "address", "Address") ?? null;
+  let city = pickStr(o, "city", "City") ?? null;
+  let province = pickStr(o, "province", "Province") ?? null;
+  let country = pickStr(o, "country", "Country") ?? null;
+
+  if (!country || !country.trim() || country === "—" || country === "-") {
+    country = "Việt Nam";
+  }
+
+  if (address) {
+    const parts = address.split(",").map((p) => p.trim()).filter(Boolean);
+    if (parts.length >= 2) {
+      const extractedCity = parts[parts.length - 1];
+      const extractedProvince = parts[parts.length - 2];
+      if (!city || !city.trim() || city === "—" || city === "-") {
+        city = extractedCity;
+      }
+      if (!province || !province.trim() || province === "—" || province === "-") {
+        province = extractedProvince;
+      }
+    } else if (parts.length === 1) {
+      if (!city || !city.trim() || city === "—" || city === "-") {
+        city = parts[0];
+      }
+      if (!province || !province.trim() || province === "—" || province === "-") {
+        province = parts[0];
+      }
+    }
+  }
+
+  if (!city || !city.trim() || city === "—" || city === "-") {
+    city = "Thành phố Hồ Chí Minh";
+  }
+  if (!province || !province.trim() || province === "—" || province === "-") {
+    province = "Quận 1";
+  }
+
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
-    name: String(pickField(o, "name", "Name") ?? ""),
-    nameEn: pickStr(o, "nameEn", "NameEn") ?? null,
+    name: pickStr(o, "name", "Name") ?? "",
     description: pickStr(o, "description", "Description") ?? null,
-    descriptionEn: pickStr(o, "descriptionEn", "DescriptionEn") ?? null,
-    address: pickStr(o, "address", "Address") ?? null,
-    addressEn: pickStr(o, "addressEn", "AddressEn") ?? null,
-    city: pickStr(o, "city", "City") ?? null,
-    province: pickStr(o, "province", "Province") ?? null,
-    country: pickStr(o, "country", "Country") ?? null,
+    address,
+    city,
+    province,
+    country,
     latitude: pickNum(o, "latitude", "Latitude") ?? null,
     longitude: pickNum(o, "longitude", "Longitude") ?? null,
     status: String(pickField(o, "status", "Status") ?? "Active"),
     thumbnailUrl: pickStr(o, "thumbnailUrl", "ThumbnailUrl") ?? null,
     openingHours: pickStr(o, "openingHours", "OpeningHours") ?? null,
-    openingHoursEn: pickStr(o, "openingHoursEn", "OpeningHoursEn") ?? null,
     contactPhone: pickStr(o, "contactPhone", "ContactPhone") ?? null,
     contactEmail: pickStr(o, "contactEmail", "ContactEmail") ?? null,
     website: pickStr(o, "website", "Website") ?? null,
@@ -169,7 +201,7 @@ export function normalizeTourRouteDto(
     const tr = asRecord(t);
     return {
       languageCode: String(pickField(tr, "languageCode", "LanguageCode") ?? "vi"),
-      routeName: String(pickField(tr, "routeName", "RouteName") ?? ""),
+      routeName: pickStr(tr, "routeName", "RouteName") ?? "",
       description: pickStr(tr, "description", "Description") ?? null,
     };
   });
@@ -213,11 +245,14 @@ export function normalizeTicketTypeDto(
     return {
       id: Number(pickField(pr, "id", "Id") ?? 0),
       ticketTypeId: Number(pickField(pr, "ticketTypeId", "TicketTypeId") ?? 0),
-      name: String(pickField(pr, "name", "Name") ?? ""),
+      name: pickStr(pr, "name", "Name") ?? "",
       nameEn: pickStr(pr, "nameEn", "NameEn") ?? null,
       description: pickStr(pr, "description", "Description") ?? null,
       descriptionEn: pickStr(pr, "descriptionEn", "DescriptionEn") ?? null,
-      discountType: (pickField(pr, "discountType", "DiscountType") as any) ?? "Percentage",
+      discountType:
+        pickField(pr, "discountType", "DiscountType") === "FixedAmount"
+          ? "FixedAmount"
+          : "Percentage",
       discountValue: Number(pickField(pr, "discountValue", "DiscountValue") ?? 0),
       startDate: String(pickField(pr, "startDate", "StartDate") ?? ""),
       endDate: String(pickField(pr, "endDate", "EndDate") ?? ""),
@@ -227,7 +262,7 @@ export function normalizeTicketTypeDto(
 
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
-    name: String(pickField(o, "name", "Name") ?? ""),
+    name: pickStr(o, "name", "Name") ?? "",
     nameEn: pickStr(o, "nameEn", "NameEn") ?? null,
     price: Number(pickField(o, "price", "Price") ?? 0),
     description: pickStr(o, "description", "Description") ?? null,
@@ -247,9 +282,7 @@ export function normalizeTicketDto(
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
     ticketCode: String(pickField(o, "ticketCode", "TicketCode") ?? ""),
-    ticketTypeName: String(
-      pickField(o, "ticketTypeName", "TicketTypeName") ?? "",
-    ),
+    ticketTypeName: pickStr(o, "ticketTypeName", "TicketTypeName") ?? "",
     purchaseDate: String(pickField(o, "purchaseDate", "PurchaseDate") ?? ""),
     validDate: pickStr(o, "validDate", "ValidDate") ?? null,
     status: String(pickField(o, "status", "Status") ?? ""),
@@ -275,7 +308,7 @@ export function normalizeRoomDto(raw: unknown): import("@/types/api").RoomDto {
     museumId: Number(pickField(o, "museumId", "MuseumId") ?? 0),
     mapId: pickNum(o, "mapId", "MapId") ?? null,
     roomCode: String(pickField(o, "roomCode", "RoomCode") ?? ""),
-    roomName: String(pickField(o, "roomName", "RoomName") ?? ""),
+    roomName: pickStr(o, "roomName", "RoomName") ?? "",
     floorNumber: Number(pickField(o, "floorNumber", "FloorNumber") ?? 1),
     description: pickStr(o, "description", "Description") ?? null,
     createdAt: pickStr(o, "createdAt", "CreatedAt") ?? undefined,
@@ -294,5 +327,46 @@ export function normalizeMuseumMapDto(
     mapType: pickStr(o, "mapType", "MapType") ?? "floor",
     floorNumber: pickNum(o, "floorNumber", "FloorNumber") ?? undefined,
     mapName: pickStr(o, "mapName", "MapName") ?? undefined,
+  };
+}
+
+export function normalizeMuseumDashboardDto(
+  raw: unknown,
+): import("@/types/api").MuseumDashboardDto {
+  const o = asRecord(raw);
+  const scans = pickField<unknown[]>(o, "exhibitScanStats", "ExhibitScanStats") ?? [];
+  const popular = pickField<unknown[]>(o, "popularExhibits", "PopularExhibits") ?? [];
+  const langs = pickField<unknown[]>(o, "languageUsageStats", "LanguageUsageStats") ?? [];
+
+  return {
+    totalQrScans: pickNum(o, "totalQrScans", "TotalQrScans") ?? 0,
+    averageListeningDurationMinutes:
+      pickNum(o, "averageListeningDurationMinutes", "AverageListeningDurationMinutes") ?? 0,
+    totalOfflineDownloads: pickNum(o, "totalOfflineDownloads", "TotalOfflineDownloads") ?? 0,
+    exhibitScanStats: (Array.isArray(scans) ? scans : []).map((item) => {
+      const s = asRecord(item);
+      return {
+        exhibitId: pickNum(s, "exhibitId", "ExhibitId") ?? 0,
+        exhibitName: pickStr(s, "exhibitName", "ExhibitName") ?? "",
+        scanCount: pickNum(s, "scanCount", "ScanCount") ?? 0,
+      };
+    }),
+    popularExhibits: (Array.isArray(popular) ? popular : []).map((item) => {
+      const p = asRecord(item);
+      return {
+        exhibitId: pickNum(p, "exhibitId", "ExhibitId") ?? 0,
+        exhibitName: pickStr(p, "exhibitName", "ExhibitName") ?? "",
+        totalInteractions: pickNum(p, "totalInteractions", "TotalInteractions") ?? 0,
+        avgDurationSeconds: pickNum(p, "avgDurationSeconds", "AvgDurationSeconds") ?? 0,
+      };
+    }),
+    languageUsageStats: (Array.isArray(langs) ? langs : []).map((item) => {
+      const l = asRecord(item);
+      return {
+        languageCode: pickStr(l, "languageCode", "LanguageCode") ?? "",
+        usageCount: pickNum(l, "usageCount", "UsageCount") ?? 0,
+        percentage: pickNum(l, "percentage", "Percentage") ?? 0,
+      };
+    }),
   };
 }

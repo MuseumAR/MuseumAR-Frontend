@@ -40,3 +40,12 @@ export type ChangePasswordRequest = {
 export type GoogleLoginRequest = {
   idToken: string;
 };
+
+export type VerifyEmailRequest = {
+  email: string;
+  token: string;
+};
+
+export type ResendVerificationRequest = {
+  email: string;
+};

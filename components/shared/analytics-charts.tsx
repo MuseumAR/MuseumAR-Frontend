@@ -59,8 +59,8 @@ function BarChart({
 
   return (
     <div className="flex h-44 items-end justify-between gap-2 pt-4">
-      {data.map((item) => (
-        <div key={item.label} className="flex h-full flex-1 flex-col justify-end items-center gap-1">
+      {data.map((item, index) => (
+        <div key={`${item.label}-${index}`} className="flex h-full flex-1 flex-col justify-end items-center gap-1">
           <span className="text-[10px] font-semibold" style={{ color: T.text }}>
             {formatCompactNumber(item.value)}{suffix}
           </span>
@@ -99,7 +99,10 @@ function LineChart({
   const chartHeight = height - paddingTop - paddingBottom;
 
   const coords = points.map((v, i) => ({
-    x: paddingLeft + (i / (points.length - 1)) * chartWidth,
+    x:
+      points.length === 1
+        ? paddingLeft + chartWidth / 2
+        : paddingLeft + (i / (points.length - 1)) * chartWidth,
     y: paddingTop + chartHeight - (v / max) * chartHeight,
   }));
   const path = coords.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
@@ -158,91 +161,74 @@ function LineChart({
   );
 }
 
+function shortLabel(name: string) {
+  return name.length > 10 ? `${name.substring(0, 10)}..` : name;
+}
+
+const EMPTY_LINE_POINTS = [0, 0, 0, 0, 0];
+const EMPTY_LINE_LABELS = ["1", "2", "3", "4", "5"];
+const EMPTY_BARS = [
+  { label: "1", value: 0 },
+  { label: "2", value: 0 },
+  { label: "3", value: 0 },
+  { label: "4", value: 0 },
+  { label: "5", value: 0 },
+];
+const EMPTY_LANG = [
+  { label: "VI", value: 0 },
+  { label: "EN", value: 0 },
+];
+
 export function AnalyticsCharts({ dashboard }: { dashboard?: MuseumDashboardDto | null }) {
-  const totalScans = dashboard?.totalQrScans || 0;
-  const arSessions = totalScans > 0
-    ? [
-        Math.round(totalScans * 0.5),
-        Math.round(totalScans * 0.7),
-        Math.round(totalScans * 0.6),
-        Math.round(totalScans * 0.8),
-        Math.round(totalScans * 0.75),
-        Math.round(totalScans * 0.9),
-        totalScans,
-      ]
-    : [3200, 4100, 3800, 4500, 4200, 4800, 5200];
-  const arTitle = totalScans > 0 ? "Interactions Trend" : "AR Sessions Trend";
-  const arSubtitle = totalScans > 0 ? "Weekly scan volume" : "Weekly session volume";
+  const scanStats = dashboard?.exhibitScanStats ?? [];
+  const langStats = dashboard?.languageUsageStats ?? [];
+  const popular = dashboard?.popularExhibits ?? [];
 
-  const hasQrStats = !!(dashboard?.exhibitScanStats && dashboard.exhibitScanStats.length > 0);
-  const qrConversion = hasQrStats
-    ? dashboard!.exhibitScanStats.slice(0, 7).map((x) => ({
-        label: x.exhibitName.length > 10 ? x.exhibitName.substring(0, 10) + ".." : x.exhibitName,
-        value: x.scanCount,
-      }))
-    : [
-        { label: "Mon", value: 62 },
-        { label: "Tue", value: 68 },
-        { label: "Wed", value: 71 },
-        { label: "Thu", value: 65 },
-        { label: "Fri", value: 74 },
-        { label: "Sat", value: 82 },
-        { label: "Sun", value: 78 },
-      ];
-  const qrTitle = hasQrStats ? "QR Scans by Exhibit" : "QR Scan Conversion";
-  const qrSubtitle = hasQrStats ? "Top scanned exhibits" : "Daily conversion rate (%)";
-  const qrSuffix = hasQrStats ? "" : "%";
+  const popularInteractions =
+    popular.length > 0 ? popular.map((x) => x.totalInteractions) : EMPTY_LINE_POINTS;
+  const popularLabels =
+    popular.length > 0 ? popular.map((x) => shortLabel(x.exhibitName)) : EMPTY_LINE_LABELS;
 
-  const hasLangStats = !!(dashboard?.languageUsageStats && dashboard.languageUsageStats.length > 0);
-  const audioCompletion = hasLangStats
-    ? dashboard!.languageUsageStats.map((x) => ({
-        label: x.languageCode.toUpperCase(),
-        value: Math.round(x.percentage),
-      }))
-    : [
-        { label: "EN", value: 58 },
-        { label: "VI", value: 52 },
-        { label: "FR", value: 48 },
-        { label: "DE", value: 44 },
-        { label: "ES", value: 41 },
-      ];
-  const langTitle = hasLangStats ? "Language Usage Stats" : "Audio Completion by Language";
-  const langSubtitle = hasLangStats ? "Tỷ lệ sử dụng ngôn ngữ (%)" : "Completion rate per locale";
-  const langSuffix = "%";
+  const qrByExhibit =
+    scanStats.length > 0
+      ? scanStats.slice(0, 7).map((x) => ({
+          label: shortLabel(x.exhibitName),
+          value: x.scanCount,
+        }))
+      : EMPTY_BARS;
 
-  const hasPopularStats = !!(dashboard?.popularExhibits && dashboard.popularExhibits.length > 0);
-  const sessionDuration = hasPopularStats
-    ? dashboard!.popularExhibits.slice(0, 5).map((x) => ({
-        label: x.exhibitName.length > 10 ? x.exhibitName.substring(0, 10) + ".." : x.exhibitName,
-        value: Math.round(x.avgDurationSeconds / 60),
-      }))
-    : [
-        { label: "0-2m", value: 18 },
-        { label: "2-4m", value: 35 },
-        { label: "4-6m", value: 28 },
-        { label: "6-8m", value: 12 },
-        { label: "8m+", value: 7 },
-      ];
-  const durationTitle = hasPopularStats ? "Avg Listening Time (Min)" : "Session Duration Distribution";
-  const durationSubtitle = hasPopularStats ? "By popular exhibits" : "Visitor engagement buckets";
-  const durationSuffix = hasPopularStats ? "m" : "%";
+  const languageUsage =
+    langStats.length > 0
+      ? langStats.map((x) => ({
+          label: x.languageCode.toUpperCase(),
+          value: Math.round(x.percentage),
+        }))
+      : EMPTY_LANG;
+
+  const listeningTime =
+    popular.length > 0
+      ? popular.slice(0, 5).map((x) => ({
+          label: shortLabel(x.exhibitName),
+          value: Math.round(x.avgDurationSeconds / 60),
+        }))
+      : EMPTY_BARS;
 
   return (
     <div className="grid gap-5 lg:grid-cols-2">
-      <ChartCard title={arTitle} subtitle={arSubtitle}>
-        <LineChart points={arSessions} />
+      <ChartCard title="Popular exhibits" subtitle="Interactions from the dashboard API">
+        <LineChart points={popularInteractions} labels={popularLabels} />
       </ChartCard>
 
-      <ChartCard title={qrTitle} subtitle={qrSubtitle}>
-        <BarChart data={qrConversion} suffix={qrSuffix} />
+      <ChartCard title="QR scans by exhibit" subtitle="Most scanned exhibits">
+        <BarChart data={qrByExhibit} />
       </ChartCard>
 
-      <ChartCard title={langTitle} subtitle={langSubtitle}>
-        <BarChart data={audioCompletion} color="#9A6F1F" suffix={langSuffix} />
+      <ChartCard title="Language statistics" subtitle="Language usage (%)">
+        <BarChart data={languageUsage} color="#9A6F1F" suffix="%" />
       </ChartCard>
 
-      <ChartCard title={durationTitle} subtitle={durationSubtitle}>
-        <BarChart data={sessionDuration} color="#5C4033" suffix={durationSuffix} />
+      <ChartCard title="Average listening time (min)" subtitle="By popular exhibits">
+        <BarChart data={listeningTime} color="#5C4033" suffix=" min" />
       </ChartCard>
     </div>
   );

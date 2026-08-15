@@ -12,15 +12,15 @@ import {
   Plus,
   QrCode,
   ShieldCheck,
-  Ticket,
   X,
   Tag,
 } from "lucide-react";
 import { Navbar } from "@/components/shared/navbar";
+import { StableLabel } from "@/components/shared/stable-label";
 import { useAuth } from "@/context/auth-context";
 import { useLanguage } from "@/context/language-context";
 import { formatVnd } from "@/lib/format";
-import { getDisplayError } from "@/lib/validation";
+import { getDisplayError, isUnverifiedEmailError } from "@/lib/validation";
 import {
   cancelTicketOrder,
   confirmTicketPayment,
@@ -63,7 +63,8 @@ function formatTimer(secs: number) {
 
 export function TicketShop() {
   const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+  const [needsEmailVerify, setNeedsEmailVerify] = useState(false);
   const { t, language } = useLanguage();
   const [types, setTypes] = useState<TicketTypeDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -123,7 +124,14 @@ export function TicketShop() {
           if (prev <= 1) {
             if (timerRef.current) clearInterval(timerRef.current);
             if (pendingOrder?.orderCode) {
-              cancelTicketOrder(pendingOrder.orderCode).catch(() => {});
+              cancelTicketOrder(pendingOrder.orderCode).catch((err) => {
+                setError(
+                  getDisplayError(
+                    err,
+                    "Đơn đã hết 15 phút. Không hủy được trên máy chủ — kiểm tra lại Vé của tôi.",
+                  ),
+                );
+              });
             }
             setPendingOrder(null);
             setIsModalOpen(false);
@@ -144,9 +152,11 @@ export function TicketShop() {
   useEffect(() => {
     if (!pendingOrder || !isModalOpen) return;
 
+    let failCount = 0;
     const intervalId = setInterval(async () => {
       try {
         const res = await checkPaymentStatus(pendingOrder.orderCode);
+        failCount = 0;
         if (res?.isPaid) {
           clearInterval(intervalId);
           setSuccess(`Thanh toán thành công đơn hàng #${pendingOrder.orderCode}!`);
@@ -160,7 +170,13 @@ export function TicketShop() {
           setIsModalOpen(false);
         }
       } catch {
-        // Silently ignore polling errors during auto-check
+        failCount += 1;
+        if (failCount >= 3) {
+          setModalError(
+            "Không kiểm tra được thanh toán. Mở PayOS hoặc bấm xác nhận nếu bạn đã trả.",
+          );
+          failCount = 0;
+        }
       }
     }, 3000);
 
@@ -180,6 +196,7 @@ export function TicketShop() {
         );
       } catch (err) {
         if (!cancelled) {
+          setTypes([]);
           setError(getDisplayError(err, t("tickets.error_load")));
         }
       } finally {
@@ -202,6 +219,7 @@ export function TicketShop() {
     setError(null);
     setSuccess(null);
     setModalError(null);
+    setNeedsEmailVerify(false);
 
     if (authLoading) return;
 
@@ -245,6 +263,7 @@ export function TicketShop() {
       setIsCheckoutOpen(false); // Close checkout modal
       setCheckoutTarget(null);
     } catch (err) {
+      setNeedsEmailVerify(isUnverifiedEmailError(err));
       setError(
         getDisplayError(err, t("tickets.error_init")),
       );
@@ -320,20 +339,6 @@ export function TicketShop() {
           <p className="mt-3 max-w-xl text-sm leading-relaxed" style={{ color: C.muted }}>
             {t("tickets.subtitle")}
           </p>
-          <div className="mt-5">
-            <Link
-              href="/tickets/mine"
-              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-opacity hover:opacity-85"
-              style={{
-                background: C.surface,
-                border: `1px solid ${C.border}`,
-                color: C.text,
-              }}
-            >
-              <Ticket className="h-4 w-4" style={{ color: C.primary }} />
-              {t("tickets.my_tickets_btn")}
-            </Link>
-          </div>
         </header>
 
         {/* SHOPEE-STYLE PENDING ORDER BANNER */}
@@ -380,6 +385,14 @@ export function TicketShop() {
             role="alert"
           >
             {error}
+            {needsEmailVerify && (
+              <Link
+                href={`/verify-email?email=${encodeURIComponent(user?.email ?? "")}&next=${encodeURIComponent("/tickets")}`}
+                className="mt-2 inline-block font-semibold underline underline-offset-2"
+              >
+                {t("tickets.verify_email_link")}
+              </Link>
+            )}
           </div>
         )}
 
@@ -406,12 +419,14 @@ export function TicketShop() {
             {t("tickets.loading_types")}
           </div>
         ) : types.length === 0 ? (
-          <div
-            className="rounded-3xl px-8 py-16 text-center text-sm"
-            style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.muted }}
-          >
-            {t("tickets.no_types")}
-          </div>
+          error ? null : (
+            <div
+              className="rounded-3xl px-8 py-16 text-center text-sm"
+              style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.muted }}
+            >
+              {t("tickets.no_types")}
+            </div>
+          )
         ) : (
           <ul className="space-y-4">
             {types.map((ticket) => {
@@ -513,13 +528,13 @@ export function TicketShop() {
                     >
                       {busy ? (
                         <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          {t("tickets.creating_order")}
+                          <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                          <StableLabel k="tickets.creating_order" />
                         </>
                       ) : isAuthenticated ? (
-                        t("tickets.buy")
+                        <StableLabel k="tickets.buy" />
                       ) : (
-                        t("tickets.login_to_buy")
+                        <StableLabel k="tickets.login_to_buy" />
                       )}
                     </button>
                   </div>
@@ -876,7 +891,7 @@ export function TicketShop() {
                   className="inline-flex items-center gap-2 text-xs font-medium underline transition-opacity hover:opacity-85"
                   style={{ color: C.secondary }}
                 >
-                  {t("tickets.open_payos")} <ExternalLink className="h-3.5 w-3.5" />
+                  <StableLabel k="tickets.open_payos" /> <ExternalLink className="h-3.5 w-3.5 shrink-0" />
                 </a>
               </div>
             )}
@@ -924,8 +939,8 @@ export function TicketShop() {
                   </>
                 ) : (
                   <>
-                    <ShieldCheck className="h-4 w-4" />
-                    {t("tickets.confirm_paid")}
+                    <ShieldCheck className="h-4 w-4 shrink-0" />
+                    <StableLabel k="tickets.confirm_paid" />
                   </>
                 )}
               </button>

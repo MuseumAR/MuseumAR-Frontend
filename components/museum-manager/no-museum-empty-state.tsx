@@ -3,8 +3,8 @@ import { Landmark, Plus } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 
 export function NoMuseumEmptyState({
-  title = "No museum registered yet",
-  description = "Create your museum profile to start managing exhibitions, analytics, and tickets.",
+  title = "Museum not registered",
+  description = "Create a museum profile to start managing exhibitions, analytics, and tickets.",
 }: {
   title?: string;
   description?: string;

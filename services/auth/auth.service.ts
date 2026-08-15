@@ -2,6 +2,7 @@ import { apiPost, apiPostAuth, getApiUrl } from "./auth.api";
 import { clearAuthSession, saveAuthSession } from "./auth.storage";
 import { refreshAccessToken } from "./refresh-token";
 import { AppError } from "@/lib/validation";
+import { canonicalRoleName } from "@/lib/roles";
 import type {
   ChangePasswordRequest,
   ForgotPasswordRequest,
@@ -9,7 +10,9 @@ import type {
   LoginRequest,
   LoginResponseDto,
   RegisterRequest,
+  ResendVerificationRequest,
   ResetPasswordRequest,
+  VerifyEmailRequest,
 } from "./auth.types";
 
 export { refreshAccessToken };
@@ -29,6 +32,16 @@ export async function login(payload: LoginRequest): Promise<LoginResponseDto> {
 
 export async function register(payload: RegisterRequest): Promise<number> {
   return apiPost<number>("/api/auth/register", payload);
+}
+
+export async function verifyEmail(payload: VerifyEmailRequest): Promise<void> {
+  await apiPost<boolean>("/api/auth/verify-email", payload);
+}
+
+export async function resendVerification(
+  payload: ResendVerificationRequest,
+): Promise<void> {
+  await apiPost<boolean>("/api/auth/resend-verification", payload);
 }
 
 export async function forgotPassword(
@@ -72,7 +85,9 @@ function normalizeLoginResponse(
     userId: Number(r.userId ?? r.UserId ?? 0),
     fullName: String(r.fullName ?? r.FullName ?? ""),
     email: String(r.email ?? r.Email ?? ""),
-    roleName: String(r.roleName ?? r.RoleName ?? ""),
+    roleName: canonicalRoleName(
+      String(r.roleName ?? r.RoleName ?? r.role ?? r.Role ?? ""),
+    ),
     accessToken: String(r.accessToken ?? r.AccessToken ?? ""),
     refreshToken: (r.refreshToken ?? r.RefreshToken ?? null) as string | null,
   };

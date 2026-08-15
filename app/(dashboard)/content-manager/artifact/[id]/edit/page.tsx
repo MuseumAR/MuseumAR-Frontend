@@ -57,6 +57,7 @@ export default async function UpdateArtifactPage({
       initialTagIds={exhibitTags.map((t) => t.id)}
       initialMapId={exhibit?.mapId ?? null}
       initialRoomId={exhibit?.roomId ?? null}
+      initialTranslations={exhibit?.translations ?? []}
     />
   );
 }

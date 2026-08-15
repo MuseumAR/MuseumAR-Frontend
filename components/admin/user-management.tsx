@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { labelStatus } from "@/lib/status-labels";
 import { getDisplayError } from "@/lib/validation";
+import { SuccessBanner, useSuccessToast } from "@/components/shared/success-banner";
 import {
   ADMIN_ROLE_OPTIONS,
   createUserEntry,
@@ -32,6 +34,7 @@ export function UserManagementPanel({
   const [search, setSearch] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { success, showSuccess } = useSuccessToast();
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -105,6 +108,7 @@ export function UserManagementPanel({
         });
       }
       setShowForm(false);
+      showSuccess(editing ? "User updated." : "User created.");
       await afterMutation();
     } catch (err) {
       setError(getDisplayError(err, "Unable to save user."));
@@ -117,6 +121,7 @@ export function UserManagementPanel({
     if (!confirm(`Delete user ${user.fullName}?`)) return;
     try {
       await deleteUserEntry(user.id);
+      showSuccess("User deleted.");
       await afterMutation();
     } catch (err) {
       setError(getDisplayError(err, "Unable to delete user."));
@@ -130,7 +135,7 @@ export function UserManagementPanel({
           <span className="font-semibold" style={{ color: T.text }}>
             {users.length}
           </span>
-          {` user${users.length === 1 ? "" : "s"}`}
+          {" users"}
         </p>
         <button
           type="button"
@@ -154,6 +159,8 @@ export function UserManagementPanel({
         style={{ border: `1px solid ${T.border}`, background: T.surface, color: T.text }}
       />
 
+      <SuccessBanner message={success} />
+
       {showForm && (
         <form
           onSubmit={handleSubmit}
@@ -176,7 +183,7 @@ export function UserManagementPanel({
                 </p>
               </div>
             )}
-            <Field label="Phone" value={phone} onChange={setPhone} />
+            <Field label="Phone number" value={phone} onChange={setPhone} />
             <Field
               label={editing ? "New password (optional)" : "Password *"}
               value={password}
@@ -192,7 +199,7 @@ export function UserManagementPanel({
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
               >
                 {ADMIN_ROLE_OPTIONS.map((role) => (
-                  <option key={role.id} value={role.id}>{role.name}</option>
+                    <option key={role.id} value={role.id}>{labelStatus(role.name)}</option>
                 ))}
               </select>
             </div>
@@ -205,8 +212,8 @@ export function UserManagementPanel({
                   className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                   style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                 >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
+                  <option value="Active">{labelStatus("Active")}</option>
+                  <option value="Inactive">{labelStatus("Inactive")}</option>
                 </select>
               </div>
             )}
@@ -257,7 +264,7 @@ export function UserManagementPanel({
                   <tr key={user.id} style={{ borderBottom: `1px solid ${T.border}` }}>
                     <td className="px-5 py-4 font-medium" style={{ color: T.text }}>{user.fullName}</td>
                     <td className="px-5 py-4" style={{ color: T.muted }}>{user.email}</td>
-                    <td className="px-5 py-4" style={{ color: T.muted }}>{user.roleName}</td>
+                    <td className="px-5 py-4" style={{ color: T.muted }}>{labelStatus(user.roleName)}</td>
                     <td className="px-5 py-4">
                       <span
                         className="rounded-full px-2.5 py-0.5 text-xs font-medium"
@@ -266,7 +273,7 @@ export function UserManagementPanel({
                           color: user.status === "Active" ? T.success : T.danger,
                         }}
                       >
-                        {user.status}
+                        {labelStatus(user.status)}
                       </span>
                     </td>
                     <td className="px-5 py-4">

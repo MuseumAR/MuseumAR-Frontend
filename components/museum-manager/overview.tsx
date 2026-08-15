@@ -1,39 +1,54 @@
 import { StatCard } from "@/components/dashboard/stat-card";
-import {
-  getLanguageUsage,
-  getMuseumManagerStats,
-  getPopularExhibits,
-  getVisitorsTrend,
-} from "@/services/museum-manager";
+import { loadMuseumManagerOverview } from "@/services/museum-manager";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { LanguageUsageChart } from "./charts/language-usage-chart";
 import { PopularExhibitChart } from "./charts/popular-exhibit-chart";
 import { VisitorsTrendChart } from "./charts/visitors-trend-chart";
 
 export async function MuseumManagerOverview() {
-  const [stats, popularExhibits, languageUsage, visitorsTrend] = await Promise.all([
-    getMuseumManagerStats(),
-    getPopularExhibits(),
-    getLanguageUsage(),
-    getVisitorsTrend(),
-  ]);
+  const { stats, popularExhibits, languageUsage, scanByExhibit, error } =
+    await loadMuseumManagerOverview();
 
   return (
     <div className="space-y-8 px-8 pb-10">
+      {error ? (
+        <p
+          className="rounded-2xl px-4 py-3 text-sm"
+          style={{ background: "rgba(180,40,40,0.08)", color: "#8B2E2E" }}
+        >
+          {error}
+        </p>
+      ) : null}
+
       <section>
         <div className="mb-5">
           <p className="text-xs font-medium uppercase tracking-[0.22em]" style={{ color: T.mutedLight }}>
-            Museum Overview
+            Overview
           </p>
           <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-            Visitor & Engagement
+            Visitors & Engagement
           </h2>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Total Visitors" value={stats.totalVisitor} icon="users" watermark="column" />
-          <StatCard label="QR Scans Today" value={stats.qrScansToday} icon="qrCode" watermark="map" />
-          <StatCard label="Offline Downloads" value={stats.offlineDownloads} icon="download" watermark="scroll" />
-          <StatCard label="Avg. Listening Time" value={stats.averageListeningTime} icon="headphones" watermark="vase" />
+          <StatCard label="Total QR scans" value={stats.qrScansToday} icon="qrCode" watermark="map" />
+          <StatCard
+            label="Total interactions"
+            value={stats.totalVisitor}
+            icon="users"
+            watermark="column"
+          />
+          <StatCard
+            label="Offline downloads"
+            value={stats.offlineDownloads}
+            icon="download"
+            watermark="scroll"
+          />
+          <StatCard
+            label="Average listening time (min)"
+            value={stats.averageListeningTime}
+            icon="headphones"
+            watermark="vase"
+          />
         </div>
       </section>
 
@@ -43,7 +58,7 @@ export async function MuseumManagerOverview() {
             Analytics
           </p>
           <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-            Exhibition Insights
+            Exhibition insights
           </h2>
         </div>
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
@@ -51,7 +66,7 @@ export async function MuseumManagerOverview() {
             <PopularExhibitChart data={popularExhibits} />
             <LanguageUsageChart data={languageUsage} />
           </div>
-          <VisitorsTrendChart data={visitorsTrend} />
+          <VisitorsTrendChart data={scanByExhibit} />
         </div>
       </section>
     </div>
