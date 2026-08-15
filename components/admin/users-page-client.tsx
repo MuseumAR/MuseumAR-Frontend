@@ -28,8 +28,25 @@ export function UsersPageClient() {
   }, []);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    let cancelled = false;
+    getUsers()
+      .then((data) => {
+        if (cancelled) return;
+        setUsers(Array.isArray(data) ? data : []);
+        setError(null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(getDisplayError(err, "Unable to load users."));
+        setUsers([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (loading && users.length === 0) {
     return (

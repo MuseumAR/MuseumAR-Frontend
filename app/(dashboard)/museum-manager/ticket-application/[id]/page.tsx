@@ -19,28 +19,31 @@ export default async function TicketDetailPage({
 
   const token = await getServerAccessToken();
 
+  let ticket;
+  let museum;
+  let exhibitions;
   try {
-    const [ticket, museum, exhibitions] = await Promise.all([
+    [ticket, museum, exhibitions] = await Promise.all([
       getTicketDetailForManager(ticketId, token),
       getManagedMuseum(),
       getExhibitionList(),
     ]);
-
-    if (!ticket) {
-      notFound();
-    }
-
-    const filteredExhibitions = exhibitions.filter((ex) => ex.museumId === museum?.id);
-
-    return (
-      <TicketDetailPanel
-        initialTicket={ticket}
-        exhibitions={filteredExhibitions}
-        museumId={museum?.id ?? null}
-      />
-    );
   } catch (err) {
     console.error("Failed to load ticket detail page:", err);
     notFound();
   }
+
+  if (!ticket) {
+    notFound();
+  }
+
+  const filteredExhibitions = exhibitions.filter((ex) => ex.museumId === museum?.id);
+
+  return (
+    <TicketDetailPanel
+      initialTicket={ticket}
+      exhibitions={filteredExhibitions}
+      museumId={museum?.id ?? null}
+    />
+  );
 }

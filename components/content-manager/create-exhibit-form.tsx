@@ -127,7 +127,7 @@ export function CreateExhibitForm({
         translations: translationsPayload,
       });
 
-      const exhibitId = typeof res === "object" && res && "id" in res ? (res as any).id : (res as unknown as number);
+      const exhibitId = res.id;
 
       const displayTitle = titleVi.trim() || titleEn.trim() || "Artifact";
       if (imageFile) await uploadExhibitImage(exhibitId, imageFile, displayTitle);

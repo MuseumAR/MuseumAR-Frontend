@@ -41,6 +41,8 @@ export function TicketDetailPanel() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { language } = useLanguage();
+  const ticketId = Number(params.id);
+  const idValid = Number.isFinite(ticketId);
   const [detail, setDetail] = useState<TicketDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkInLoading, setCheckInLoading] = useState(false);
@@ -57,21 +59,14 @@ export function TicketDetailPanel() {
     }
 
     const id = Number(params.id);
-    if (!Number.isFinite(id)) {
-      setDetail(null);
-      setLoading(false);
-      return;
-    }
+    if (!Number.isFinite(id)) return;
 
     let cancelled = false;
-    (async () => {
-      setLoading(true);
-      const res = await getTicketDetail(id, language);
-      if (!cancelled) {
-        setDetail(res);
-        setLoading(false);
-      }
-    })();
+    getTicketDetail(id, language).then((res) => {
+      if (cancelled) return;
+      setDetail(res);
+      setLoading(false);
+    });
 
     return () => {
       cancelled = true;
@@ -117,7 +112,7 @@ export function TicketDetailPanel() {
           Vé của tôi
         </Link>
 
-        {authLoading || loading ? (
+        {authLoading || (isAuthenticated && idValid && loading) ? (
           <div
             className="flex items-center justify-center gap-2 rounded-3xl py-24 text-sm"
             style={{

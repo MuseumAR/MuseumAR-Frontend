@@ -82,7 +82,19 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
   };
 
   useEffect(() => {
-    loadExhibitsData();
+    let cancelled = false;
+    Promise.all([
+      getExhibitsByExhibition(exhibition.id).catch(() => [] as ExhibitDto[]),
+      getExhibits().catch(() => [] as ExhibitDto[]),
+    ]).then(([linked, all]) => {
+      if (cancelled) return;
+      setExhibitsInExhibition(linked);
+      setAllMuseumExhibits(all);
+      setLoadingExhibits(false);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [exhibition.id]);
 
   const handleAssignExhibit = async () => {
