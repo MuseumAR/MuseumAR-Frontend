@@ -194,6 +194,7 @@ export type ExhibitionDto = {
   id: number;
   museumId: number;
   themeId?: number | null;
+  themeName?: string | null;
   name?: string | null;
   description?: string | null;
   thumbnailUrl?: string | null;

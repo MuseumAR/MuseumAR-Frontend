@@ -257,6 +257,10 @@ export function ExhibitionPanel({
               <p className="text-xs mt-0.5" style={{ color: T.mutedLight }}>ID: {item.id}</p>
               <div className="mt-3 space-y-2 text-sm" style={{ color: T.muted }}>
                 <div className="flex justify-between">
+                  <span>Theme</span>
+                  <span style={{ color: T.text }}>{item.themeName || "—"}</span>
+                </div>
+                <div className="flex justify-between">
                   <span>Start</span>
                   <span style={{ color: T.text }}>{item.startDate?.slice(0, 10) ?? "—"}</span>
                 </div>
