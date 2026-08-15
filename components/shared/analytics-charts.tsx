@@ -59,8 +59,8 @@ function BarChart({
 
   return (
     <div className="flex h-44 items-end justify-between gap-2 pt-4">
-      {data.map((item) => (
-        <div key={item.label} className="flex h-full flex-1 flex-col justify-end items-center gap-1">
+      {data.map((item, index) => (
+        <div key={`${item.label}-${index}`} className="flex h-full flex-1 flex-col justify-end items-center gap-1">
           <span className="text-[10px] font-semibold" style={{ color: T.text }}>
             {formatCompactNumber(item.value)}{suffix}
           </span>
@@ -161,69 +161,74 @@ function LineChart({
   );
 }
 
-function ChartEmpty() {
-  return (
-    <p className="flex h-32 items-center justify-center text-sm" style={{ color: T.muted }}>
-      No data
-    </p>
-  );
-}
-
 function shortLabel(name: string) {
   return name.length > 10 ? `${name.substring(0, 10)}..` : name;
 }
+
+const EMPTY_LINE_POINTS = [0, 0, 0, 0, 0];
+const EMPTY_LINE_LABELS = ["1", "2", "3", "4", "5"];
+const EMPTY_BARS = [
+  { label: "1", value: 0 },
+  { label: "2", value: 0 },
+  { label: "3", value: 0 },
+  { label: "4", value: 0 },
+  { label: "5", value: 0 },
+];
+const EMPTY_LANG = [
+  { label: "VI", value: 0 },
+  { label: "EN", value: 0 },
+];
 
 export function AnalyticsCharts({ dashboard }: { dashboard?: MuseumDashboardDto | null }) {
   const scanStats = dashboard?.exhibitScanStats ?? [];
   const langStats = dashboard?.languageUsageStats ?? [];
   const popular = dashboard?.popularExhibits ?? [];
 
-  const popularInteractions = popular.map((x) => x.totalInteractions);
-  const popularLabels = popular.map((x) => shortLabel(x.exhibitName));
+  const popularInteractions =
+    popular.length > 0 ? popular.map((x) => x.totalInteractions) : EMPTY_LINE_POINTS;
+  const popularLabels =
+    popular.length > 0 ? popular.map((x) => shortLabel(x.exhibitName)) : EMPTY_LINE_LABELS;
 
-  const qrByExhibit = scanStats.slice(0, 7).map((x) => ({
-    label: shortLabel(x.exhibitName),
-    value: x.scanCount,
-  }));
+  const qrByExhibit =
+    scanStats.length > 0
+      ? scanStats.slice(0, 7).map((x) => ({
+          label: shortLabel(x.exhibitName),
+          value: x.scanCount,
+        }))
+      : EMPTY_BARS;
 
-  const languageUsage = langStats.map((x) => ({
-    label: x.languageCode.toUpperCase(),
-    value: Math.round(x.percentage),
-  }));
+  const languageUsage =
+    langStats.length > 0
+      ? langStats.map((x) => ({
+          label: x.languageCode.toUpperCase(),
+          value: Math.round(x.percentage),
+        }))
+      : EMPTY_LANG;
 
-  const listeningTime = popular.slice(0, 5).map((x) => ({
-    label: shortLabel(x.exhibitName),
-    value: Math.round(x.avgDurationSeconds / 60),
-  }));
+  const listeningTime =
+    popular.length > 0
+      ? popular.slice(0, 5).map((x) => ({
+          label: shortLabel(x.exhibitName),
+          value: Math.round(x.avgDurationSeconds / 60),
+        }))
+      : EMPTY_BARS;
 
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       <ChartCard title="Popular exhibits" subtitle="Interactions from the dashboard API">
-        {popularInteractions.length > 0 ? (
-          <LineChart points={popularInteractions} labels={popularLabels} />
-        ) : (
-          <ChartEmpty />
-        )}
+        <LineChart points={popularInteractions} labels={popularLabels} />
       </ChartCard>
 
       <ChartCard title="QR scans by exhibit" subtitle="Most scanned exhibits">
-        {qrByExhibit.length > 0 ? <BarChart data={qrByExhibit} /> : <ChartEmpty />}
+        <BarChart data={qrByExhibit} />
       </ChartCard>
 
       <ChartCard title="Language statistics" subtitle="Language usage (%)">
-        {languageUsage.length > 0 ? (
-          <BarChart data={languageUsage} color="#9A6F1F" suffix="%" />
-        ) : (
-          <ChartEmpty />
-        )}
+        <BarChart data={languageUsage} color="#9A6F1F" suffix="%" />
       </ChartCard>
 
       <ChartCard title="Average listening time (min)" subtitle="By popular exhibits">
-        {listeningTime.length > 0 ? (
-          <BarChart data={listeningTime} color="#5C4033" suffix=" min" />
-        ) : (
-          <ChartEmpty />
-        )}
+        <BarChart data={listeningTime} color="#5C4033" suffix=" min" />
       </ChartCard>
     </div>
   );

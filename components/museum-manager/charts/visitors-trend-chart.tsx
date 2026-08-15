@@ -15,18 +15,29 @@ function formatCompactNumber(value: number): string {
   return value.toString();
 }
 
+const EMPTY_TREND: VisitorTrend[] = [
+  { day: "1", value: 0 },
+  { day: "2", value: 0 },
+  { day: "3", value: 0 },
+  { day: "4", value: 0 },
+  { day: "5", value: 0 },
+];
+
 export function VisitorsTrendChart({ data }: { data: VisitorTrend[] }) {
+  const series = data.length > 0 ? data : EMPTY_TREND;
   const innerWidth = CHART_WIDTH - PADDING.left - PADDING.right;
   const innerHeight = CHART_HEIGHT - PADDING.top - PADDING.bottom;
 
-  // Calculate dynamic Y_MAX and Y_TICKS based on data values
-  const maxVal = Math.max(...data.map((d) => d.value), 1);
+  const maxVal = Math.max(...series.map((d) => d.value), 1);
   const Y_MAX = maxVal <= 5 ? 5 : maxVal <= 10 ? 10 : maxVal <= 50 ? 50 : maxVal <= 100 ? 100 : Math.ceil(maxVal / 100) * 100;
   const Y_TICKS = Array.from({ length: 5 }, (_, i) => Math.round((Y_MAX / 5) * (i + 1)));
 
-  const points = data.map((item, index) => ({
+  const points = series.map((item, index) => ({
     ...item,
-    x: PADDING.left + (index / (data.length - 1)) * innerWidth,
+    x:
+      series.length === 1
+        ? PADDING.left + innerWidth / 2
+        : PADDING.left + (index / (series.length - 1)) * innerWidth,
     y: PADDING.top + innerHeight - (item.value / Y_MAX) * innerHeight,
   }));
 
@@ -44,14 +55,14 @@ export function VisitorsTrendChart({ data }: { data: VisitorTrend[] }) {
       }}
     >
       <h2 className="text-base font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-        Visitor trend
+        QR scans by exhibit
       </h2>
       <div className="mt-4 flex flex-1 items-center justify-center overflow-x-auto">
         <svg
           viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
           className="h-full w-full max-w-full"
           role="img"
-          aria-label="Visitor trend chart"
+          aria-label="QR scans by exhibit"
         >
           {Y_TICKS.map((tick) => {
             const y = PADDING.top + innerHeight - (tick / Y_MAX) * innerHeight;

@@ -2,8 +2,16 @@ import type { PopularExhibit } from "@/types";
 import { formatNumber } from "@/lib/format";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 
+const EMPTY_ROWS: PopularExhibit[] = [
+  { name: "Exhibit 1", value: 0, color: "#C89B45" },
+  { name: "Exhibit 2", value: 0, color: "#C89B45" },
+  { name: "Exhibit 3", value: 0, color: "#C89B45" },
+  { name: "Exhibit 4", value: 0, color: "#C89B45" },
+];
+
 export function PopularExhibitChart({ data }: { data: PopularExhibit[] }) {
-  const maxValue = Math.max(...data.map((item) => item.value));
+  const rows = data.length > 0 ? data : EMPTY_ROWS;
+  const maxValue = Math.max(...rows.map((item) => item.value), 1);
 
   return (
     <div
@@ -18,7 +26,7 @@ export function PopularExhibitChart({ data }: { data: PopularExhibit[] }) {
         Popular exhibits
       </h2>
       <div className="mt-6 space-y-5">
-        {data.map((item) => (
+        {rows.map((item) => (
           <div key={item.name}>
             <div className="flex items-center justify-between text-sm">
               <span style={{ color: T.text }}>{item.name}</span>
