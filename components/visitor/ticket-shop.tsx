@@ -23,7 +23,6 @@ import { formatVnd } from "@/lib/format";
 import { getDisplayError, isUnverifiedEmailError } from "@/lib/validation";
 import {
   cancelTicketOrder,
-  confirmTicketPayment,
   getPendingOrder,
   listPublicTicketTypes,
   placeTicketOrder,
@@ -83,7 +82,6 @@ export function TicketShop() {
   const [pendingOrder, setPendingOrder] = useState<PendingOrder | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState<number>(0);
-  const [confirming, setConfirming] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
 
@@ -173,7 +171,7 @@ export function TicketShop() {
         failCount += 1;
         if (failCount >= 3) {
           setModalError(
-            "Không kiểm tra được thanh toán. Mở PayOS hoặc bấm xác nhận nếu bạn đã trả.",
+            "Không kiểm tra được thanh toán. Vui lòng mở trang thanh toán PayOS hoặc kiểm tra kết nối mạng.",
           );
           failCount = 0;
         }
@@ -274,30 +272,6 @@ export function TicketShop() {
     }
   }
 
-  async function handleConfirmPayment() {
-    if (!pendingOrder) return;
-
-    setConfirming(true);
-    setModalError(null);
-
-    try {
-      // Confirm payment on backend
-      await confirmTicketPayment(pendingOrder.orderCode);
-      setSuccess(t("tickets.payment_success", { code: pendingOrder.orderCode }));
-      setPendingOrder(null);
-      setIsModalOpen(false);
-      router.push("/tickets/mine?purchased=1");
-    } catch (err) {
-      setModalError(
-        getDisplayError(
-          err,
-          t("tickets.error_confirm"),
-        ),
-      );
-    } finally {
-      setConfirming(false);
-    }
-  }
 
   // EXPLICIT CANCEL ORDER FUNCTION (Only when user explicitly clicks "Hủy đơn hàng này")
   async function handleCancelOrder() {
@@ -806,7 +780,7 @@ export function TicketShop() {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                disabled={cancelling || confirming}
+                disabled={cancelling}
                 className="rounded-full p-2 hover:bg-[rgba(200,155,60,0.15)] transition-colors disabled:opacity-50"
                 style={{ color: C.muted }}
               >
@@ -906,11 +880,20 @@ export function TicketShop() {
 
             {/* Modal Actions */}
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              {/* EXPLICIT CANCEL ORDER BUTTON */}
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                disabled={cancelling}
+                className="flex-1 rounded-full border py-3 text-sm font-semibold transition-colors hover:bg-stone-100 disabled:opacity-50"
+                style={{ borderColor: C.border, color: C.text }}
+              >
+                Đóng
+              </button>
+
               <button
                 type="button"
                 onClick={handleCancelOrder}
-                disabled={cancelling || confirming}
+                disabled={cancelling}
                 className="flex-1 rounded-full border py-3 text-sm font-semibold transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
                 style={{ borderColor: C.border, color: C.muted }}
               >
@@ -921,29 +904,6 @@ export function TicketShop() {
                   </span>
                 ) : (
                   "Hủy đơn hàng này"
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleConfirmPayment}
-                disabled={confirming || cancelling}
-                className="flex-1 rounded-full py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-1.5"
-                style={{
-                  background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
-                  boxShadow: "0 2px 10px rgba(166,124,45,0.30)",
-                }}
-              >
-                {confirming ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {t("tickets.checking_payment")}
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck className="h-4 w-4 shrink-0" />
-                    <StableLabel k="tickets.confirm_paid" />
-                  </>
                 )}
               </button>
             </div>

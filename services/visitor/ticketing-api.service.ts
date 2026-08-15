@@ -41,10 +41,6 @@ export function getTicketDetail(id: number, lang?: string): Promise<TicketDetail
   return apiGetAuth<TicketDetailDto>(`/api/ticketing/my-tickets/${id}${query}`);
 }
 
-export function mockConfirmPayment(orderCode: string) {
-  const params = new URLSearchParams({ orderCode });
-  return apiGetAuth<unknown>(`/api/ticketing/mock-confirm?${params.toString()}`);
-}
 
 export function checkPaymentStatus(orderCode: string): Promise<{ isPaid?: boolean; isCancelled?: boolean; status?: string }> {
   return apiGet<{ isPaid?: boolean; isCancelled?: boolean; status?: string }>(`/api/payment/check-status/${encodeURIComponent(orderCode)}`);
