@@ -88,6 +88,7 @@ export type CreateAnalyticsLogDto = {
   museumId: number;
   exhibitId?: number | null;
   actionType: string;
+  listeningDuration?: number | null;
   languageUsed?: string | null;
   deviceType?: string | null;
   searchQuery?: string | null;
