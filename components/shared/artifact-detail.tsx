@@ -22,6 +22,10 @@ interface Props {
     description?: string | null;
     audioUrl?: string | null;
   }>;
+  tags?: Array<{
+    id: number;
+    tagName: string;
+  }>;
 }
 
 export function ArtifactDetail({
@@ -29,6 +33,7 @@ export function ArtifactDetail({
   backPath,
   variant = "museum-manager",
   translations = [],
+  tags = [],
 }: Props) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -147,7 +152,25 @@ export function ArtifactDetail({
                     <ActiveRow label={ARTIFACT_LABELS.audio!} value={currentAudioUrl ? "Active" : "Inactive"} />
                   </dl>
 
-                  <p className="mt-2 text-sm leading-relaxed" style={{ color: T.muted }}>
+                  {tags && tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 pt-1.5">
+                      {tags.map((tag) => (
+                        <span
+                          key={tag.id}
+                          className="rounded-full px-2.5 py-0.5 text-[11px] font-medium"
+                          style={{
+                            background: "rgba(200,155,69,0.12)",
+                            border: `1px solid ${T.border}`,
+                            color: T.primaryDark,
+                          }}
+                        >
+                          {tag.tagName}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <p className="mt-3 text-sm leading-relaxed" style={{ color: T.muted }}>
                     <span style={{ color: T.mutedLight }}>{ARTIFACT_LABELS.description}: </span>
                     {currentDesc}
                   </p>
