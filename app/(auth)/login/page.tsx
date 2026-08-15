@@ -499,7 +499,14 @@ export default function LoginPage() {
               )}
 
               {/* Forgot */}
-              <div className="flex justify-end">
+              <div className="flex justify-between gap-3">
+                <Link
+                  href={email.trim() ? `/verify-email?email=${encodeURIComponent(email.trim())}` : "/verify-email"}
+                  className="text-xs transition-colors hover:opacity-70"
+                  style={{ color: C.primary }}
+                >
+                  Xác thực email
+                </Link>
                 <Link href="/forgot-password" className="text-xs transition-colors hover:opacity-70" style={{ color: C.primary }}>
                   Quên mật khẩu?
                 </Link>

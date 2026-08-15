@@ -106,6 +106,7 @@ const UI_DICTIONARY: Record<Language, Record<string, string>> = {
 
     "tickets.error_load": "Không thể tải danh sách vé.",
     "tickets.error_init": "Không thể khởi tạo đơn hàng vé. Vui lòng thử lại.",
+    "tickets.verify_email_link": "Xác thực email để mua vé",
     "tickets.payment_success": "Thanh toán thành công đơn hàng #{code}!",
     "tickets.error_confirm": "Xác nhận thanh toán thất bại hoặc chưa nhận được tiền. Vui lòng kiểm tra lại!",
     "tickets.order_cancelled": "Đã hủy đơn hàng #{code}.",
@@ -221,6 +222,7 @@ const UI_DICTIONARY: Record<Language, Record<string, string>> = {
 
     "tickets.error_load": "Failed to load ticket types.",
     "tickets.error_init": "Could not create ticket order. Please try again.",
+    "tickets.verify_email_link": "Verify email to buy tickets",
     "tickets.payment_success": "Payment successful for order #{code}!",
     "tickets.error_confirm": "Payment confirmation failed or payment not received. Please check again!",
     "tickets.order_cancelled": "Order #{code} has been cancelled.",

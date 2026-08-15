@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ElementType } from "react";
+import { useState, type ElementType, type HTMLAttributes } from "react";
 import { AUTH_C } from "@/lib/auth-theme";
 
 export function AuthField({
@@ -13,6 +13,9 @@ export function AuthField({
   suffix,
   disabled,
   required = true,
+  maxLength,
+  inputMode,
+  autoComplete,
 }: {
   type: string;
   name: string;
@@ -23,6 +26,9 @@ export function AuthField({
   suffix?: React.ReactNode;
   disabled?: boolean;
   required?: boolean;
+  maxLength?: number;
+  inputMode?: HTMLAttributes<HTMLInputElement>["inputMode"];
+  autoComplete?: string;
 }) {
   const [focused, setFocused] = useState(false);
 
@@ -40,6 +46,9 @@ export function AuthField({
         placeholder={placeholder}
         disabled={disabled}
         required={required}
+        maxLength={maxLength}
+        inputMode={inputMode}
+        autoComplete={autoComplete}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         className="w-full rounded-2xl py-3.5 pl-11 pr-12 text-sm outline-none transition-all duration-200 disabled:opacity-60"

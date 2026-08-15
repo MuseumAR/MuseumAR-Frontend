@@ -169,7 +169,7 @@ export default function RegisterPage() {
         email: email.trim(),
         password,
       });
-      router.push("/login");
+      router.push(`/verify-email?email=${encodeURIComponent(email.trim())}`);
     } catch (err) {
       setError(getDisplayError(err, "Đăng ký thất bại. Vui lòng thử lại."));
     } finally {
