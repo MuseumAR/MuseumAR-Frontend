@@ -276,8 +276,7 @@ export function Navbar() {
   const navLinks = [
     { key: "nav.home", href: "/" },
     { key: "nav.tickets", href: "/tickets" },
-    { key: "nav.collections", href: sectionHref(pathname, "#collections") },
-    { key: "nav.museums", href: sectionHref(pathname, "#museums") },
+    { key: "nav.my_tickets", href: "/tickets/mine" },
     { key: "nav.about", href: sectionHref(pathname, "#about") },
   ];
 
@@ -330,7 +329,10 @@ export function Navbar() {
 
       <div className="hidden items-center gap-0.5 md:flex">
         {navLinks.map((link) => {
-          const active = pathname === link.href;
+          const active =
+            link.href === "/tickets/mine"
+              ? pathname === "/tickets/mine" || pathname.startsWith("/tickets/mine/")
+              : pathname === link.href;
           return (
             <Link
               key={link.href}

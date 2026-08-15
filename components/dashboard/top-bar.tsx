@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, CalendarDays, ChevronDown, KeyRound, LogOut, Search } from "lucide-react";
+import { CalendarDays, ChevronDown, KeyRound, LogOut } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { useRole } from "@/context/role-context";
 import { ROLE_LABELS } from "@/lib/roles";
@@ -40,26 +40,8 @@ export function TopBar() {
       </div>
 
       <div className="flex flex-1 items-center justify-end gap-3">
-        <div className="relative hidden max-w-sm flex-1 md:block">
-          <Search
-            className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2"
-            style={{ color: T.mutedLight }}
-          />
-          <input
-            type="search"
-            placeholder="Search..."
-            className="w-full rounded-2xl py-2.5 pl-11 pr-4 text-sm outline-none transition-all"
-            style={{
-              background: T.surface,
-              border: `1px solid ${T.border}`,
-              color: T.text,
-            }}
-          />
-        </div>
-
-        <button
-          type="button"
-          className="hidden items-center gap-2 rounded-2xl px-3 py-2 text-xs transition-colors sm:flex"
+        <div
+          className="hidden items-center gap-2 rounded-2xl px-3 py-2 text-xs sm:flex"
           style={{
             background: T.surface,
             border: `1px solid ${T.border}`,
@@ -68,24 +50,7 @@ export function TopBar() {
         >
           <CalendarDays className="h-4 w-4" style={{ color: T.primary }} />
           {today}
-        </button>
-
-        <button
-          type="button"
-          className="relative flex h-10 w-10 items-center justify-center rounded-2xl transition-colors"
-          style={{
-            background: T.surface,
-            border: `1px solid ${T.border}`,
-            color: T.muted,
-          }}
-          aria-label="Notifications"
-        >
-          <Bell className="h-4 w-4" />
-          <span
-            className="absolute right-2.5 top-2.5 h-2 w-2 rounded-full"
-            style={{ background: T.primary }}
-          />
-        </button>
+        </div>
 
         <div className="group relative">
           <button

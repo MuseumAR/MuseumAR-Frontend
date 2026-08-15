@@ -86,6 +86,15 @@ export default function LandingPage() {
   }, [authLoading, isAuthenticated, user, router]);
 
   useEffect(() => {
+    document.documentElement.classList.add("homepage-lock");
+    document.body.classList.add("homepage-lock");
+    return () => {
+      document.documentElement.classList.remove("homepage-lock");
+      document.body.classList.remove("homepage-lock");
+    };
+  }, []);
+
+  useEffect(() => {
     if (typeof window !== "undefined" && window.location.hash) {
       const targetId = window.location.hash.substring(1);
       setTimeout(() => {
@@ -177,7 +186,7 @@ export default function LandingPage() {
   ];
 
   return (
-    <div style={{ background: C.bg, color: C.text }}>
+    <div className="homepage-scroll" style={{ background: C.bg, color: C.text }}>
       <Navbar />
 
       {/* ══ HERO ═══════════════════════════════════════════════════════════ */}
@@ -349,7 +358,7 @@ export default function LandingPage() {
 
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
               <Link
-                href="#collections"
+                href="#about"
                 className="flex items-center gap-2.5 rounded-full px-8 py-3.5 text-sm font-medium transition-all"
                 style={{
                   background: "rgba(255,248,231,0.10)",
@@ -365,37 +374,11 @@ export default function LandingPage() {
                 }}
               >
                 <BookOpen className="h-4 w-4 shrink-0" />
-                <StableLabel k="hero.view_collection" />
+                <StableLabel k="hero.learn_more" />
               </Link>
             </motion.div>
           </motion.div>
         </div>
-
-        {/* Scroll cue */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.6 }}
-          className="absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1.5"
-        >
-          <motion.div
-            animate={{ y: [0, 5, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          >
-            <div
-              className="h-7 w-px"
-              style={{
-                background: "linear-gradient(180deg, rgba(200,155,60,0.7) 0%, transparent 100%)",
-              }}
-            />
-          </motion.div>
-          <span
-            className="text-[9px] tracking-[0.25em] uppercase"
-            style={{ color: "rgba(200,155,60,0.6)" }}
-          >
-            {t("hero.scroll")}
-          </span>
-        </motion.div>
       </section>
 
       {/* ══ FEATURES ═══════════════════════════════════════════════════════ */}
