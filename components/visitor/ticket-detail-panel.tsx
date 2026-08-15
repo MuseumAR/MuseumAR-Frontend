@@ -98,9 +98,7 @@ export function TicketDetailPanel() {
         setCheckInError(res.message || "Check-in không thành công.");
       }
     } catch (err: unknown) {
-      console.error("Failed to self check-in:", err);
-      const errMsg = err instanceof Error ? err.message : "Check-in thất bại. Vui lòng thử lại.";
-      setCheckInError(errMsg);
+      setCheckInError(getDisplayError(err, "Check-in thất bại. Vé có thể đã dùng, hết hạn, hoặc mã không hợp lệ."));
     } finally {
       setCheckInLoading(false);
     }
@@ -145,18 +143,43 @@ export function TicketDetailPanel() {
             }}
             role="alert"
           >
-            {loadError}
+            <p>{loadError}</p>
+            <Link
+              href="/tickets/mine"
+              className="mt-6 inline-flex rounded-full px-5 py-2.5 text-sm font-medium"
+              style={{
+                background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
+                color: C.surface,
+              }}
+            >
+              Về vé của tôi
+            </Link>
           </div>
         ) : !detail ? (
           <div
-            className="rounded-3xl px-8 py-16 text-center text-sm"
+            className="rounded-3xl px-8 py-16 text-center"
             style={{
               background: C.surface,
               border: `1px solid ${C.border}`,
               color: C.muted,
             }}
           >
-            Không tìm thấy vé.
+            <p className="text-sm font-medium" style={{ color: C.text }}>
+              Không tìm thấy vé
+            </p>
+            <p className="mt-2 text-sm">
+              Vé không tồn tại, không thuộc tài khoản này, hoặc đã bị xóa.
+            </p>
+            <Link
+              href="/tickets/mine"
+              className="mt-6 inline-flex rounded-full px-5 py-2.5 text-sm font-medium"
+              style={{
+                background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
+                color: C.surface,
+              }}
+            >
+              Về vé của tôi
+            </Link>
           </div>
         ) : (
           <article
@@ -386,29 +409,42 @@ export function TicketDetailPanel() {
                 Mã QR Vé
               </h2>
               <div
-                className="flex flex-col items-start gap-3 rounded-2xl p-4 sm:flex-row sm:items-center"
+                className="rounded-2xl p-5 text-center"
                 style={{
                   background: C.bg,
                   border: `1px solid ${C.border}`,
                 }}
               >
-                <div
-                  className="flex h-20 w-20 items-center justify-center rounded-xl"
-                  style={{
-                    background: C.surface,
-                    border: `1px dashed ${C.border}`,
-                  }}
+                {detail.qrCodeData &&
+                (detail.qrCodeData.startsWith("http") ||
+                  detail.qrCodeData.startsWith("data:image")) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={detail.qrCodeData}
+                    alt="Mã QR check-in"
+                    className="mx-auto h-44 w-44 rounded-xl object-contain"
+                    style={{ background: "#fff", border: `1px solid ${C.border}` }}
+                  />
+                ) : (
+                  <div
+                    className="mx-auto flex h-28 w-28 items-center justify-center rounded-xl"
+                    style={{
+                      background: C.surface,
+                      border: `1px dashed ${C.border}`,
+                    }}
+                  >
+                    <QrCode className="h-14 w-14" style={{ color: C.primary }} />
+                  </div>
+                )}
+                <p className="mt-4 text-sm font-medium" style={{ color: C.text }}>
+                  Đưa mã này cho cổng khi check-in
+                </p>
+                <p
+                  className="mt-2 break-all font-mono text-lg font-semibold tracking-wide"
+                  style={{ color: C.text }}
                 >
-                  <QrCode className="h-10 w-10" style={{ color: C.primary }} />
-                </div>
-                <div>
-                  <p className="text-sm font-medium" style={{ color: C.text }}>
-                    Mã Check-in QR
-                  </p>
-                  <p className="mt-1 font-mono text-xs break-all" style={{ color: C.muted }}>
-                    {detail.qrCodeData || "—"}
-                  </p>
-                </div>
+                  {detail.qrCodeData || detail.ticketCode || "—"}
+                </p>
               </div>
             </section>
           </article>

@@ -4,6 +4,7 @@ import {
 } from "@/services/auth/auth.storage";
 import { refreshAccessToken } from "@/services/auth/refresh-token";
 import { AppError } from "@/lib/validation";
+import { isAuthApiPath, redirectToLogin } from "@/lib/login-redirect";
 import { repairJsonValue } from "@/lib/repair-text";
 import type { ApiResponse } from "@/types/api";
 
@@ -101,7 +102,8 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       !_retried &&
       !!accessToken &&
       path !== "/api/auth/refresh" &&
-      path !== "/api/auth/login";
+      path !== "/api/auth/login" &&
+      !isAuthApiPath(path);
 
     if (canRetry) {
       const newToken = await ensureFreshToken();
@@ -109,6 +111,14 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
         return request<T>(path, { ...options, accessToken: newToken, _retried: true });
       }
       clearAuthSession();
+      if (typeof window !== "undefined" && !isAuthApiPath(path)) {
+        redirectToLogin();
+      }
+    } else if (isUnauthorized && !isAuthApiPath(path)) {
+      clearAuthSession();
+      if (typeof window !== "undefined") {
+        redirectToLogin();
+      }
     }
 
     throw new AppError(message || `HTTP Error ${statusCode}`, statusCode);
@@ -121,14 +131,23 @@ function withAuth(accessToken?: string | null) {
   return accessToken ?? getAccessToken();
 }
 
+function requireToken(accessToken?: string | null) {
+  const token = withAuth(accessToken);
+  if (!token) {
+    if (typeof window !== "undefined") {
+      redirectToLogin();
+    }
+    throw new AppError("Not authenticated", 401);
+  }
+  return token;
+}
+
 export function apiGet<T>(path: string) {
   return request<T>(path);
 }
 
 export function apiGetAuth<T>(path: string, accessToken?: string | null) {
-  const token = withAuth(accessToken);
-  if (!token) throw new AppError("Not authenticated", 401);
-  return request<T>(path, { accessToken: token });
+  return request<T>(path, { accessToken: requireToken(accessToken) });
 }
 
 export function apiPost<T>(path: string, body?: unknown) {
@@ -140,9 +159,7 @@ export function apiPostAuth<T>(
   body?: unknown,
   accessToken?: string | null,
 ) {
-  const token = withAuth(accessToken);
-  if (!token) throw new AppError("Not authenticated", 401);
-  return request<T>(path, { method: "POST", body, accessToken: token });
+  return request<T>(path, { method: "POST", body, accessToken: requireToken(accessToken) });
 }
 
 export function apiPutAuth<T>(
@@ -150,15 +167,11 @@ export function apiPutAuth<T>(
   body?: unknown,
   accessToken?: string | null,
 ) {
-  const token = withAuth(accessToken);
-  if (!token) throw new AppError("Not authenticated", 401);
-  return request<T>(path, { method: "PUT", body, accessToken: token });
+  return request<T>(path, { method: "PUT", body, accessToken: requireToken(accessToken) });
 }
 
 export function apiDeleteAuth<T>(path: string, accessToken?: string | null) {
-  const token = withAuth(accessToken);
-  if (!token) throw new AppError("Not authenticated", 401);
-  return request<T>(path, { method: "DELETE", accessToken: token });
+  return request<T>(path, { method: "DELETE", accessToken: requireToken(accessToken) });
 }
 
 export function apiPostFormAuth<T>(
@@ -166,12 +179,10 @@ export function apiPostFormAuth<T>(
   formData: FormData,
   accessToken?: string | null,
 ) {
-  const token = withAuth(accessToken);
-  if (!token) throw new AppError("Not authenticated", 401);
   return request<T>(path, {
     method: "POST",
     body: formData,
-    accessToken: token,
+    accessToken: requireToken(accessToken),
   });
 }
 
@@ -180,12 +191,10 @@ export function apiPutFormAuth<T>(
   formData: FormData,
   accessToken?: string | null,
 ) {
-  const token = withAuth(accessToken);
-  if (!token) throw new AppError("Not authenticated", 401);
   return request<T>(path, {
     method: "PUT",
     body: formData,
-    accessToken: token,
+    accessToken: requireToken(accessToken),
   });
 }
 

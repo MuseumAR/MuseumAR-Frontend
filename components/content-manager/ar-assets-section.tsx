@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Box, ExternalLink, Trash2 } from "lucide-react";
 import { dashboardTheme as T } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
+import { SuccessBanner, useSuccessToast } from "@/components/shared/success-banner";
 import { deleteArAsset, getArAssets } from "@/services/content-manager";
 import type { ExhibitArassetDto } from "@/types/api";
 
@@ -44,6 +45,7 @@ export function ArAssetsSection({
   const [loading, setLoading] = useState(initialAssets.length === 0);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const { success, showSuccess } = useSuccessToast();
 
   useEffect(() => {
     if (!exhibitId || Number.isNaN(exhibitId)) return;
@@ -76,6 +78,7 @@ export function ArAssetsSection({
     try {
       await deleteArAsset(id);
       setAssets((prev) => prev.filter((a) => a.id !== id));
+      showSuccess("AR asset deleted.");
     } catch (err) {
       setError(getDisplayError(err, "Could not delete AR asset."));
     } finally {
@@ -89,6 +92,7 @@ export function ArAssetsSection({
         Existing AR assets
       </p>
 
+      <SuccessBanner message={success} />
       {error && (
         <p
           className="rounded-xl px-3 py-2 text-xs"

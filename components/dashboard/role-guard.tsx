@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { getHomePathForRole, canonicalRoleName, type DashboardRole } from "@/lib/roles";
+import { currentPathForNext, loginUrl } from "@/lib/login-redirect";
 
 function DashboardLoading() {
   return (
@@ -39,7 +40,7 @@ export function RoleGuard({
     if (isLoading) return;
 
     if (!isAuthenticated) {
-      router.replace("/login");
+      router.replace(loginUrl(currentPathForNext()));
       return;
     }
 
