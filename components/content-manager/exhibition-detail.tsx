@@ -18,7 +18,8 @@ import {
   assignExhibitsToExhibition,
   removeExhibitFromExhibition,
 } from "@/services/content-manager/content-api.service";
-import type { ExhibitionDto, ExhibitDto } from "@/types/api";
+import { createThemeEntry } from "@/services/content-manager/taxonomy.service";
+import type { ExhibitionDto, ExhibitDto, ThemeDto } from "@/types/api";
 
 function StatusBadge({ status }: { status: string }) {
   const active = status === "Active";
@@ -45,7 +46,13 @@ function formatDate(value?: string | null) {
   return value.slice(0, 10);
 }
 
-export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) {
+export function ExhibitionDetail({
+  exhibition,
+  themes = [],
+}: {
+  exhibition: ExhibitionDto;
+  themes?: ThemeDto[];
+}) {
   const router = useRouter();
   const [showEdit, setShowEdit] = useState(false);
   const [name, setName] = useState(exhibition.name ?? "");
@@ -53,6 +60,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
   const [startDate, setStartDate] = useState(exhibition.startDate?.slice(0, 10) ?? "");
   const [endDate, setEndDate] = useState(exhibition.endDate?.slice(0, 10) ?? "");
   const [status, setStatus] = useState(exhibition.status);
+  const [themeInput, setThemeInput] = useState(exhibition.themeName ?? "");
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -156,9 +164,29 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
     }
 
     try {
+      let finalThemeId: number | undefined = undefined;
+      const trimmedTheme = themeInput.trim();
+      if (trimmedTheme) {
+        const existing = themes.find(
+          (t) => t.themeName.toLowerCase() === trimmedTheme.toLowerCase()
+        );
+        if (existing) {
+          finalThemeId = existing.id;
+        } else {
+          try {
+            const newTheme = await createThemeEntry({ themeName: trimmedTheme });
+            finalThemeId = newTheme.id;
+          } catch (err) {
+            setError("Could not create a new theme.");
+            setIsSubmitting(false);
+            return;
+          }
+        }
+      }
+
       await updateExhibition(exhibition.id, {
         museumId: exhibition.museumId,
-        themeId: exhibition.themeId ?? undefined,
+        themeId: finalThemeId,
         name: name.trim(),
         description: description.trim() || undefined,
         startDate: startDate || undefined,
@@ -259,6 +287,23 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                     style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                   />
                 </div>
+                <div className="space-y-1.5 relative">
+                  <label className="block text-sm" style={{ color: T.muted }}>Theme</label>
+                  <input
+                    type="text"
+                    list="theme-suggestions"
+                    placeholder="Select or type a new theme..."
+                    value={themeInput}
+                    onChange={(e) => setThemeInput(e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                  />
+                  <datalist id="theme-suggestions">
+                    {themes.map((theme) => (
+                      <option key={theme.id} value={theme.themeName} />
+                    ))}
+                  </datalist>
+                </div>
               </div>
               <div className="flex justify-end gap-3 mt-6">
                 <button type="button" onClick={() => setShowEdit(false)} className="rounded-xl px-5 py-2 text-sm font-medium" style={{ border: `1px solid ${T.border}`, color: T.text }}>
@@ -334,6 +379,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                   <InfoRow label="Status" value={labelStatus(exhibition.status)} />
                   <InfoRow label="Start date" value={formatDate(exhibition.startDate)} />
                   <InfoRow label="End date" value={formatDate(exhibition.endDate)} />
+                  <InfoRow label="Theme" value={exhibition.themeName || "—"} />
                 </dl>
               </div>
             </div>
