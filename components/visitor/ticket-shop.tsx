@@ -179,6 +179,7 @@ export function TicketShop() {
         );
       } catch (err) {
         if (!cancelled) {
+          setTypes([]);
           setError(getDisplayError(err, t("tickets.error_load")));
         }
       } finally {
@@ -391,12 +392,14 @@ export function TicketShop() {
             {t("tickets.loading_types")}
           </div>
         ) : types.length === 0 ? (
-          <div
-            className="rounded-3xl px-8 py-16 text-center text-sm"
-            style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.muted }}
-          >
-            {t("tickets.no_types")}
-          </div>
+          error ? null : (
+            <div
+              className="rounded-3xl px-8 py-16 text-center text-sm"
+              style={{ background: C.surface, border: `1px solid ${C.border}`, color: C.muted }}
+            >
+              {t("tickets.no_types")}
+            </div>
+          )
         ) : (
           <ul className="space-y-4">
             {types.map((ticket) => {

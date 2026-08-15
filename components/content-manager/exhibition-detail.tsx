@@ -345,7 +345,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                 Artifacts in this exhibition ({exhibitsInExhibition.length})
               </h3>
               <p className="text-xs" style={{ color: T.mutedLight }}>
-                Manage artifacts displayed in this exhibition
+                Links artifacts to this event. Floor / Room (map and AR location) is not changed here.
               </p>
             </div>
 
@@ -441,8 +441,15 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
             <h3 className="text-base font-bold mb-2" style={{ color: T.primaryDark }}>
               Assign artifact to exhibition
             </h3>
-            <p className="text-xs mb-4" style={{ color: T.mutedLight }}>
+            <p className="text-xs mb-3" style={{ color: T.mutedLight }}>
               Choose an artifact from the museum to assign to &ldquo;{exhibition.name || `#${exhibition.id}`}&rdquo;
+            </p>
+            <p
+              className="mb-4 rounded-xl px-3 py-2.5 text-xs leading-relaxed"
+              style={{ background: "rgba(200,155,69,0.12)", color: T.primaryDark }}
+            >
+              This only attaches the artifact to the exhibition. It does not move it on the map.
+              If the piece was physically relocated, update Floor / Room on the artifact edit page so map and AR stay correct.
             </p>
 
             {assignError && (
@@ -479,6 +486,18 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
                     })}
                   </select>
                 )}
+                {selectedExhibitId ? (
+                  <p className="mt-2 text-xs" style={{ color: T.muted }}>
+                    <Link
+                      href={`/content-manager/artifact/${selectedExhibitId}/edit`}
+                      className="font-semibold underline-offset-2 hover:underline"
+                      style={{ color: T.primaryDark }}
+                    >
+                      Edit Floor / Room
+                    </Link>
+                    {" "}for this artifact if it changed location.
+                  </p>
+                ) : null}
               </div>
 
               <div className="flex justify-end gap-2.5 pt-2">

@@ -22,6 +22,28 @@ body {
   font-family: var(--font-be-vietnam), system-ui, sans-serif;
 }
 
+/* Homepage: lock the window scroller (Windows always-on bar) and scroll inside. */
+html.homepage-lock,
+html.homepage-lock body {
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+.homepage-scroll {
+  height: 100dvh;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.homepage-scroll::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+  background: transparent;
+}
+
 /* Hide Edge/IE built-in password reveal — pages use a custom eye toggle */
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear {

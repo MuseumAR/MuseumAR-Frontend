@@ -97,8 +97,7 @@ export function getPostLoginPath(roleName: string, next?: string | null): string
     safeNext &&
     !safeNext.startsWith("/admin") &&
     !safeNext.startsWith("/museum-manager") &&
-    !safeNext.startsWith("/content-manager") &&
-    !safeNext.startsWith("/analyst")
+    !safeNext.startsWith("/content-manager")
   ) {
     return safeNext;
   }
