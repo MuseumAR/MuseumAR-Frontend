@@ -5,7 +5,6 @@ import {
 import { refreshAccessToken } from "@/services/auth/refresh-token";
 import { AppError } from "@/lib/validation";
 import { isAuthApiPath, redirectToLogin } from "@/lib/login-redirect";
-import { repairJsonValue } from "@/lib/repair-text";
 import type { ApiResponse } from "@/types/api";
 
 
@@ -76,7 +75,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
   let json: ApiResponse<T>;
   try {
-    json = repairJsonValue((await res.json()) as ApiResponse<T>);
+    json = (await res.json()) as ApiResponse<T>;
   } catch {
     throw new AppError(`Server returned ${res.status} ${res.statusText || "Error"}`, res.status);
   }
