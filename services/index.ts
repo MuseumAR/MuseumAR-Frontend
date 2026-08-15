@@ -20,7 +20,6 @@ export * from "./museum-manager/artifact.service";
 export {
   addBookmark,
   checkForUpdates,
-  confirmTicketPayment,
   createOrder,
   getBookmarks,
   getMyTickets,
@@ -28,7 +27,6 @@ export {
   getVisitedExhibits,
   listMyTickets,
   listPublicTicketTypes,
-  mockConfirmPayment,
   placeTicketOrder,
   removeBookmark,
   trackAction,

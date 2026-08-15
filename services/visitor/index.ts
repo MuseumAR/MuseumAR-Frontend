@@ -4,5 +4,4 @@ export {
   listPublicTicketTypes,
   listMyTickets,
   placeTicketOrder,
-  confirmTicketPayment,
 } from "./ticketing.service";

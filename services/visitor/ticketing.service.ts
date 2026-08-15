@@ -14,7 +14,6 @@ import {
   getPendingOrder,
   getPublicTicketTypes as getPublicTicketTypesApi,
   getTicketDetail as getTicketDetailApi,
-  mockConfirmPayment as mockConfirmPaymentApi,
   validateTicket as validateTicketApi,
 } from "./ticketing-api.service";
 
@@ -46,10 +45,6 @@ export async function placeTicketOrder(
   return createOrderApi(payload);
 }
 
-/** Demo confirm — backend mock-confirm until PayOS webhook is wired. */
-export async function confirmTicketPayment(orderCode: string): Promise<void> {
-  await mockConfirmPaymentApi(orderCode);
-}
 
 export async function cancelTicketOrder(orderCode: string): Promise<void> {
   await cancelPaymentApi(orderCode);
@@ -59,7 +54,6 @@ export {
   createOrderApi as createOrder,
   getMyTicketsApi as getMyTickets,
   getPublicTicketTypesApi as getPublicTicketTypes,
-  mockConfirmPaymentApi as mockConfirmPayment,
   cancelPaymentApi as cancelTicketOrderApi,
   getPendingOrder,
   validateTicketApi as validateTicket,
