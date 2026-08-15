@@ -10,6 +10,7 @@ import { useAuth } from "@/context/auth-context";
 import { useLanguage } from "@/context/language-context";
 import { formatDateTimeVi } from "@/lib/format";
 import { labelStatus } from "@/lib/status-labels";
+import { getDisplayError } from "@/lib/validation";
 import { listMyTickets } from "@/services/visitor/ticketing.service";
 import type { TicketDto } from "@/types/api";
 
@@ -31,6 +32,7 @@ export function MyTicketsPanel() {
   const { t, language } = useLanguage();
   const [tickets, setTickets] = useState<TicketDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const purchased = searchParams.get("purchased") === "1";
 
   useEffect(() => {
@@ -42,20 +44,25 @@ export function MyTicketsPanel() {
     }
 
     let cancelled = false;
-    (async () => {
-      setLoading(true);
-      // UI mock store only — skips my-tickets API (same VisitorId bug).
-      const list = await listMyTickets(language);
-      if (!cancelled) {
+    listMyTickets(language)
+      .then((list) => {
+        if (cancelled) return;
         setTickets(list);
-        setLoading(false);
-      }
-    })();
+        setError(null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(getDisplayError(err, t("mytickets.error_load")));
+        setTickets([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isAuthenticated, router, language]);
+  }, [authLoading, isAuthenticated, router, language, t]);
 
   return (
     <div className="min-h-screen" style={{ background: C.bg }}>
@@ -112,6 +119,18 @@ export function MyTicketsPanel() {
           >
             <Loader2 className="h-4 w-4 animate-spin" />
             {t("mytickets.loading")}
+          </div>
+        ) : error ? (
+          <div
+            className="rounded-3xl px-8 py-16 text-center text-sm"
+            style={{
+              background: C.surface,
+              border: `1px solid ${C.border}`,
+              color: "#8B3A3A",
+            }}
+            role="alert"
+          >
+            {error}
           </div>
         ) : tickets.length === 0 ? (
           <div

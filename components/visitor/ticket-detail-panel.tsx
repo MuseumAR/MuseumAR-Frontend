@@ -8,6 +8,7 @@ import { Navbar } from "@/components/shared/navbar";
 import { useAuth } from "@/context/auth-context";
 import { formatDateTimeVi, formatVnd } from "@/lib/format";
 import { labelStatus } from "@/lib/status-labels";
+import { getDisplayError } from "@/lib/validation";
 import { checkInTicket, getTicketDetail } from "@/services/visitor/ticketing.service";
 import type { TicketDetailDto } from "@/types/api";
 import { useLanguage } from "@/context/language-context";
@@ -40,11 +41,12 @@ export function TicketDetailPanel() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const ticketId = Number(params.id);
   const idValid = Number.isFinite(ticketId);
   const [detail, setDetail] = useState<TicketDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [checkInLoading, setCheckInLoading] = useState(false);
   const [checkInSuccess, setCheckInSuccess] = useState(false);
   const [checkInError, setCheckInError] = useState<string | null>(null);
@@ -62,16 +64,25 @@ export function TicketDetailPanel() {
     if (!Number.isFinite(id)) return;
 
     let cancelled = false;
-    getTicketDetail(id, language).then((res) => {
-      if (cancelled) return;
-      setDetail(res);
-      setLoading(false);
-    });
+    getTicketDetail(id, language)
+      .then((res) => {
+        if (cancelled) return;
+        setDetail(res);
+        setLoadError(null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setDetail(null);
+        setLoadError(getDisplayError(err, t("mytickets.error_detail")));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
 
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isAuthenticated, params.id, router, language]);
+  }, [authLoading, isAuthenticated, params.id, router, language, t]);
 
   const handleSelfCheckIn = async () => {
     if (!detail || !detail.ticketCode) return;
@@ -123,6 +134,18 @@ export function TicketDetailPanel() {
           >
             <Loader2 className="h-4 w-4 animate-spin" />
             Đang tải chi tiết…
+          </div>
+        ) : loadError ? (
+          <div
+            className="rounded-3xl px-8 py-16 text-center text-sm"
+            style={{
+              background: C.surface,
+              border: `1px solid ${C.border}`,
+              color: "#8B3A3A",
+            }}
+            role="alert"
+          >
+            {loadError}
           </div>
         ) : !detail ? (
           <div

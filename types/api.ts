@@ -471,10 +471,7 @@ export type TicketDto = {
   status: string;
 };
 
-/**
- * Proposed BE contract — GET /api/ticketing/my-tickets/{id}
- * (not implemented on BE yet; FE uses mock detail for UX / handoff)
- */
+/** GET /api/ticketing/my-tickets/{id} */
 export type TicketDetailDto = {
   id: number;
   ticketCode: string;
