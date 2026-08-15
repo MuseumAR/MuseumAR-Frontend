@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Box, ExternalLink, Trash2 } from "lucide-react";
 import { dashboardTheme as T } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
@@ -45,25 +45,29 @@ export function ArAssetsSection({
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
-  const reload = useCallback(async () => {
-    if (!exhibitId || Number.isNaN(exhibitId)) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getArAssets(exhibitId);
-      const list = Array.isArray(data) ? data.map(normalizeAsset) : [];
-      setAssets(list);
-    } catch (err) {
-      setError(getDisplayError(err, "Could not load AR assets."));
-      setAssets([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [exhibitId]);
-
   useEffect(() => {
-    void reload();
-  }, [reload]);
+    if (!exhibitId || Number.isNaN(exhibitId)) return;
+    let cancelled = false;
+
+    getArAssets(exhibitId)
+      .then((data) => {
+        if (cancelled) return;
+        setAssets(Array.isArray(data) ? data.map(normalizeAsset) : []);
+        setError(null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(getDisplayError(err, "Could not load AR assets."));
+        setAssets([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [exhibitId]);
 
   async function handleDelete(id: number) {
     if (!confirm("Delete this AR asset?")) return;

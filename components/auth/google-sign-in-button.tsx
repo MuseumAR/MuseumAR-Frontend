@@ -103,10 +103,12 @@ export function GoogleSignInButton({
   const callbackRef = useRef(onCredential);
   const [gsiReady, setGsiReady] = useState(false);
   const [hovered, setHovered] = useState(false);
-
-  callbackRef.current = onCredential;
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim();
   const isInteractive = Boolean(clientId) && gsiReady && !disabled && !loading;
+
+  useEffect(() => {
+    callbackRef.current = onCredential;
+  }, [onCredential]);
 
   useEffect(() => {
     if (!clientId || !overlayRef.current) return;

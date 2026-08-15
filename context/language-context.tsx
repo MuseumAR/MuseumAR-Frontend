@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 
 export type Language = "vi" | "en";
 
@@ -251,23 +257,41 @@ const LanguageContext = createContext<LanguageContextType>({
   t: (key) => key,
 });
 
-export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguageState] = useState<Language>("vi");
+const LANG_STORAGE_KEY = "ui_lang";
+const LANG_CHANGED_EVENT = "museumar-ui-lang-changed";
 
-  useEffect(() => {
-    const saved = localStorage.getItem("ui_lang") as Language | null;
-    if (saved === "vi" || saved === "en") {
-      setLanguageState(saved);
-    }
-  }, []);
+function subscribeLanguage(onStoreChange: () => void) {
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener(LANG_CHANGED_EVENT, onStoreChange);
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(LANG_CHANGED_EVENT, onStoreChange);
+  };
+}
+
+function readLanguage(): Language {
+  const saved = localStorage.getItem(LANG_STORAGE_KEY);
+  return saved === "en" ? "en" : "vi";
+}
+
+function getLanguageServerSnapshot(): Language {
+  return "vi";
+}
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const language = useSyncExternalStore(
+    subscribeLanguage,
+    readLanguage,
+    getLanguageServerSnapshot,
+  );
 
   useEffect(() => {
     document.documentElement.lang = language;
   }, [language]);
 
   const setLanguage = (lang: Language) => {
-    setLanguageState(lang);
-    localStorage.setItem("ui_lang", lang);
+    localStorage.setItem(LANG_STORAGE_KEY, lang);
+    window.dispatchEvent(new Event(LANG_CHANGED_EVENT));
   };
 
   const t = (key: string, params?: Record<string, string | number>): string => {

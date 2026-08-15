@@ -116,6 +116,35 @@ export function getAuthUser(): StoredAuthUser | null {
   }
 }
 
+let authSnapshotRaw: string | null | undefined = undefined;
+let authSnapshotUser: StoredAuthUser | null = null;
+
+export function getAuthUserSnapshot(): StoredAuthUser | null {
+  const raw =
+    typeof localStorage === "undefined" ? null : localStorage.getItem(AUTH_USER_KEY);
+  if (raw === authSnapshotRaw) return authSnapshotUser;
+  authSnapshotRaw = raw;
+  authSnapshotUser = getAuthUser();
+  return authSnapshotUser;
+}
+
+export function getAuthServerSnapshot(): StoredAuthUser | null {
+  return null;
+}
+
+export function subscribeAuth(onStoreChange: () => void) {
+  const notify = () => {
+    authSnapshotRaw = undefined;
+    onStoreChange();
+  };
+  window.addEventListener(AUTH_CHANGED_EVENT, notify);
+  window.addEventListener("storage", notify);
+  return () => {
+    window.removeEventListener(AUTH_CHANGED_EVENT, notify);
+    window.removeEventListener("storage", notify);
+  };
+}
+
 export function clearAuthSession(): void {
   if (typeof localStorage === "undefined") return;
   localStorage.removeItem(ACCESS_TOKEN_KEY);

@@ -249,7 +249,10 @@ export function normalizeTicketTypeDto(
       nameEn: pickStr(pr, "nameEn", "NameEn") ?? null,
       description: pickStr(pr, "description", "Description") ?? null,
       descriptionEn: pickStr(pr, "descriptionEn", "DescriptionEn") ?? null,
-      discountType: (pickField(pr, "discountType", "DiscountType") as any) ?? "Percentage",
+      discountType:
+        pickField(pr, "discountType", "DiscountType") === "FixedAmount"
+          ? "FixedAmount"
+          : "Percentage",
       discountValue: Number(pickField(pr, "discountValue", "DiscountValue") ?? 0),
       startDate: String(pickField(pr, "startDate", "StartDate") ?? ""),
       endDate: String(pickField(pr, "endDate", "EndDate") ?? ""),

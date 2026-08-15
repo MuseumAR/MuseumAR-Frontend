@@ -47,12 +47,14 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
 
   const [waypoints, setWaypoints] = useState<WaypointDto[]>([]);
   const [edges, setEdges] = useState<WaypointEdgeDto[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loadedMapId, setLoadedMapId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loading = selectedMapId !== loadedMapId;
 
-  // Map image failed state
-  const [mapImgFailed, setMapImgFailed] = useState(false);
+  // Map image failed state (derived so switching maps does not need an effect)
+  const [failedMapId, setFailedMapId] = useState<number | null>(null);
+  const mapImgFailed = failedMapId === selectedMapId;
 
   // Connection mode state
   const [edgeStartWpId, setEdgeStartWpId] = useState<string | null>(null);
@@ -162,24 +164,29 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     );
   };
 
-  useEffect(() => {
-    setMapImgFailed(false);
-  }, [selectedMapId]);
-
   // Load graph when selected map changes (scoped by MapId on BE)
   useEffect(() => {
     if (!selectedMapId) return;
-    setLoading(true);
-    setTestResult(null);
-    setActiveStepIndex(null);
-    setSelectedWpId(null);
+    let cancelled = false;
     getNavigationGraphByMap(selectedMapId)
       .then((data) => {
+        if (cancelled) return;
         setWaypoints(data.waypoints || []);
         setEdges(data.edges || []);
+        setTestResult(null);
+        setActiveStepIndex(null);
+        setSelectedWpId(null);
+        setLoadedMapId(selectedMapId);
       })
-      .catch(() => setError("Could not load navigation graph."))
-      .finally(() => setLoading(false));
+      .catch(() => {
+        if (!cancelled) setError("Could not load navigation graph.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoadedMapId(selectedMapId);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [selectedMapId]);
 
   // Handle map click for adding waypoint
@@ -629,7 +636,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                 src={currentMap.mapImageUrl}
                 alt={currentMap.mapName || "Floor plan"}
                 className="h-full w-full object-contain pointer-events-none select-none"
-                onError={() => setMapImgFailed(true)}
+                onError={() => setFailedMapId(selectedMapId)}
               />
             ) : (
               <div className="flex h-[500px] flex-col items-center justify-center gap-2 p-6 text-center text-sm text-slate-500">

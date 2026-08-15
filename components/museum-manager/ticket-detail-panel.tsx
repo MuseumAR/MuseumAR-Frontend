@@ -23,6 +23,20 @@ import {
 } from "@/services/museum-manager/ticket-api.service";
 import { getDisplayError } from "@/lib/validation";
 
+function formFromTicket(ticket: Ticket) {
+  return {
+    name: ticket.type,
+    nameEn: ticket.nameEn ?? "",
+    price:
+      ticket.rawPrice != null
+        ? String(ticket.rawPrice)
+        : ticket.price.replace(/[^\d]/g, ""),
+    exhibitionId: ticket.exhibitionId != null ? String(ticket.exhibitionId) : "",
+    description: ticket.description ?? "",
+    descriptionEn: ticket.descriptionEn ?? "",
+  };
+}
+
 export function TicketDetailPanel({
   initialTicket,
   exhibitions,
@@ -38,23 +52,18 @@ export function TicketDetailPanel({
 
   const [ticket, setTicket] = useState<Ticket>(initialTicket);
   const [isEditing, setIsEditing] = useState(shouldEdit);
-
-  // Edit form states
-  const [name, setName] = useState(ticket.type);
-  const [nameEn, setNameEn] = useState(ticket.nameEn ?? "");
-  const [price, setPrice] = useState("");
-  const [exhibitionId, setExhibitionId] = useState(
-    ticket.exhibitionId != null ? String(ticket.exhibitionId) : ""
-  );
-  const [description, setDescription] = useState(ticket.description ?? "");
-  const [descriptionEn, setDescriptionEn] = useState(ticket.descriptionEn ?? "");
-  
+  const initialForm = formFromTicket(ticket);
+  const [name, setName] = useState(initialForm.name);
+  const [nameEn, setNameEn] = useState(initialForm.nameEn);
+  const [price, setPrice] = useState(initialForm.price);
+  const [exhibitionId, setExhibitionId] = useState(initialForm.exhibitionId);
+  const [description, setDescription] = useState(initialForm.description);
+  const [descriptionEn, setDescriptionEn] = useState(initialForm.descriptionEn);
+  const [formSource, setFormSource] = useState(ticket);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Promotions states
   const [promotions, setPromotions] = useState<TicketPromotionDto[]>([]);
-  const [loadingPromos, setLoadingPromos] = useState(false);
+  const [loadingPromos, setLoadingPromos] = useState(true);
   const [showPromoForm, setShowPromoForm] = useState(false);
   const [promoName, setPromoName] = useState("");
   const [promoDiscountType, setPromoDiscountType] = useState<"Percentage" | "FixedAmount">("Percentage");
@@ -64,7 +73,6 @@ export function TicketDetailPanel({
   const [promoDescription, setPromoDescription] = useState("");
   const [promoSubmitting, setPromoSubmitting] = useState(false);
   const [promoError, setPromoError] = useState<string | null>(null);
-  
   const [editingPromoId, setEditingPromoId] = useState<number | null>(null);
   const [viewingPromo, setViewingPromo] = useState<TicketPromotionDto | null>(null);
   const [loadingDetailPromoId, setLoadingDetailPromoId] = useState<number | null>(null);
@@ -72,22 +80,31 @@ export function TicketDetailPanel({
   const numericTicketId = Number(ticket.id.replace("TK-", ""));
 
   useEffect(() => {
-    // Populate form fields once ticket loads
-    setName(ticket.type);
-    setNameEn(ticket.nameEn ?? "");
-    if (ticket.rawPrice != null) {
-      setPrice(String(ticket.rawPrice));
-    } else {
-      const cleanPrice = ticket.price.replace(/[^\d]/g, "");
-      setPrice(cleanPrice);
-    }
-    setExhibitionId(ticket.exhibitionId != null ? String(ticket.exhibitionId) : "");
-    setDescription(ticket.description ?? "");
-    setDescriptionEn(ticket.descriptionEn ?? "");
+    if (Number.isNaN(numericTicketId)) return;
+    let cancelled = false;
+    getManagerTicketPromotions(numericTicketId)
+      .then((data) => {
+        if (!cancelled) setPromotions(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoadingPromos(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [numericTicketId]);
 
-    // Load promotions
-    loadPromotions();
-  }, [ticket]);
+  if (ticket !== formSource) {
+    setFormSource(ticket);
+    const next = formFromTicket(ticket);
+    setName(next.name);
+    setNameEn(next.nameEn);
+    setPrice(next.price);
+    setExhibitionId(next.exhibitionId);
+    setDescription(next.description);
+    setDescriptionEn(next.descriptionEn);
+  }
 
   async function loadPromotions() {
     if (Number.isNaN(numericTicketId)) return;
