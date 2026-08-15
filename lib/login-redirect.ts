@@ -1,4 +1,10 @@
-const AUTH_PAGES = ["/login", "/register", "/forgot-password", "/reset-password"];
+const AUTH_PAGES = [
+  "/login",
+  "/register",
+  "/forgot-password",
+  "/reset-password",
+  "/verify-email",
+];
 
 export function currentPathForNext() {
   if (typeof window === "undefined") return "/";
@@ -25,6 +31,8 @@ export function isAuthApiPath(path: string) {
     normalized.startsWith("/api/auth/register") ||
     normalized.startsWith("/api/auth/forgot-password") ||
     normalized.startsWith("/api/auth/reset-password") ||
-    normalized.startsWith("/api/auth/google-login")
+    normalized.startsWith("/api/auth/google-login") ||
+    normalized.startsWith("/api/auth/verify-email") ||
+    normalized.startsWith("/api/auth/resend-verification")
   );
 }

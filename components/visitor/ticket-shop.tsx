@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
@@ -19,7 +20,7 @@ import { StableLabel } from "@/components/shared/stable-label";
 import { useAuth } from "@/context/auth-context";
 import { useLanguage } from "@/context/language-context";
 import { formatVnd } from "@/lib/format";
-import { getDisplayError } from "@/lib/validation";
+import { getDisplayError, isUnverifiedEmailError } from "@/lib/validation";
 import {
   cancelTicketOrder,
   confirmTicketPayment,
@@ -62,7 +63,8 @@ function formatTimer(secs: number) {
 
 export function TicketShop() {
   const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+  const [needsEmailVerify, setNeedsEmailVerify] = useState(false);
   const { t, language } = useLanguage();
   const [types, setTypes] = useState<TicketTypeDto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -217,6 +219,7 @@ export function TicketShop() {
     setError(null);
     setSuccess(null);
     setModalError(null);
+    setNeedsEmailVerify(false);
 
     if (authLoading) return;
 
@@ -260,6 +263,7 @@ export function TicketShop() {
       setIsCheckoutOpen(false); // Close checkout modal
       setCheckoutTarget(null);
     } catch (err) {
+      setNeedsEmailVerify(isUnverifiedEmailError(err));
       setError(
         getDisplayError(err, t("tickets.error_init")),
       );
@@ -381,6 +385,14 @@ export function TicketShop() {
             role="alert"
           >
             {error}
+            {needsEmailVerify && (
+              <Link
+                href={`/verify-email?email=${encodeURIComponent(user?.email ?? "")}&next=${encodeURIComponent("/tickets")}`}
+                className="mt-2 inline-block font-semibold underline underline-offset-2"
+              >
+                {t("tickets.verify_email_link")}
+              </Link>
+            )}
           </div>
         )}
 

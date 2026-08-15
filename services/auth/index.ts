@@ -6,7 +6,9 @@ export {
   logout,
   refreshAccessToken,
   register,
+  resendVerification,
   resetPassword,
+  verifyEmail,
 } from "./auth.service";
 export {
   clearAuthSession,
@@ -32,7 +34,9 @@ export type {
   LoginResponseDto,
   RefreshTokenRequest,
   RegisterRequest,
+  ResendVerificationRequest,
   ResetPasswordRequest,
+  VerifyEmailRequest,
 } from "./auth.types";
 export type { StoredAuthUser } from "./auth.storage";
 

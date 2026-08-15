@@ -10,7 +10,9 @@ import type {
   LoginRequest,
   LoginResponseDto,
   RegisterRequest,
+  ResendVerificationRequest,
   ResetPasswordRequest,
+  VerifyEmailRequest,
 } from "./auth.types";
 
 export { refreshAccessToken };
@@ -30,6 +32,16 @@ export async function login(payload: LoginRequest): Promise<LoginResponseDto> {
 
 export async function register(payload: RegisterRequest): Promise<number> {
   return apiPost<number>("/api/auth/register", payload);
+}
+
+export async function verifyEmail(payload: VerifyEmailRequest): Promise<void> {
+  await apiPost<boolean>("/api/auth/verify-email", payload);
+}
+
+export async function resendVerification(
+  payload: ResendVerificationRequest,
+): Promise<void> {
+  await apiPost<boolean>("/api/auth/resend-verification", payload);
 }
 
 export async function forgotPassword(

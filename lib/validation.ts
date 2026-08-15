@@ -21,6 +21,11 @@ export type ForgotPasswordInput = {
   email: string;
 };
 
+export type VerifyEmailInput = {
+  email: string;
+  token: string;
+};
+
 export type ResetPasswordInput = {
   token: string;
   newPassword: string;
@@ -111,6 +116,31 @@ export function validateRegister(input: RegisterInput): ValidationResult {
   }
 
   return result(errors);
+}
+
+export function validateVerifyEmail(input: VerifyEmailInput): ValidationResult {
+  const errors: Record<string, string> = {};
+  const email = input.email.trim();
+  const token = input.token.trim();
+
+  if (!email) {
+    errors.email = "Vui lòng nhập email.";
+  } else if (!EMAIL_REGEX.test(email)) {
+    errors.email = "Email không hợp lệ.";
+  }
+
+  if (!token) {
+    errors.token = "Vui lòng nhập mã xác thực.";
+  } else if (!/^\d{6}$/.test(token)) {
+    errors.token = "Mã xác thực gồm 6 chữ số.";
+  }
+
+  return result(errors);
+}
+
+export function isUnverifiedEmailError(error: unknown): boolean {
+  const message = getDisplayError(error, "");
+  return /xác thực email/i.test(message);
 }
 
 export function validateForgotPassword(input: ForgotPasswordInput): ValidationResult {
@@ -234,6 +264,11 @@ const API_MESSAGE_MAP: Record<string, string> = {
   "Invalid credentials or account is inactive.":
     "Email hoặc mật khẩu không đúng, hoặc tài khoản đã bị khóa.",
   "Email already exists.": "Email này đã được đăng ký.",
+  "Email và mã xác thực không được để trống.": "Email và mã xác thực không được để trống.",
+  "Không tìm thấy người dùng với email này.": "Không tìm thấy người dùng với email này.",
+  "Mã xác thực không chính xác.": "Mã xác thực không chính xác.",
+  "Mã xác thực đã hết hạn. Vui lòng bấm gửi lại mã xác nhận.":
+    "Mã xác thực đã hết hạn. Vui lòng gửi lại mã.",
   "Login failed": "Đăng nhập thất bại. Vui lòng thử lại.",
   "Registration failed": "Đăng ký thất bại. Vui lòng thử lại.",
   "Not authenticated": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
