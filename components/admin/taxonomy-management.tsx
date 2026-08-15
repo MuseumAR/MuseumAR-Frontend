@@ -6,6 +6,7 @@ import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { labelStatus } from "@/lib/status-labels";
 import { getDisplayError } from "@/lib/validation";
+import { SuccessBanner, useSuccessToast } from "@/components/shared/success-banner";
 import {
   categoryDisplayName,
   createCategoryEntry,
@@ -120,6 +121,7 @@ function CategoriesTab({
   const [parentId, setParentId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const { success, showSuccess } = useSuccessToast();
 
   function openCreate() {
     setEditing(null);
@@ -182,6 +184,7 @@ function CategoriesTab({
       if (editing) await updateCategoryEntry(editing.id, payload);
       else await createCategoryEntry(payload);
       setShowForm(false);
+      showSuccess(editing ? "Category updated." : "Category created.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to save category."));
@@ -194,6 +197,7 @@ function CategoriesTab({
     if (!confirm("Delete this category?")) return;
     try {
       await deleteCategoryEntry(id);
+      showSuccess("Category deleted.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to delete category."));
@@ -207,6 +211,7 @@ function CategoriesTab({
       onToggle={() => setShowForm((v) => !v)}
       createLabel="Create category"
       error={error}
+      success={success}
     >
       {showForm && (
         <FormCard title={editing ? "Edit category" : "New category"}>
@@ -285,6 +290,7 @@ function ThemesTab({
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const { success, showSuccess } = useSuccessToast();
 
   function openCreate() {
     setEditing(null);
@@ -319,6 +325,7 @@ function ThemesTab({
       if (editing) await updateThemeEntry(editing.id, payload);
       else await createThemeEntry(payload);
       setShowForm(false);
+      showSuccess(editing ? "Theme updated." : "Theme created.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to save theme."));
@@ -331,6 +338,7 @@ function ThemesTab({
     if (!confirm("Delete this theme?")) return;
     try {
       await deleteThemeEntry(id);
+      showSuccess("Theme deleted.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to delete theme."));
@@ -344,6 +352,7 @@ function ThemesTab({
       onToggle={() => setShowForm((v) => !v)}
       createLabel="Create theme"
       error={error}
+      success={success}
     >
       {showForm && (
         <FormCard title={editing ? "Edit theme" : "New theme"}>
@@ -387,6 +396,7 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
   const [sortOrder, setSortOrder] = useState("0");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const { success, showSuccess } = useSuccessToast();
 
   function openCreate() {
     setEditing(null);
@@ -417,6 +427,7 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
       if (editing) await updateTagGroupEntry(editing.id, payload);
       else await createTagGroupEntry(payload);
       setShowForm(false);
+      showSuccess(editing ? "Tag group updated." : "Tag group created.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to save tag group."));
@@ -429,6 +440,7 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
     if (!confirm("Delete this tag group?")) return;
     try {
       await deleteTagGroupEntry(id);
+      showSuccess("Tag group deleted.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to delete tag group."));
@@ -442,6 +454,7 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
       onToggle={() => setShowForm((v) => !v)}
       createLabel="Create tag group"
       error={error}
+      success={success}
     >
       {showForm && (
         <FormCard title={editing ? "Edit tag group" : "New tag group"}>
@@ -499,6 +512,7 @@ function TagsTab({
   const [sortOrder, setSortOrder] = useState("0");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const { success, showSuccess } = useSuccessToast();
 
   function openCreate() {
     setEditing(null);
@@ -535,6 +549,7 @@ function TagsTab({
       if (editing) await updateTagEntry(editing.id, payload);
       else await createTagEntry(payload);
       setShowForm(false);
+      showSuccess(editing ? "Tag updated." : "Tag created.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to save tag."));
@@ -547,6 +562,7 @@ function TagsTab({
     if (!confirm("Delete this tag?")) return;
     try {
       await deleteTagEntry(id);
+      showSuccess("Tag deleted.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Unable to delete tag."));
@@ -560,6 +576,7 @@ function TagsTab({
       onToggle={() => setShowForm((v) => !v)}
       createLabel="Create tag"
       error={error}
+      success={success}
       disableCreate={tagGroups.length === 0}
     >
       {tagGroups.length === 0 && (
@@ -618,6 +635,7 @@ function Section({
   onToggle,
   createLabel,
   error,
+  success,
   disableCreate,
   children,
 }: {
@@ -627,6 +645,7 @@ function Section({
   onToggle: () => void;
   createLabel: string;
   error: string | null;
+  success?: string | null;
   disableCreate?: boolean;
   children: React.ReactNode;
 }) {
@@ -664,6 +683,7 @@ function Section({
         )}
       </div>
 
+      <SuccessBanner message={success ?? null} />
       {error && (
         <p
           className="rounded-xl px-4 py-3 text-sm"

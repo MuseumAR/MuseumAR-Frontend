@@ -16,6 +16,7 @@ import {
   Link as LinkIcon,
 } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { getDisplayError } from "@/lib/validation";
 import type {
   MuseumMapDto,
   RoomDto,
@@ -178,8 +179,12 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
         setSelectedWpId(null);
         setLoadedMapId(selectedMapId);
       })
-      .catch(() => {
-        if (!cancelled) setError("Could not load navigation graph.");
+      .catch((err) => {
+        if (!cancelled) {
+          setError(
+            getDisplayError(err, "Could not load the map graph. The navigation API may be unavailable."),
+          );
+        }
       })
       .finally(() => {
         if (!cancelled) setLoadedMapId(selectedMapId);

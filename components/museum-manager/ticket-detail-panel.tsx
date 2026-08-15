@@ -22,6 +22,7 @@ import {
   getManagerTicketPromotionDetail,
 } from "@/services/museum-manager/ticket-api.service";
 import { getDisplayError } from "@/lib/validation";
+import { SuccessBanner, useSuccessToast } from "@/components/shared/success-banner";
 
 function formFromTicket(ticket: Ticket) {
   return {
@@ -62,6 +63,7 @@ export function TicketDetailPanel({
   const [formSource, setFormSource] = useState(ticket);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { success, showSuccess } = useSuccessToast();
   const [promotions, setPromotions] = useState<TicketPromotionDto[]>([]);
   const [loadingPromos, setLoadingPromos] = useState(true);
   const [showPromoForm, setShowPromoForm] = useState(false);
@@ -126,6 +128,7 @@ export function TicketDetailPanel({
     try {
       await publishTicketTypeEntryForManager(numericTicketId);
       setTicket((prev) => ({ ...prev, status: "Active" }));
+      showSuccess("Ticket type published.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Could not publish ticket type."));
@@ -177,6 +180,7 @@ export function TicketDetailPanel({
       });
 
       setIsEditing(false);
+      showSuccess("Ticket type updated.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Could not update ticket type."));
@@ -257,6 +261,7 @@ export function TicketDetailPanel({
         await createManagerTicketPromotion(numericTicketId, payload);
       }
       cancelEditPromotion();
+      showSuccess(editingPromoId != null ? "Promotion updated." : "Promotion created.");
       await loadPromotions();
     } catch (err) {
       setPromoError(getDisplayError(err, editingPromoId != null ? "Could not update promotion." : "Could not create promotion."));
@@ -275,6 +280,7 @@ export function TicketDetailPanel({
       if (editingPromoId === promotionId) {
         cancelEditPromotion();
       }
+      showSuccess("Promotion deleted.");
       await loadPromotions();
     } catch (err) {
       setError(getDisplayError(err, "Could not delete promotion."));
@@ -284,6 +290,7 @@ export function TicketDetailPanel({
   async function handleTogglePromotion(promotionId: number, currentActive: boolean) {
     try {
       await toggleManagerTicketPromotion(promotionId, !currentActive);
+      showSuccess(currentActive ? "Promotion deactivated." : "Promotion activated.");
       await loadPromotions();
     } catch (err) {
       setError(getDisplayError(err, "Could not change promotion status."));
@@ -344,6 +351,7 @@ export function TicketDetailPanel({
         </div>
       </div>
 
+      <SuccessBanner message={success} />
       {error && (
         <p className="rounded-xl px-3 py-2 text-sm" style={{ background: "rgba(180,40,40,0.08)", color: "#8B2E2E" }}>
           {error}

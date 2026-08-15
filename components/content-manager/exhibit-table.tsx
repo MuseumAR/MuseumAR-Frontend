@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { Eye, Pencil, Search, Send, Trash2 } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
+import { SuccessBanner, useSuccessToast } from "@/components/shared/success-banner";
 import { labelStatus } from "@/lib/status-labels";
 import {
   deleteExhibit,
@@ -41,6 +42,7 @@ export function ExhibitTable({
   const [page, setPage] = useState(1);
   const [actingId, setActingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { success, showSuccess } = useSuccessToast();
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -63,6 +65,7 @@ export function ExhibitTable({
     try {
       if (published) await unpublishExhibit(id);
       else await publishExhibit(id);
+      showSuccess(published ? "Artifact unpublished." : "Artifact published.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Action failed."));
@@ -77,6 +80,7 @@ export function ExhibitTable({
     setError(null);
     try {
       await deleteExhibit(id);
+      showSuccess("Artifact deleted.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Could not delete artifact."));
@@ -128,6 +132,7 @@ export function ExhibitTable({
         </div>
       </div>
 
+      <SuccessBanner message={success} />
       {error && (
         <p
           className="rounded-xl px-4 py-3 text-sm"

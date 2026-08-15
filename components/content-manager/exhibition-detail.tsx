@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
+import { SuccessBanner, useSuccessToast } from "@/components/shared/success-banner";
 import { labelStatus } from "@/lib/status-labels";
 import {
   deleteExhibition,
@@ -64,6 +65,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
   const [selectedExhibitId, setSelectedExhibitId] = useState<number | "">("");
   const [isAssigning, setIsAssigning] = useState(false);
   const [assignError, setAssignError] = useState<string | null>(null);
+  const { success, showSuccess } = useSuccessToast();
 
   const loadExhibitsData = async () => {
     setLoadingExhibits(true);
@@ -105,6 +107,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
       await assignExhibitsToExhibition(exhibition.id, [Number(selectedExhibitId)]);
       setSelectedExhibitId("");
       setShowAddModal(false);
+      showSuccess("Artifact assigned to this exhibition.");
       await loadExhibitsData();
     } catch (err) {
       setAssignError(getDisplayError(err, "Could not assign artifact to exhibition."));
@@ -117,6 +120,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
     if (!confirm("Remove this artifact from the exhibition?")) return;
     try {
       await removeExhibitFromExhibition(exhibition.id, exhibitId);
+      showSuccess("Artifact removed from this exhibition.");
       await loadExhibitsData();
     } catch (err) {
       alert(getDisplayError(err, "Could not remove artifact."));
@@ -167,6 +171,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
       }
 
       setShowEdit(false);
+      showSuccess("Exhibition updated.");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Could not update exhibition."));
@@ -191,6 +196,7 @@ export function ExhibitionDetail({ exhibition }: { exhibition: ExhibitionDto }) 
       </Link>
 
       <div className="space-y-6">
+        <SuccessBanner message={success} />
         {/* Exhibition Metadata Header Card */}
         <div
           className="rounded-3xl p-6"

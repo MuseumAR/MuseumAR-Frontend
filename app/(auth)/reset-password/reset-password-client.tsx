@@ -133,7 +133,10 @@ export default function ResetPasswordPage() {
               className="rounded-xl px-3 py-2 text-xs"
               style={{ background: "rgba(180,40,40,0.08)", color: "#8B2E2E" }}
             >
-              {error}
+              {error}{" "}
+              <Link href="/forgot-password" className="font-semibold underline underline-offset-2">
+                Gửi lại email
+              </Link>
             </p>
           )}
 

@@ -1,5 +1,6 @@
 import { AppError } from "@/lib/validation";
 
+/** Only treat missing records as empty. Network / 500 / 401 must surface. */
 export async function safeFetch<T>(
   fn: () => Promise<T>,
   fallback: T,
@@ -7,12 +8,9 @@ export async function safeFetch<T>(
   try {
     return await fn();
   } catch (error) {
-    const isExpected =
-      error instanceof AppError &&
-      (error.statusCode === 404 || error.statusCode === 401);
-    if (!isExpected) {
-      console.error("[API]", error);
+    if (error instanceof AppError && error.statusCode === 404) {
+      return fallback;
     }
-    return fallback;
+    throw error;
   }
 }

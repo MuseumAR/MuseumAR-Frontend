@@ -122,7 +122,14 @@ export function TicketShop() {
           if (prev <= 1) {
             if (timerRef.current) clearInterval(timerRef.current);
             if (pendingOrder?.orderCode) {
-              cancelTicketOrder(pendingOrder.orderCode).catch(() => {});
+              cancelTicketOrder(pendingOrder.orderCode).catch((err) => {
+                setError(
+                  getDisplayError(
+                    err,
+                    "Đơn đã hết 15 phút. Không hủy được trên máy chủ — kiểm tra lại Vé của tôi.",
+                  ),
+                );
+              });
             }
             setPendingOrder(null);
             setIsModalOpen(false);
@@ -143,9 +150,11 @@ export function TicketShop() {
   useEffect(() => {
     if (!pendingOrder || !isModalOpen) return;
 
+    let failCount = 0;
     const intervalId = setInterval(async () => {
       try {
         const res = await checkPaymentStatus(pendingOrder.orderCode);
+        failCount = 0;
         if (res?.isPaid) {
           clearInterval(intervalId);
           setSuccess(`Thanh toán thành công đơn hàng #${pendingOrder.orderCode}!`);
@@ -159,7 +168,13 @@ export function TicketShop() {
           setIsModalOpen(false);
         }
       } catch {
-        // Silently ignore polling errors during auto-check
+        failCount += 1;
+        if (failCount >= 3) {
+          setModalError(
+            "Không kiểm tra được thanh toán. Mở PayOS hoặc bấm xác nhận nếu bạn đã trả.",
+          );
+          failCount = 0;
+        }
       }
     }, 3000);
 

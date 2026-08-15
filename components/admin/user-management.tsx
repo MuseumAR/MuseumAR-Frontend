@@ -6,6 +6,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { labelStatus } from "@/lib/status-labels";
 import { getDisplayError } from "@/lib/validation";
+import { SuccessBanner, useSuccessToast } from "@/components/shared/success-banner";
 import {
   ADMIN_ROLE_OPTIONS,
   createUserEntry,
@@ -33,6 +34,7 @@ export function UserManagementPanel({
   const [search, setSearch] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { success, showSuccess } = useSuccessToast();
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -106,6 +108,7 @@ export function UserManagementPanel({
         });
       }
       setShowForm(false);
+      showSuccess(editing ? "User updated." : "User created.");
       await afterMutation();
     } catch (err) {
       setError(getDisplayError(err, "Unable to save user."));
@@ -118,6 +121,7 @@ export function UserManagementPanel({
     if (!confirm(`Delete user ${user.fullName}?`)) return;
     try {
       await deleteUserEntry(user.id);
+      showSuccess("User deleted.");
       await afterMutation();
     } catch (err) {
       setError(getDisplayError(err, "Unable to delete user."));
@@ -154,6 +158,8 @@ export function UserManagementPanel({
         className="w-full max-w-md rounded-xl px-4 py-2.5 text-sm outline-none"
         style={{ border: `1px solid ${T.border}`, background: T.surface, color: T.text }}
       />
+
+      <SuccessBanner message={success} />
 
       {showForm && (
         <form

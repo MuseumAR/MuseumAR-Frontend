@@ -44,6 +44,7 @@ import {
 import { createRoom, deleteRoom } from "@/services/content-manager/room.service";
 import { updateMuseumMap, deleteMuseumMap } from "@/services/content-manager/content-api.service";
 import { NavigationGraphEditor } from "@/components/content-manager/navigation-graph-editor";
+import { SuccessBanner, useSuccessToast } from "@/components/shared/success-banner";
 import type {
   AgeGroupDto,
   ExhibitDto,
@@ -390,6 +391,7 @@ function RouteDetailModal({
   );
   const [editStatus, setEditStatus] = useState(route.status);
   const router = useRouter();
+  const { success, showSuccess } = useSuccessToast();
 
   // Exhibits not already in stops
   const usedExhibitIds = new Set(route.stops.map((s) => s.exhibitId));
@@ -410,6 +412,7 @@ function RouteDetailModal({
       setSelectedExhibitId("");
       setStopMinutes("");
       setAddingStop(false);
+      showSuccess("Stop added.");
       onRefresh();
     } catch (err) {
       setError(getDisplayError(err, "Could not add stop."));
@@ -423,6 +426,7 @@ function RouteDetailModal({
     setError(null);
     try {
       await removeRouteStop(route.id, exhibitId);
+      showSuccess("Stop removed.");
       onRefresh();
     } catch (err) {
       setError(getDisplayError(err, "Could not remove stop."));
@@ -455,6 +459,7 @@ function RouteDetailModal({
         status: editStatus || undefined,
       });
       setEditing(false);
+      showSuccess("Route updated.");
       onRefresh();
     } catch (err) {
       setError(getDisplayError(err, "Could not update route."));
@@ -839,12 +844,14 @@ function RouteDetailModal({
           </div>
         )}
 
-        {/* Error */}
-        {error && (
-          <p className="mb-4 text-sm" style={{ color: "#8B2E2E" }}>
-            {error}
-          </p>
-        )}
+        <div className="mb-4 space-y-2">
+          <SuccessBanner message={success} />
+          {error && (
+            <p className="text-sm" style={{ color: "#8B2E2E" }}>
+              {error}
+            </p>
+          )}
+        </div>
 
         {/* Footer */}
         <div
@@ -942,6 +949,7 @@ export function MapsRoutesPanel({
   const [roomDesc, setRoomDesc] = useState("");
   const [roomError, setRoomError] = useState<string | null>(null);
   const [deletingRoomId, setDeletingRoomId] = useState<number | null>(null);
+  const { success, showSuccess } = useSuccessToast();
 
   // Route form state
   const [routeName, setRouteName] = useState("");
@@ -996,6 +1004,7 @@ export function MapsRoutesPanel({
       setEditingMap(null);
       setEditMapFile(null);
       setEditMapPreview(null);
+      showSuccess("Map updated.");
       router.refresh();
     } catch (err) {
       setMapError(getDisplayError(err, "Could not update map."));
@@ -1011,6 +1020,7 @@ export function MapsRoutesPanel({
     try {
       await deleteMuseumMap(id);
       if (selectedMap?.id === id) setSelectedMap(null);
+      showSuccess("Map deleted.");
       router.refresh();
     } catch (err) {
       setMapError(getDisplayError(err, "Could not delete map."));
@@ -1055,6 +1065,7 @@ export function MapsRoutesPanel({
       });
       resetRouteForm();
       setShowRouteForm(false);
+      showSuccess("Route created.");
       router.refresh();
     } catch (err) {
       setRouteError(getDisplayError(err, "Could not create route."));
@@ -1097,6 +1108,7 @@ export function MapsRoutesPanel({
       setRoomMapId("");
       setRoomFloorNumber("1");
       setShowRoomForm(false);
+      showSuccess("Room created.");
       router.refresh();
     } catch (err) {
       setRoomError(getDisplayError(err, "Could not create room."));
@@ -1110,6 +1122,7 @@ export function MapsRoutesPanel({
     setRoomError(null);
     try {
       await deleteRoom(id);
+      showSuccess("Room deleted.");
       router.refresh();
     } catch (err) {
       setRoomError(getDisplayError(err, "Could not delete room."));
@@ -1139,6 +1152,7 @@ export function MapsRoutesPanel({
       setMapType("floor");
       if (mapFileRef.current) mapFileRef.current.value = "";
       setShowMapForm(false);
+      showSuccess("Map uploaded.");
       router.refresh();
     } catch (err) {
       setMapError(getDisplayError(err, "Could not upload map."));
@@ -1213,6 +1227,8 @@ export function MapsRoutesPanel({
         {tabBtn("routes", "Tour routes", routes.length, Route)}
         {tabBtn("graph", "Navigation graph", 1, Navigation)}
       </div>
+
+      <SuccessBanner message={success} />
 
       {/* ═══ GRAPH TAB ═══ */}
       {tab === "graph" && (
