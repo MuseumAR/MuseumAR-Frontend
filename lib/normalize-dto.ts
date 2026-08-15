@@ -329,3 +329,44 @@ export function normalizeMuseumMapDto(
     mapName: pickStr(o, "mapName", "MapName") ?? undefined,
   };
 }
+
+export function normalizeMuseumDashboardDto(
+  raw: unknown,
+): import("@/types/api").MuseumDashboardDto {
+  const o = asRecord(raw);
+  const scans = pickField<unknown[]>(o, "exhibitScanStats", "ExhibitScanStats") ?? [];
+  const popular = pickField<unknown[]>(o, "popularExhibits", "PopularExhibits") ?? [];
+  const langs = pickField<unknown[]>(o, "languageUsageStats", "LanguageUsageStats") ?? [];
+
+  return {
+    totalQrScans: pickNum(o, "totalQrScans", "TotalQrScans") ?? 0,
+    averageListeningDurationMinutes:
+      pickNum(o, "averageListeningDurationMinutes", "AverageListeningDurationMinutes") ?? 0,
+    totalOfflineDownloads: pickNum(o, "totalOfflineDownloads", "TotalOfflineDownloads") ?? 0,
+    exhibitScanStats: (Array.isArray(scans) ? scans : []).map((item) => {
+      const s = asRecord(item);
+      return {
+        exhibitId: pickNum(s, "exhibitId", "ExhibitId") ?? 0,
+        exhibitName: pickStr(s, "exhibitName", "ExhibitName") ?? "",
+        scanCount: pickNum(s, "scanCount", "ScanCount") ?? 0,
+      };
+    }),
+    popularExhibits: (Array.isArray(popular) ? popular : []).map((item) => {
+      const p = asRecord(item);
+      return {
+        exhibitId: pickNum(p, "exhibitId", "ExhibitId") ?? 0,
+        exhibitName: pickStr(p, "exhibitName", "ExhibitName") ?? "",
+        totalInteractions: pickNum(p, "totalInteractions", "TotalInteractions") ?? 0,
+        avgDurationSeconds: pickNum(p, "avgDurationSeconds", "AvgDurationSeconds") ?? 0,
+      };
+    }),
+    languageUsageStats: (Array.isArray(langs) ? langs : []).map((item) => {
+      const l = asRecord(item);
+      return {
+        languageCode: pickStr(l, "languageCode", "LanguageCode") ?? "",
+        usageCount: pickNum(l, "usageCount", "UsageCount") ?? 0,
+        percentage: pickNum(l, "percentage", "Percentage") ?? 0,
+      };
+    }),
+  };
+}

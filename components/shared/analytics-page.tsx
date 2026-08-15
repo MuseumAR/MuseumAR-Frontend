@@ -42,16 +42,16 @@ export function AnalyticsPageContent({ metrics, dashboard, error }: Props) {
           </h2>
         </div>
 
-        {metrics.length === 0 ? (
-          <p
-            className="rounded-3xl px-6 py-10 text-center text-sm"
-            style={{ background: T.surface, border: `1px solid ${T.border}`, color: T.muted }}
-          >
-            No metrics to display.
-          </p>
-        ) : (
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            {metrics.map((metric) => {
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            {(metrics.length > 0
+              ? metrics
+              : [
+                  { label: "Total QR scans", value: "0", change: "—" },
+                  { label: "Average listening time", value: "0 min", change: "—" },
+                  { label: "Offline downloads", value: "0", change: "—" },
+                  { label: "Popular exhibits", value: "0", change: "—" },
+                ]
+            ).map((metric) => {
               const delta = hasDelta(metric.change);
               const positive = metric.change.startsWith("+");
               return (
@@ -98,7 +98,6 @@ export function AnalyticsPageContent({ metrics, dashboard, error }: Props) {
               );
             })}
           </div>
-        )}
       </section>
 
       <section>
