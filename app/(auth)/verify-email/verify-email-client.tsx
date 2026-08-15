@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, useRef, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -28,9 +28,24 @@ export default function VerifyEmailPage() {
   const [isResending, setIsResending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(
-    emailFromUrl ? "Mã 6 số đã được gửi tới email của bạn. Hết hạn sau 24 giờ." : null,
+    emailFromUrl
+      ? nextPath
+        ? "Đang tự động gửi mã xác thực tới email của bạn..."
+        : "Mã 6 số đã được gửi tới email của bạn. Hết hạn sau 24 giờ."
+      : null,
   );
   const [done, setDone] = useState(false);
+
+  const hasAutoSent = useRef(false);
+
+  useEffect(() => {
+    // If the user lands here via a checkout flow redirect (nextPath is present)
+    // and we have their email, automatically trigger the OTP dispatch so they receive it immediately.
+    if (emailFromUrl && nextPath && !hasAutoSent.current) {
+      hasAutoSent.current = true;
+      void handleResend();
+    }
+  }, [emailFromUrl, nextPath]);
 
   function safeNext() {
     return nextPath.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "";

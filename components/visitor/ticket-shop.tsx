@@ -267,6 +267,8 @@ export function TicketShop() {
       setError(
         getDisplayError(err, t("tickets.error_init")),
       );
+      setIsCheckoutOpen(false);
+      setCheckoutTarget(null);
     } finally {
       setBuyingId(null);
     }
