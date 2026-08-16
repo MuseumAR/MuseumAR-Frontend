@@ -3,7 +3,9 @@ function base64UrlDecode(input: string): string {
   if (typeof Buffer !== "undefined") {
     return Buffer.from(base64, "base64").toString("utf8");
   }
-  return atob(base64);
+  const binString = atob(base64);
+  const bytes = Uint8Array.from(binString, (m) => m.codePointAt(0)!);
+  return new TextDecoder().decode(bytes);
 }
 
 export function decodeJwtPayload(

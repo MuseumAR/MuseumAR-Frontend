@@ -121,7 +121,7 @@ export function UserManagementPanel({
     if (!confirm(`Delete user ${user.fullName}?`)) return;
     try {
       await deleteUserEntry(user.id);
-      showSuccess("User deleted.");
+      showSuccess("User deactivated.");
       await afterMutation();
     } catch (err) {
       setError(getDisplayError(err, "Unable to delete user."));
@@ -277,25 +277,31 @@ export function UserManagementPanel({
                       </span>
                     </td>
                     <td className="px-5 py-4">
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(user)}
-                          className="rounded-lg px-3 py-1 text-xs"
-                          style={{ border: `1px solid ${T.border}`, color: T.muted }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDelete(user)}
-                          className="inline-flex items-center gap-1 rounded-lg px-3 py-1 text-xs"
-                          style={{ border: "1px solid rgba(180,40,40,0.25)", color: "#8B2E2E" }}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                          Delete
-                        </button>
-                      </div>
+                      {user.status !== "Inactive" ? (
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={() => openEdit(user)}
+                            className="rounded-lg px-3 py-1 text-xs"
+                            style={{ border: `1px solid ${T.border}`, color: T.muted }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDelete(user)}
+                            className="inline-flex items-center gap-1 rounded-lg px-3 py-1 text-xs"
+                            style={{ border: "1px solid rgba(180,40,40,0.25)", color: "#8B2E2E" }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                            Delete
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs italic" style={{ color: T.mutedLight }}>
+                          Deactivated
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

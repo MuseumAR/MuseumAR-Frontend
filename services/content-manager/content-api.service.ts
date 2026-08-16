@@ -48,11 +48,11 @@ export function getExhibitById(id: number, includeUnpublished = true) {
 }
 
 export function createExhibit(payload: CreateExhibitDto) {
-  return apiPostAuth<ExhibitDto>("/api/content/exhibits", payload);
+  return apiPostAuth<number>("/api/content/exhibits", payload);
 }
 
 export function updateExhibit(id: number, payload: CreateExhibitDto) {
-  return apiPutAuth<ExhibitDto>(`/api/content/exhibits/${id}`, payload);
+  return apiPutAuth<number>(`/api/content/exhibits/${id}`, payload);
 }
 
 export function deleteExhibit(id: number) {
@@ -92,6 +92,10 @@ export function createContentVersion(versionNumber: string, description: string)
 
 export function getContentVersions() {
   return apiGet<ContentVersionDto[]>("/api/content/versions");
+}
+
+export function publishContentVersion(id: number) {
+  return apiPostAuth<unknown>(`/api/content/versions/${id}/publish`);
 }
 
 export function getArAssets(exhibitId: number) {

@@ -369,7 +369,7 @@ export function TicketDetailPanel({
               <h2 className="text-lg font-bold" style={{ fontFamily: cinzel, color: T.text }}>
                 {isEditing ? "Edit Ticket Type" : "Ticket Information"}
               </h2>
-              {!isEditing && (
+              {!isEditing && ticket.status !== "Inactive" && (
                 <button
                   onClick={() => setIsEditing(true)}
                   className="inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-xl transition-opacity hover:opacity-85"
@@ -537,14 +537,16 @@ export function TicketDetailPanel({
                   </div>
                 </div>
 
-                <div className="border-t pt-4 flex justify-end">
-                  <button
-                    onClick={handleDelete}
-                    className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm text-red-600 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" /> Delete Ticket Type
-                  </button>
-                </div>
+                {ticket.status !== "Inactive" && (
+                  <div className="border-t pt-4 flex justify-end">
+                    <button
+                      onClick={handleDelete}
+                      className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" /> Delete Ticket Type
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -560,7 +562,7 @@ export function TicketDetailPanel({
               <h3 className="text-base font-bold flex items-center gap-1.5" style={{ color: T.text }}>
                 <Tag className="h-4 w-4 text-red-600" /> Promotions
               </h3>
-              {!showPromoForm && (
+              {!showPromoForm && ticket.status !== "Inactive" && (
                 <button
                   onClick={() => setShowPromoForm(true)}
                   className="inline-flex items-center gap-1 text-[11px] font-bold bg-red-50 text-red-600 border border-red-200/50 rounded-xl px-2.5 py-1 transition-opacity hover:opacity-85"

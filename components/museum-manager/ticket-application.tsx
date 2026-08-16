@@ -455,53 +455,57 @@ export function TicketApplicationTable({
                           <Eye className="h-3 w-3" />
                           Detail
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => router.push(`/museum-manager/ticket-application/${ticket.id.replace("TK-", "")}?edit=true`)}
-                          className="inline-flex items-center gap-1 rounded-xl px-3 py-1 text-xs font-medium transition-opacity hover:opacity-90"
-                          style={{
-                            border: `1px solid ${T.border}`,
-                            background: T.bg,
-                            color: T.text,
-                          }}
-                        >
-                          <Edit2 className="h-3 w-3" />
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteTicket(ticket.id)}
-                          className="inline-flex items-center gap-1 rounded-xl px-3 py-1 text-xs font-medium transition-opacity hover:opacity-90 text-red-600 hover:bg-red-50"
-                          style={{
-                            border: "1px solid rgba(220,38,38,0.20)",
-                            background: "rgba(220,38,38,0.08)",
-                          }}
-                        >
-                          <Trash2 className="h-3 w-3" />
-                          Delete
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (promoFormTarget === ticket.id) {
-                              setPromoFormTarget(null);
-                              cancelEditPromotion();
-                            } else {
-                              setPromoFormTarget(ticket.id);
-                              cancelEditPromotion();
-                              loadPromotions(ticket.id);
-                            }
-                          }}
-                          className="inline-flex items-center gap-1 rounded-xl px-3 py-1 text-xs font-medium transition-opacity hover:opacity-90"
-                          style={{
-                            background: promoFormTarget === ticket.id ? "rgba(220,38,38,0.15)" : "rgba(220,38,38,0.08)",
-                            border: "1px solid rgba(220,38,38,0.20)",
-                            color: "#B91C1C",
-                          }}
-                        >
-                          <Tag className="h-3 w-3" />
-                          {promoFormTarget === ticket.id ? "Close" : "Promotions"}
-                        </button>
+                        {ticket.status !== "Inactive" && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => router.push(`/museum-manager/ticket-application/${ticket.id.replace("TK-", "")}?edit=true`)}
+                              className="inline-flex items-center gap-1 rounded-xl px-3 py-1 text-xs font-medium transition-opacity hover:opacity-90"
+                              style={{
+                                border: `1px solid ${T.border}`,
+                                background: T.bg,
+                                color: T.text,
+                              }}
+                            >
+                              <Edit2 className="h-3 w-3" />
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteTicket(ticket.id)}
+                              className="inline-flex items-center gap-1 rounded-xl px-3 py-1 text-xs font-medium transition-opacity hover:opacity-90 text-red-600 hover:bg-red-50"
+                              style={{
+                                border: "1px solid rgba(220,38,38,0.20)",
+                                background: "rgba(220,38,38,0.08)",
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Delete
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (promoFormTarget === ticket.id) {
+                                  setPromoFormTarget(null);
+                                  cancelEditPromotion();
+                                } else {
+                                  setPromoFormTarget(ticket.id);
+                                  cancelEditPromotion();
+                                  loadPromotions(ticket.id);
+                                }
+                              }}
+                              className="inline-flex items-center gap-1 rounded-xl px-3 py-1 text-xs font-medium transition-opacity hover:opacity-90"
+                              style={{
+                                background: promoFormTarget === ticket.id ? "rgba(220,38,38,0.15)" : "rgba(220,38,38,0.08)",
+                                border: "1px solid rgba(220,38,38,0.20)",
+                                color: "#B91C1C",
+                              }}
+                            >
+                              <Tag className="h-3 w-3" />
+                              {promoFormTarget === ticket.id ? "Close" : "Promotions"}
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

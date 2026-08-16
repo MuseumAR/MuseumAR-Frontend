@@ -8,6 +8,7 @@ import { getDisplayError } from "@/lib/validation";
 import { labelStatus } from "@/lib/status-labels";
 import {
   createVersionEntry,
+  publishVersion,
 } from "@/services/content-manager/content-version.service";
 import type { ContentVersionDto } from "@/types/api";
 
@@ -54,6 +55,18 @@ export function ContentVersionsPanel({
       setError(getDisplayError(err, "Could not create content version."));
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handlePublish(id: number) {
+    setError(null);
+    try {
+      await publishVersion(id);
+      setVersions((prev) =>
+        prev.map((v) => (v.id === id ? { ...v, status: "Published" } : v))
+      );
+    } catch (err) {
+      setError(getDisplayError(err, "Could not publish content version."));
     }
   }
 
@@ -182,7 +195,7 @@ export function ContentVersionsPanel({
                   background: "rgba(245,230,200,0.35)",
                 }}
               >
-                {["ID", "Version", "Status", "Description", "Created"].map((h) => (
+                {["ID", "Version", "Status", "Description", "Created", "Actions"].map((h) => (
                   <th key={h} className="px-5 py-4 font-medium" style={{ color: T.mutedLight }}>
                     {h}
                   </th>
@@ -202,8 +215,11 @@ export function ContentVersionsPanel({
                     <span
                       className="rounded-full px-2.5 py-0.5 text-xs font-medium"
                       style={{
-                        background: "rgba(200,155,69,0.15)",
-                        color: T.primaryDark,
+                        background:
+                          item.status === "Published"
+                            ? "rgba(79,125,74,0.12)"
+                            : "rgba(200,155,69,0.15)",
+                        color: item.status === "Published" ? T.success : T.primaryDark,
                       }}
                     >
                       {labelStatus(item.status)}
@@ -218,6 +234,22 @@ export function ContentVersionsPanel({
                   </td>
                   <td className="px-5 py-4" style={{ color: T.muted }}>
                     {item.createdAt?.slice(0, 10) ?? "—"}
+                  </td>
+                  <td className="px-5 py-4">
+                    {item.status === "Draft" ? (
+                      <button
+                        type="button"
+                        onClick={() => handlePublish(item.id)}
+                        className="rounded-xl px-3 py-1 text-xs font-semibold shadow-sm transition-transform active:scale-95 hover:opacity-90 text-white"
+                        style={{ background: T.primary }}
+                      >
+                        Publish
+                      </button>
+                    ) : (
+                      <span className="text-xs italic" style={{ color: T.mutedLight }}>
+                        Published
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
