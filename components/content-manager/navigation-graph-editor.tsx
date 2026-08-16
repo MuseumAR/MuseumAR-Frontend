@@ -26,6 +26,7 @@ import type {
 } from "@/types/api";
 import {
   getNavigationGraphByMap,
+  getNavigationGraphByMuseum,
   createWaypoint,
   deleteWaypoint,
   createEdge,
@@ -91,9 +92,17 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
   }, [waypoints, currentMap]);
 
   const currentFloorEdges = useMemo(() => {
-    const currentWpIds = new Set(currentFloorWaypoints.map((w) => w.id));
-    return edges.filter((e) => currentWpIds.has(e.fromWaypointId) || currentWpIds.has(e.toWaypointId));
+    const currentWpIds = new Set(currentFloorWaypoints.map((w) => String(w.id)));
+    return edges.filter(
+      (e) =>
+        currentWpIds.has(String(e.fromWaypointId)) || currentWpIds.has(String(e.toWaypointId)),
+    );
   }, [edges, currentFloorWaypoints]);
+
+  const roomsOnSelectedMap = useMemo(
+    () => rooms.filter((r) => r.mapId === selectedMapId),
+    [rooms, selectedMapId],
+  );
 
   const roomById = useMemo(() => {
     const map = new Map<number, RoomDto>();
@@ -168,34 +177,54 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     );
   };
 
-  // Load graph when selected map changes (scoped by MapId on BE)
+  const selectedFloor = currentMap?.floorNumber ?? 0;
+
+  // Seed waypoints often have mapId=0, so graph-by-map is empty — fall back to museum graph.
   useEffect(() => {
     if (!selectedMapId) return;
     let cancelled = false;
-    getNavigationGraphByMap(selectedMapId)
-      .then((data) => {
+
+    const belongsToMap = (w: WaypointDto) =>
+      w.mapId === selectedMapId ||
+      ((w.mapId == null || w.mapId === 0) && w.floorNumber === selectedFloor);
+
+    (async () => {
+      try {
+        let data = await getNavigationGraphByMap(selectedMapId);
         if (cancelled) return;
+
+        if (!(data.waypoints?.length) && museumId) {
+          const museumGraph = await getNavigationGraphByMuseum(museumId);
+          if (cancelled) return;
+          const nextWaypoints = (museumGraph.waypoints || []).filter(belongsToMap);
+          const wpIds = new Set(nextWaypoints.map((w) => String(w.id)));
+          const nextEdges = (museumGraph.edges || []).filter(
+            (e) =>
+              wpIds.has(String(e.fromWaypointId)) || wpIds.has(String(e.toWaypointId)),
+          );
+          data = { museumId, waypoints: nextWaypoints, edges: nextEdges };
+        }
+
         setWaypoints(data.waypoints || []);
         setEdges(data.edges || []);
-        setTestResult(null);
-        setActiveStepIndex(null);
         setSelectedWpId(null);
+        setWpRoomId(undefined);
         setLoadedMapId(selectedMapId);
-      })
-      .catch((err) => {
+      } catch (err) {
         if (!cancelled) {
           setError(
             getDisplayError(err, "Could not load the map graph. The navigation API may be unavailable."),
           );
         }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoadedMapId(selectedMapId);
-      });
+      }
+    })();
+
     return () => {
       cancelled = true;
     };
-  }, [selectedMapId]);
+  }, [selectedMapId, selectedFloor, museumId]);
 
   // Handle map click for adding waypoint
   const handleMapClick = async (e: React.MouseEvent<HTMLDivElement>) => {
@@ -297,27 +326,45 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     }
   };
 
+  const jumpToPathMap = (path: WaypointDto[]) => {
+    const first = path[0];
+    if (!first) return;
+
+    if (first.mapId && first.mapId !== 0 && maps.some((m) => m.id === first.mapId)) {
+      if (first.mapId !== selectedMapId) setSelectedMapId(first.mapId);
+      return;
+    }
+
+    const floor = first.floorNumber;
+    if (floor == null) return;
+    const current = maps.find((m) => m.id === selectedMapId);
+    if ((current?.floorNumber ?? 1) === floor) return;
+    const mapForFloor = maps.find((m) => (m.floorNumber ?? 1) === floor);
+    if (mapForFloor) setSelectedMapId(mapForFloor.id);
+  };
+
   // Run Test Route Navigation
   const handleRunTest = async () => {
     if (!testFromRoomId || !testToRoomId) return;
+    if (Number(testFromRoomId) === Number(testToRoomId)) {
+      setError("Choose two different rooms.");
+      return;
+    }
     setTestingPath(true);
     setTestResult(null);
     setActiveStepIndex(null);
     try {
       const res = await navigateRoute(Number(testFromRoomId), Number(testToRoomId));
-      if (!res) {
-        setError("No path found between the two rooms.");
+      const path = res?.pathWaypoints ?? [];
+      if (!res || path.length === 0) {
+        setError(
+          res?.instructions?.[0]?.instruction || "No path found between the two rooms.",
+        );
         return;
       }
       setTestResult(res);
       setActiveStepIndex(res.instructions[0]?.stepIndex ?? null);
-
-      // Jump to the floor of the first path waypoint so the highlight is visible
-      const firstFloor = res.pathWaypoints[0]?.floorNumber;
-      if (firstFloor != null) {
-        const mapForFloor = maps.find((m) => (m.floorNumber ?? 1) === firstFloor);
-        if (mapForFloor) setSelectedMapId(mapForFloor.id);
-      }
+      jumpToPathMap(path);
     } catch (err) {
       setError("Could not run the test path.");
     } finally {
@@ -332,10 +379,10 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
 
   const handleSelectStep = (stepIndex: number, floorNumber: number) => {
     setActiveStepIndex(stepIndex);
+    const current = maps.find((m) => m.id === selectedMapId);
+    if ((current?.floorNumber ?? 1) === floorNumber) return;
     const mapForFloor = maps.find((m) => (m.floorNumber ?? 1) === floorNumber);
-    if (mapForFloor && mapForFloor.id !== selectedMapId) {
-      setSelectedMapId(mapForFloor.id);
-    }
+    if (mapForFloor) setSelectedMapId(mapForFloor.id);
   };
 
   /** Phòng (DOOR / ROOM) vs hành lang — màu theo type, không theo roomId dính. */
@@ -485,7 +532,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                       style={{ background: "white", borderColor: T.border }}
                     >
                       <option value="">-- Select room --</option>
-                      {rooms.map((r) => (
+                      {roomsOnSelectedMap.map((r) => (
                         <option key={r.id} value={r.id}>
                           {r.roomName} ({r.roomCode})
                         </option>
@@ -531,7 +578,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                   style={{ background: "white", borderColor: T.border }}
                 >
                   <option value="">-- Select room --</option>
-                  {rooms.map((r) => (
+                  {roomsOnSelectedMap.map((r) => (
                     <option key={r.id} value={r.id}>{r.roomName}</option>
                   ))}
                 </select>
@@ -546,7 +593,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                   style={{ background: "white", borderColor: T.border }}
                 >
                   <option value="">-- Select room --</option>
-                  {rooms.map((r) => (
+                  {roomsOnSelectedMap.map((r) => (
                     <option key={r.id} value={r.id}>{r.roomName}</option>
                   ))}
                 </select>
@@ -668,8 +715,8 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
             <svg className="absolute inset-0 h-full w-full pointer-events-none">
               {/* Base graph edges */}
               {currentFloorEdges.map((edge) => {
-                const w1 = waypoints.find((w) => w.id === edge.fromWaypointId);
-                const w2 = waypoints.find((w) => w.id === edge.toWaypointId);
+                const w1 = waypoints.find((w) => String(w.id) === String(edge.fromWaypointId));
+                const w2 = waypoints.find((w) => String(w.id) === String(edge.toWaypointId));
                 if (!w1 || !w2) return null;
 
                 const onPath =
