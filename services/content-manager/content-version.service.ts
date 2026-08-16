@@ -1,9 +1,17 @@
 import { safeFetch } from "@/lib/fetch-safe";
 import type { ContentVersionDto } from "@/types/api";
-import { createContentVersion, getContentVersions } from "./content-api.service";
+import {
+  createContentVersion,
+  getContentVersions,
+  publishContentVersion,
+} from "./content-api.service";
 
 export async function getVersionList(): Promise<ContentVersionDto[]> {
   return safeFetch(() => getContentVersions(), []);
+}
+
+export async function publishVersion(id: number): Promise<void> {
+  await publishContentVersion(id);
 }
 
 function asNumber(value: unknown): number | null {

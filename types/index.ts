@@ -114,7 +114,7 @@ export type Ticket = {
   id: string;
   type: string;
   price: string;
-  status: "Active" | "Pending";
+  status: "Active" | "Pending" | "Inactive";
   description?: string | null;
   exhibitionId?: number | null;
   nameEn?: string | null;

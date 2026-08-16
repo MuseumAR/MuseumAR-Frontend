@@ -19,7 +19,7 @@ function mapTicketType(dto: TicketTypeDto): Ticket {
       currency: "VND",
       maximumFractionDigits: 0,
     }).format(dto.price),
-    status: dto.status === "Approved" ? "Active" : "Pending",
+    status: dto.isActive === false ? "Inactive" : dto.status === "Approved" ? "Active" : "Pending",
     description: dto.description,
     exhibitionId: dto.exhibitionId,
     nameEn: dto.nameEn,

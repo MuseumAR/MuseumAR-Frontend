@@ -214,8 +214,8 @@ export function MyTicketsPanel() {
                         <span
                           className="rounded-full px-2.5 py-1 text-xs font-medium"
                           style={{
-                            background: "rgba(60,120,80,0.12)",
-                            color: "#2F5D3A",
+                            background: ticket.status === "Used" ? "rgba(125,90,60,0.10)" : "rgba(60,120,80,0.12)",
+                            color: ticket.status === "Used" ? C.muted : "#2F5D3A",
                           }}
                         >
                           {labelStatus(ticket.status)}
