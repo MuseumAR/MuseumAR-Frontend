@@ -1,5 +1,5 @@
 import { safeFetch } from "@/lib/fetch-safe";
-import { repairMuseumText } from "@/lib/repair-text";
+import { fillMuseumLocationDefaults } from "@/lib/normalize-dto";
 import type { MuseumDto, UpdateMuseumProfileDto } from "@/types/api";
 import {
   getMuseumProfile as fetchMuseumProfile,
@@ -9,7 +9,7 @@ import {
 export async function getManagedMuseum(): Promise<MuseumDto | null> {
   return safeFetch(async () => {
     const museum = await fetchMuseumProfile();
-    return repairMuseumText(museum);
+    return fillMuseumLocationDefaults(museum);
   }, null);
 }
 

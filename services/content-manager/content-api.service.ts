@@ -47,8 +47,16 @@ export function getExhibitById(id: number, includeUnpublished = true) {
   );
 }
 
-export function createExhibit(payload: CreateExhibitDto) {
-  return apiPostAuth<number>("/api/content/exhibits", payload);
+export async function createExhibit(payload: CreateExhibitDto) {
+  const data = await apiPostAuth<ExhibitDto | number>("/api/content/exhibits", payload);
+  if (typeof data === "number") {
+    return { id: data } as ExhibitDto;
+  }
+  const id = Number((data as ExhibitDto)?.id);
+  if (!Number.isFinite(id) || id <= 0) {
+    throw new Error("Create exhibit succeeded but no id was returned.");
+  }
+  return data;
 }
 
 export function updateExhibit(id: number, payload: CreateExhibitDto) {

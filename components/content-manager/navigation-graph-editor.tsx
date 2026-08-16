@@ -101,12 +101,15 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     return map;
   }, [rooms]);
 
+  const isRoomWaypoint = (wp: Pick<WaypointDto, "waypointType">) => {
+    const type = String(wp.waypointType ?? "").toUpperCase();
+    return type === "DOOR" || type === "ROOM";
+  };
+
   const getRoomLabel = (wp: WaypointDto) => {
+    if (!isRoomWaypoint(wp)) return null;
     if (wp.roomId == null || wp.roomId === 0) {
-      if (wp.waypointType === "DOOR" || wp.waypointType === "ROOM") {
-        return wp.name?.trim() || "Room";
-      }
-      return null;
+      return wp.name?.trim() || "Room";
     }
     const room = roomById.get(wp.roomId);
     if (room) {
@@ -211,7 +214,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
         locationX: xRatio,
         locationY: yRatio,
         waypointType: wpType,
-        roomId: wpRoomId || null,
+        roomId: wpType === "DOOR" ? wpRoomId || null : null,
         name: wpName.trim() || undefined,
       });
 
@@ -226,6 +229,9 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
 
   // Handle waypoint click
   const handleWaypointClick = async (wp: WaypointDto, e: React.MouseEvent) => {
+    // Add mode: let the click reach the map so a new hallway/stair can be placed
+    // even if the cursor is over an existing room marker.
+    if (mode === "add_waypoint") return;
     e.stopPropagation();
 
     if (mode === "select") {
@@ -332,11 +338,12 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     }
   };
 
-  /** Phòng (DOOR / có roomId) vs hành lang — màu tách rõ trên bản đồ. */
+  /** Phòng (DOOR / ROOM) vs hành lang — màu theo type, không theo roomId dính. */
   const getWpColor = (wp: Pick<WaypointDto, "waypointType" | "roomId"> | string) => {
     const type = typeof wp === "string" ? wp : wp.waypointType;
-    const roomId = typeof wp === "string" ? null : wp.roomId;
-    const isRoomPoint = type === "DOOR" || type === "ROOM" || (roomId != null && roomId !== 0);
+    const isRoomPoint = typeof wp === "string"
+      ? type === "DOOR" || type === "ROOM"
+      : isRoomWaypoint(wp);
 
     if (isRoomPoint) return "#16A34A"; // xanh lá — điểm phòng
 
@@ -453,7 +460,11 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                 <span className="text-xs font-semibold" style={{ color: T.text }}>Waypoint type:</span>
                 <select
                   value={wpType}
-                  onChange={(e) => setWpType(e.target.value)}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setWpType(next);
+                    if (next !== "DOOR") setWpRoomId(undefined);
+                  }}
                   className="w-full rounded-xl px-3 py-1.5 text-xs font-medium border"
                   style={{ background: "white", borderColor: T.border }}
                 >
@@ -718,10 +729,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                 String(testResult.pathWaypoints[testResult.pathWaypoints.length - 1].id) ===
                   String(wp.id);
               const roomLabel = getRoomLabel(wp);
-              const isRoomPoint =
-                wp.waypointType === "DOOR" ||
-                wp.waypointType === "ROOM" ||
-                (wp.roomId != null && wp.roomId !== 0);
+              const isRoomPoint = isRoomWaypoint(wp);
 
               return (
                 <div
@@ -766,7 +774,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                         ? "B"
                         : isRoomPoint
                           ? "P"
-                          : wp.waypointType[0]}
+                          : (wp.waypointType || "H")[0]}
                   </span>
                 </div>
               );

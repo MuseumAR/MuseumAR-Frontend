@@ -127,7 +127,10 @@ export function CreateExhibitForm({
         translations: translationsPayload,
       });
 
-      const exhibitId = res;
+      const exhibitId = typeof res === "number" ? res : Number(res?.id);
+      if (!Number.isFinite(exhibitId) || exhibitId <= 0) {
+        throw new Error("Artifact was created but the server did not return an id.");
+      }
 
       const displayTitle = titleVi.trim() || titleEn.trim() || "Artifact";
       if (imageFile) await uploadExhibitImage(exhibitId, imageFile, displayTitle);

@@ -1,5 +1,3 @@
-import { repairDisplayText } from "@/lib/repair-text";
-
 /** Pick first defined value among alternate API keys (camelCase / PascalCase / acronym). */
 export function pickField<T = unknown>(
   raw: Record<string, unknown>,
@@ -23,7 +21,7 @@ function pickStr(
 ): string | null | undefined {
   const v = pickField<unknown>(raw, ...keys);
   if (v == null) return v as null | undefined;
-  return repairDisplayText(String(v));
+  return String(v);
 }
 
 function pickNum(
@@ -369,5 +367,62 @@ export function normalizeMuseumDashboardDto(
         percentage: pickNum(l, "percentage", "Percentage") ?? 0,
       };
     }),
+  };
+}
+
+/** Fill empty city/province/country from address — not encoding repair. */
+export function fillMuseumLocationDefaults<
+  T extends {
+    name?: string | null;
+    city?: string | null;
+    province?: string | null;
+    country?: string | null;
+    address?: string | null;
+    description?: string | null;
+  },
+>(museum: T): T {
+  const address = museum.address;
+  let city = museum.city;
+  let province = museum.province;
+  let country = museum.country;
+
+  if (!country || !country.trim() || country === "—" || country === "-") {
+    country = "Việt Nam";
+  }
+
+  if (address) {
+    const parts = address.split(",").map((p) => p.trim()).filter(Boolean);
+    if (parts.length >= 2) {
+      const extractedCity = parts[parts.length - 1];
+      const extractedProvince = parts[parts.length - 2];
+      if (!city || !city.trim() || city === "—" || city === "-") {
+        city = extractedCity;
+      }
+      if (!province || !province.trim() || province === "—" || province === "-") {
+        province = extractedProvince;
+      }
+    } else if (parts.length === 1) {
+      if (!city || !city.trim() || city === "—" || city === "-") {
+        city = parts[0];
+      }
+      if (!province || !province.trim() || province === "—" || province === "-") {
+        province = parts[0];
+      }
+    }
+  }
+
+  if (!city || !city.trim() || city === "—" || city === "-") {
+    city = "Thành phố Hồ Chí Minh";
+  }
+  if (!province || !province.trim() || province === "—" || province === "-") {
+    province = "Quận 1";
+  }
+
+  return {
+    ...museum,
+    city,
+    province,
+    country,
+    address,
   };
 }
