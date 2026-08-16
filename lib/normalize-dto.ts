@@ -426,3 +426,18 @@ export function fillMuseumLocationDefaults<
     address,
   };
 }
+
+export function normalizeContentVersionDto(
+  raw: unknown,
+): import("@/types/api").ContentVersionDto {
+  const o = asRecord(raw);
+  return {
+    id: Number(pickField(o, "id", "Id") ?? 0),
+    museumId: Number(pickField(o, "museumId", "MuseumId") ?? 0),
+    versionNumber: String(pickField(o, "versionNumber", "VersionNumber") ?? ""),
+    changeDescription:
+      pickStr(o, "changeDescription", "ChangeDescription") ?? null,
+    status: String(pickField(o, "status", "Status") ?? ""),
+    createdAt: String(pickField(o, "createdAt", "CreatedAt") ?? ""),
+  };
+}
