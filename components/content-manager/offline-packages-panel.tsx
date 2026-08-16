@@ -8,7 +8,7 @@ import { getDisplayError } from "@/lib/validation";
 import { labelStatus } from "@/lib/status-labels";
 import { getApiUrl } from "@/services/api-client";
 import { generatePackageEntry } from "@/services/content-manager/offline-package.service";
-import type { OfflinePackageDto } from "@/types/api";
+import type { ContentVersionDto, OfflinePackageDto } from "@/types/api";
 
 function formatBytes(bytes?: number | null) {
   if (!bytes || bytes <= 0) return "—";
@@ -33,8 +33,10 @@ function getPackageDownloadUrl(packageUrl?: string | null) {
 
 export function OfflinePackagesPanel({
   packages,
+  versions = [],
 }: {
   packages: OfflinePackageDto[];
+  versions?: ContentVersionDto[];
 }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
@@ -45,8 +47,8 @@ export function OfflinePackagesPanel({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const vid = Number(versionId);
-    if (!versionId.trim() || Number.isNaN(vid)) {
-      setError("Please enter a valid content version ID.");
+    if (!versionId || Number.isNaN(vid)) {
+      setError("Please select a content version.");
       return;
     }
     setError(null);
@@ -93,17 +95,37 @@ export function OfflinePackagesPanel({
         <form onSubmit={handleSubmit} className="max-w-md rounded-3xl p-6 shadow-sm" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
           <h3 className="text-sm font-bold mb-3" style={{ color: T.primaryDark }}>Create new offline ZIP package</h3>
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold" style={{ color: T.muted }}>Content version ID *</label>
-            <input
-              type="number"
-              min="1"
-              required
-              placeholder="e.g. 1, 2, 3..."
-              value={versionId}
-              onChange={(e) => setVersionId(e.target.value)}
-              className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
-              style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
-            />
+            <label className="block text-xs font-semibold" style={{ color: T.muted }}>Content version *</label>
+            {versions.length === 0 ? (
+              <p className="text-xs" style={{ color: T.muted }}>
+                No content versions yet. Create one in{" "}
+                <a
+                  href="/content-manager/content-versions"
+                  className="font-semibold underline-offset-2 hover:underline"
+                  style={{ color: T.primaryDark }}
+                >
+                  Content Versions
+                </a>{" "}
+                first.
+              </p>
+            ) : (
+              <select
+                required
+                value={versionId}
+                onChange={(e) => setVersionId(e.target.value)}
+                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+              >
+                <option value="">-- Select version --</option>
+                {versions.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.versionNumber ? `v${v.versionNumber}` : `Version`} (ID {v.id})
+                    {v.status ? ` · ${v.status}` : ""}
+                    {v.changeDescription ? ` — ${v.changeDescription}` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           {error && <p className="mt-3 text-xs" style={{ color: "#8B2E2E" }}>{error}</p>}
           <div className="mt-4 flex justify-end gap-2">
@@ -115,7 +137,7 @@ export function OfflinePackagesPanel({
             >
               Cancel
             </button>
-            <button type="submit" disabled={isSubmitting} className="rounded-xl px-5 py-2 text-xs font-semibold disabled:opacity-50" style={{ background: T.primary, color: T.surface }}>
+            <button type="submit" disabled={isSubmitting || versions.length === 0} className="rounded-xl px-5 py-2 text-xs font-semibold disabled:opacity-50" style={{ background: T.primary, color: T.surface }}>
               {isSubmitting ? "Packaging ZIP…" : "Start creating"}
             </button>
           </div>

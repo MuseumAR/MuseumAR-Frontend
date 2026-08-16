@@ -6,11 +6,15 @@ import {
   apiPutAuth,
   apiPutFormAuth,
 } from "@/services/api-client";
-import { normalizeExhibitDto, normalizeMuseumMapDto, normalizeTourRouteDto } from "@/lib/normalize-dto";
+import {
+  normalizeContentVersionDto,
+  normalizeExhibitDto,
+  normalizeMuseumMapDto,
+  normalizeTourRouteDto,
+} from "@/lib/normalize-dto";
 import type {
   AgeGroupDto,
   CategoryDto,
-  ContentVersionDto,
   CreateCategoryDto,
   CreateExhibitDto,
   CreateExhibitionDto,
@@ -99,7 +103,9 @@ export function createContentVersion(versionNumber: string, description: string)
 }
 
 export function getContentVersions() {
-  return apiGet<ContentVersionDto[]>("/api/content/versions");
+  return apiGet<unknown[]>("/api/content/versions").then((data) =>
+    (Array.isArray(data) ? data : []).map(normalizeContentVersionDto).filter((v) => v.id > 0),
+  );
 }
 
 export function publishContentVersion(id: number) {

@@ -83,7 +83,7 @@ export function ContentVersionsPanel({
             (artifacts, media, AR assets, etc.).
           </p>
           <p>
-            Create a version, note the returned <strong>ID</strong>, then open{" "}
+            Create a version, then open{" "}
             <Link
               href="/content-manager/offline-packages"
               className="font-medium underline-offset-2 hover:underline"
@@ -91,7 +91,7 @@ export function ContentVersionsPanel({
             >
               Offline Packages
             </Link>{" "}
-            and enter that ID to generate a downloadable package.
+            and pick it from the dropdown to generate a ZIP.
           </p>
         </div>
       </div>
@@ -122,8 +122,7 @@ export function ContentVersionsPanel({
           className="rounded-2xl px-4 py-3 text-sm"
           style={{ background: "rgba(79,125,74,0.10)", color: T.success }}
         >
-          Version created. Use ID <strong style={{ color: T.text }}>{lastId}</strong> in
-          Offline Packages.
+          Version created. It will appear in the Offline Packages dropdown.
         </p>
       )}
 

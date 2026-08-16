@@ -115,6 +115,20 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     return type === "DOOR" || type === "ROOM";
   };
 
+  const takenRoomIds = useMemo(() => {
+    const ids = new Set<number>();
+    for (const wp of waypoints) {
+      if (!isRoomWaypoint(wp)) continue;
+      if (wp.roomId != null && wp.roomId !== 0) ids.add(wp.roomId);
+    }
+    return ids;
+  }, [waypoints]);
+
+  const roomsAvailableToLink = useMemo(
+    () => roomsOnSelectedMap.filter((r) => !takenRoomIds.has(r.id)),
+    [roomsOnSelectedMap, takenRoomIds],
+  );
+
   const getRoomLabel = (wp: WaypointDto) => {
     if (!isRoomWaypoint(wp)) return null;
     if (wp.roomId == null || wp.roomId === 0) {
@@ -234,8 +248,14 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     const xRatio = Math.round(((e.clientX - rect.left) / rect.width) * 100 * 10) / 10;
     const yRatio = Math.round(((e.clientY - rect.top) / rect.height) * 100 * 10) / 10;
 
+    if (wpType === "DOOR" && wpRoomId && takenRoomIds.has(wpRoomId)) {
+      setError("This room already has a waypoint.");
+      return;
+    }
+
     setSaving(true);
     try {
+      const linkedRoomId = wpType === "DOOR" ? wpRoomId || null : null;
       const newWp = await createWaypoint({
         mapId: currentMap.id,
         museumId: museumId,
@@ -243,12 +263,20 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
         locationX: xRatio,
         locationY: yRatio,
         waypointType: wpType,
-        roomId: wpType === "DOOR" ? wpRoomId || null : null,
+        roomId: linkedRoomId,
         name: wpName.trim() || undefined,
       });
 
-      setWaypoints((prev) => [...prev, newWp]);
+      setWaypoints((prev) => [
+        ...prev,
+        {
+          ...newWp,
+          roomId: newWp.roomId ?? linkedRoomId,
+          waypointType: newWp.waypointType || wpType,
+        },
+      ]);
       setWpName("");
+      if (wpType === "DOOR") setWpRoomId(undefined);
     } catch (err) {
       setError("Could not add waypoint.");
     } finally {
@@ -525,19 +553,25 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                 {wpType === "DOOR" && (
                   <div>
                     <span className="text-xs font-semibold" style={{ color: T.text }}>Link to room:</span>
-                    <select
-                      value={wpRoomId || ""}
-                      onChange={(e) => setWpRoomId(e.target.value ? Number(e.target.value) : undefined)}
-                      className="w-full rounded-xl px-3 py-1.5 text-xs font-medium border mt-1"
-                      style={{ background: "white", borderColor: T.border }}
-                    >
-                      <option value="">-- Select room --</option>
-                      {roomsOnSelectedMap.map((r) => (
-                        <option key={r.id} value={r.id}>
-                          {r.roomName} ({r.roomCode})
-                        </option>
-                      ))}
-                    </select>
+                    {roomsAvailableToLink.length > 0 ? (
+                      <select
+                        value={wpRoomId || ""}
+                        onChange={(e) => setWpRoomId(e.target.value ? Number(e.target.value) : undefined)}
+                        className="w-full rounded-xl px-3 py-1.5 text-xs font-medium border mt-1"
+                        style={{ background: "white", borderColor: T.border }}
+                      >
+                        <option value="">-- Select room --</option>
+                        {roomsAvailableToLink.map((r) => (
+                          <option key={r.id} value={r.id}>
+                            {r.roomName} ({r.roomCode})
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <p className="mt-1 text-[11px]" style={{ color: T.muted }}>
+                        All rooms on this map already have a waypoint.
+                      </p>
+                    )}
                   </div>
                 )}
                 <p className="text-[11px] italic" style={{ color: T.muted }}>
