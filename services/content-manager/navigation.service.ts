@@ -50,3 +50,10 @@ export async function navigateRoute(fromRoomId: number, toRoomId: number): Promi
     null
   );
 }
+
+export async function navigateTourRoute(tourRouteId: number): Promise<NavigationRouteResponseDto | null> {
+  return safeFetch(
+    () => apiGet<NavigationRouteResponseDto>(`/api/Navigation/tour-route/${tourRouteId}`),
+    null
+  );
+}
