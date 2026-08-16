@@ -174,10 +174,13 @@ export function ExhibitionDetail({
           finalThemeId = existing.id;
         } else {
           try {
-            const newTheme = await createThemeEntry({ themeName: trimmedTheme });
+            const newTheme = await createThemeEntry({
+              museumId: exhibition.museumId,
+              themeName: trimmedTheme,
+            });
             finalThemeId = newTheme.id;
           } catch (err) {
-            setError("Could not create a new theme.");
+            setError(getDisplayError(err, "Could not create a new theme."));
             setIsSubmitting(false);
             return;
           }
