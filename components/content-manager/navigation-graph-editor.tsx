@@ -296,10 +296,23 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     } else if (mode === "connect_edge") {
       if (!edgeStartWpId) {
         setEdgeStartWpId(wp.id);
-      } else if (edgeStartWpId !== wp.id) {
+      } else if (edgeStartWpId === wp.id) {
+        setEdgeStartWpId(null);
+      } else {
         // Connect startWp and target Wp
         const startWp = waypoints.find((w) => w.id === edgeStartWpId);
         if (startWp) {
+          const isStartRoom = isRoomWaypoint(startWp) || (startWp.roomId != null && startWp.roomId !== 0);
+          const isTargetRoom = isRoomWaypoint(wp) || (wp.roomId != null && wp.roomId !== 0);
+
+          if (isStartRoom && isTargetRoom) {
+            setError(
+              "Không thể nối trực tiếp giữa hai phòng. Tuyến đường phải đi qua điểm hành lang (Hallway), sảnh (Lobby) hoặc cầu thang (Stairs)."
+            );
+            setEdgeStartWpId(null);
+            return;
+          }
+
           const dx = wp.locationX - startWp.locationX;
           const dy = wp.locationY - startWp.locationY;
           const dist = Math.round(Math.sqrt(dx * dx + dy * dy) * 10) / 10;
@@ -316,7 +329,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
             });
             setEdges((prev) => [...prev, newEdge]);
           } catch (err) {
-            setError("Could not connect waypoints.");
+            setError(getDisplayError(err, "Could not connect waypoints."));
           } finally {
             setSaving(false);
             setEdgeStartWpId(null);
@@ -589,6 +602,9 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                 ) : (
                   <p>👉 Click the first waypoint, then the second to connect them.</p>
                 )}
+                <p className="text-[11px] rounded-lg p-2 leading-relaxed" style={{ background: "rgba(200,155,69,0.08)", color: T.primaryDark }}>
+                  ⚠️ <strong>Quy tắc nối đường:</strong> Không nối trực tiếp 2 phòng với nhau. Phải nối phòng ra điểm hành lang (Hallway), sảnh (Lobby) hoặc cầu thang (Stairs) trước.
+                </p>
               </div>
             )}
           </div>

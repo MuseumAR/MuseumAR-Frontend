@@ -44,6 +44,10 @@ export function OfflinePackagesPanel({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const latestVersion = versions.length > 0
+    ? versions.reduce((max, v) => (v.id > max.id ? v : max), versions[0])
+    : null;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const vid = Number(versionId);
@@ -51,6 +55,18 @@ export function OfflinePackagesPanel({
       setError("Please select a content version.");
       return;
     }
+
+    if (latestVersion && vid !== latestVersion.id) {
+      setError(`Only the latest version (v${latestVersion.versionNumber || latestVersion.id}) can be used to create a new offline package.`);
+      return;
+    }
+
+    const hasExistingPackage = packages.some((p) => p.versionId === vid);
+    if (hasExistingPackage) {
+      setError("An offline package for this version already exists.");
+      return;
+    }
+
     setError(null);
     setIsSubmitting(true);
     try {
@@ -117,13 +133,19 @@ export function OfflinePackagesPanel({
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
               >
                 <option value="">-- Select version --</option>
-                {versions.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.versionNumber ? `v${v.versionNumber}` : `Version`} (ID {v.id})
-                    {v.status ? ` · ${v.status}` : ""}
-                    {v.changeDescription ? ` — ${v.changeDescription}` : ""}
-                  </option>
-                ))}
+                {versions.map((v) => {
+                  const isLatest = latestVersion && v.id === latestVersion.id;
+                  const hasPkg = packages.some((p) => p.versionId === v.id);
+                  return (
+                    <option key={v.id} value={v.id}>
+                      {v.versionNumber ? `v${v.versionNumber}` : `Version`} (ID {v.id})
+                      {v.status ? ` · ${v.status}` : ""}
+                      {isLatest ? " (Latest)" : " (Older)"}
+                      {hasPkg ? " [Already Packaged]" : ""}
+                      {v.changeDescription ? ` — ${v.changeDescription}` : ""}
+                    </option>
+                  );
+                })}
               </select>
             )}
           </div>

@@ -282,6 +282,7 @@ export function normalizeTicketDto(
     id: Number(pickField(o, "id", "Id") ?? 0),
     ticketCode: String(pickField(o, "ticketCode", "TicketCode") ?? ""),
     ticketTypeName: pickStr(o, "ticketTypeName", "TicketTypeName") ?? "",
+    price: pickNum(o, "price", "Price") ?? 0,
     purchaseDate: String(pickField(o, "purchaseDate", "PurchaseDate") ?? ""),
     validDate: pickStr(o, "validDate", "ValidDate") ?? null,
     status: String(pickField(o, "status", "Status") ?? ""),

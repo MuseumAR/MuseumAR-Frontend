@@ -13,6 +13,7 @@ export {
   deleteTourRoute,
   generateOfflinePackage,
   getArAssets,
+  migrateOldOverlayAssets,
   getExhibitById,
   getExhibitTranslations,
   getExhibits,

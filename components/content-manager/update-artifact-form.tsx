@@ -98,11 +98,6 @@ export function UpdateArtifactForm({
   const [imagePreview, setImagePreview] = useState<string | null>(artifact.image);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [arFile, setArFile] = useState<File | null>(null);
-  const [arPreview, setArPreview] = useState<string | null>(
-    artifact.arOverlayUrl && /\.(png|jpg|jpeg|webp)$/i.test(artifact.arOverlayUrl)
-      ? artifact.arOverlayUrl
-      : null
-  );
   const [audioFileVi, setAudioFileVi] = useState<File | null>(null);
   const [audioFileEn, setAudioFileEn] = useState<File | null>(null);
 
@@ -182,8 +177,7 @@ export function UpdateArtifactForm({
       if (audioFileVi) await uploadExhibitAudio(exhibitId, "vi", audioFileVi);
       if (audioFileEn) await uploadExhibitAudio(exhibitId, "en", audioFileEn);
       if (arFile) {
-        const arType = arFile.type.startsWith("image/") ? "OverlayImage" : "Model3D";
-        await uploadArAsset(exhibitId, arType, arFile);
+        await uploadArAsset(exhibitId, "Model3D", arFile);
       }
       await syncExhibitTags(exhibitId, selectedTagIds);
 
@@ -241,28 +235,22 @@ export function UpdateArtifactForm({
               label={
                 arFile?.name ??
                 (artifact.arOverlayUrl
-                  ? `✓ AR: ${fileNameFromUrl(artifact.arOverlayUrl)}`
+                  ? `✓ 3D: ${fileNameFromUrl(artifact.arOverlayUrl)}`
                   : artifact.arModelStatus === "Active"
-                    ? "✓ AR asset is active (Click to replace)"
-                    : "AR asset (Image/3D)")
+                    ? "✓ 3D model active (Click to replace)"
+                    : "3D Model (.glb/.gltf)")
               }
-              preview={arPreview}
               onClick={() => arRef.current?.click()}
             />
             <input
               ref={arRef}
               type="file"
-              accept="image/*,.glb,.gltf"
+              accept=".glb,.gltf"
               className="hidden"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
                 setArFile(file);
-                if (file.type.startsWith("image/")) {
-                  setArPreview(URL.createObjectURL(file));
-                } else {
-                  setArPreview(null);
-                }
               }}
             />
              <UploadBox
