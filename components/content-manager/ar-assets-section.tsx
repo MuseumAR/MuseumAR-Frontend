@@ -59,7 +59,7 @@ export function ArAssetsSection({
       })
       .catch((err) => {
         if (cancelled) return;
-        setError(getDisplayError(err, "Could not load AR assets."));
+        setError(getDisplayError(err, "Could not load 3D models."));
         setAssets([]);
       })
       .finally(() => {
@@ -89,7 +89,7 @@ export function ArAssetsSection({
   return (
     <div className="space-y-2">
       <p className="text-sm font-medium" style={{ color: T.text }}>
-        Existing AR assets
+        3D Models
       </p>
 
       <SuccessBanner message={success} />
@@ -104,11 +104,11 @@ export function ArAssetsSection({
 
       {loading ? (
         <p className="text-xs" style={{ color: T.muted }}>
-          Loading AR assets…
+          Loading 3D models…
         </p>
       ) : assets.length === 0 ? (
         <p className="text-xs" style={{ color: T.mutedLight }}>
-          No AR assets uploaded yet.
+          No 3D models uploaded yet.
         </p>
       ) : (
         <ul className="space-y-2">

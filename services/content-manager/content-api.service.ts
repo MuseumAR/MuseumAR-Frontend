@@ -136,6 +136,10 @@ export function deleteArAsset(id: number) {
   return apiDeleteAuth<null>(`/api/content/ar-assets/${id}`);
 }
 
+export function migrateOldOverlayAssets() {
+  return apiPostAuth<number>("/api/content/ar-assets/migrate-overlay");
+}
+
 export function getOfflinePackages() {
   return apiGet<OfflinePackageDto[]>("/api/content/packages");
 }

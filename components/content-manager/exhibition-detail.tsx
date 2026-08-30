@@ -70,7 +70,8 @@ export function ExhibitionDetail({
   const [allMuseumExhibits, setAllMuseumExhibits] = useState<ExhibitDto[]>([]);
   const [loadingExhibits, setLoadingExhibits] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedExhibitId, setSelectedExhibitId] = useState<number | "">("");
+  const [selectedExhibitIds, setSelectedExhibitIds] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
   const [isAssigning, setIsAssigning] = useState(false);
   const [assignError, setAssignError] = useState<string | null>(null);
   const { success, showSuccess } = useSuccessToast();
@@ -108,17 +109,18 @@ export function ExhibitionDetail({
   }, [exhibition.id]);
 
   const handleAssignExhibit = async () => {
-    if (!selectedExhibitId) return;
+    if (selectedExhibitIds.length === 0) return;
     setIsAssigning(true);
     setAssignError(null);
     try {
-      await assignExhibitsToExhibition(exhibition.id, [Number(selectedExhibitId)]);
-      setSelectedExhibitId("");
+      await assignExhibitsToExhibition(exhibition.id, selectedExhibitIds);
+      setSelectedExhibitIds([]);
+      setSearchQuery("");
       setShowAddModal(false);
-      showSuccess("Artifact assigned to this exhibition.");
+      showSuccess("Artifacts assigned to this exhibition.");
       await loadExhibitsData();
     } catch (err) {
-      setAssignError(getDisplayError(err, "Could not assign artifact to exhibition."));
+      setAssignError(getDisplayError(err, "Could not assign artifacts to exhibition."));
     } finally {
       setIsAssigning(false);
     }
@@ -211,10 +213,17 @@ export function ExhibitionDetail({
     }
   }
 
-  // Filter unassigned exhibits for selection dropdown
+  // Filter unassigned exhibits for selection dropdown (only published artifacts)
   const unassignedExhibits = allMuseumExhibits.filter(
-    (e) => !exhibitsInExhibition.some((linked) => linked.id === e.id)
+    (e) => e.status?.toLowerCase() === "published" && !exhibitsInExhibition.some((linked) => linked.id === e.id)
   );
+
+  const filteredExhibits = unassignedExhibits.filter((ex) => {
+    const title = (ex.translations?.[0]?.title || "").toLowerCase();
+    const code = (ex.exhibitCode || "").toLowerCase();
+    const q = searchQuery.toLowerCase();
+    return title.includes(q) || code.includes(q);
+  });
 
   return (
     <div className="px-8 pb-10">
@@ -497,7 +506,7 @@ export function ExhibitionDetail({
               Assign artifact to exhibition
             </h3>
             <p className="text-xs mb-3" style={{ color: T.mutedLight }}>
-              Choose an artifact from the museum to assign to &ldquo;{exhibition.name || `#${exhibition.id}`}&rdquo;
+              Choose artifacts from the museum to assign to &ldquo;{exhibition.name || `#${exhibition.id}`}&rdquo;
             </p>
             <p
               className="mb-4 rounded-xl px-3 py-2.5 text-xs leading-relaxed"
@@ -516,49 +525,136 @@ export function ExhibitionDetail({
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text }}>
-                  Select artifact:
+                  Select artifacts:
                 </label>
                 {unassignedExhibits.length === 0 ? (
                   <p className="text-xs italic py-2" style={{ color: T.muted }}>
                     All museum artifacts are already assigned to this exhibition.
                   </p>
                 ) : (
-                  <select
-                    value={selectedExhibitId}
-                    onChange={(e) => setSelectedExhibitId(Number(e.target.value))}
-                    className="w-full rounded-xl px-3.5 py-2.5 text-xs outline-none"
-                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
-                  >
-                    <option value="">-- Select artifact --</option>
-                    {unassignedExhibits.map((ex) => {
-                      const title = ex.translations?.[0]?.title || `Artifact #${ex.id}`;
-                      const code = ex.exhibitCode || `EX-${ex.id}`;
-                      return (
-                        <option key={ex.id} value={ex.id}>
-                          [{code}] {title}
-                        </option>
-                      );
-                    })}
-                  </select>
-                )}
-                {selectedExhibitId ? (
-                  <p className="mt-2 text-xs" style={{ color: T.muted }}>
-                    <Link
-                      href={`/content-manager/artifact/${selectedExhibitId}/edit`}
-                      className="font-semibold underline-offset-2 hover:underline"
-                      style={{ color: T.primaryDark }}
+                  <>
+                    {/* Search Input */}
+                    <div className="mb-3">
+                      <input
+                        type="text"
+                        placeholder="Search by code or title..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full rounded-xl px-3 py-2 text-xs outline-none"
+                        style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                      />
+                    </div>
+
+                    {/* Selection Helpers */}
+                    <div className="flex items-center justify-between text-[11px] mb-2 px-1">
+                      <span style={{ color: T.muted }}>
+                        Selected: <strong>{selectedExhibitIds.length}</strong> / {unassignedExhibits.length}
+                      </span>
+                      <div className="flex gap-2 font-semibold">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const visibleIds = filteredExhibits.map((e) => e.id);
+                            setSelectedExhibitIds((prev) => {
+                              const union = new Set([...prev, ...visibleIds]);
+                              return Array.from(union);
+                            });
+                          }}
+                          className="hover:underline"
+                          style={{ color: T.primaryDark }}
+                        >
+                          Select visible
+                        </button>
+                        <span style={{ color: T.border }}>|</span>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedExhibitIds([])}
+                          className="hover:underline"
+                          style={{ color: T.danger }}
+                        >
+                          Clear all
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Checklist Container */}
+                    <div
+                      className="max-h-60 overflow-y-auto rounded-xl p-1.5 space-y-1 mb-2 border"
+                      style={{ borderColor: T.border, background: T.bg }}
                     >
-                      Edit Floor / Room
-                    </Link>
-                    {" "}for this artifact if it changed location.
-                  </p>
-                ) : null}
+                      {filteredExhibits.length === 0 ? (
+                        <p className="text-xs italic py-4 text-center" style={{ color: T.muted }}>
+                          No matching artifacts found.
+                        </p>
+                      ) : (
+                        filteredExhibits.map((ex) => {
+                          const isChecked = selectedExhibitIds.includes(ex.id);
+                          const title = ex.translations?.[0]?.title || `Artifact #${ex.id}`;
+                          const code = ex.exhibitCode || `EX-${ex.id}`;
+                          return (
+                            <label
+                              key={ex.id}
+                              className="flex items-center gap-3 rounded-lg p-2 transition-colors cursor-pointer select-none hover:bg-black/5"
+                              style={{
+                                background: isChecked ? "rgba(200,155,69,0.08)" : "transparent",
+                              }}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  if (isChecked) {
+                                    setSelectedExhibitIds(selectedExhibitIds.filter((id) => id !== ex.id));
+                                  } else {
+                                    setSelectedExhibitIds([...selectedExhibitIds, ex.id]);
+                                  }
+                                }}
+                                className="rounded border-gray-300 focus:ring-[#A67C1E] h-3.5 w-3.5"
+                                style={{ accentColor: "#A67C1E" }}
+                              />
+                              {ex.thumbnailUrl ? (
+                                <img
+                                  src={ex.thumbnailUrl}
+                                  alt={title}
+                                  className="h-8 w-8 rounded object-cover shrink-0"
+                                  style={{ border: `1px solid ${T.border}` }}
+                                />
+                              ) : (
+                                <div
+                                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded font-bold text-[10px]"
+                                  style={{ background: T.surface, color: T.mutedLight, border: `1px solid ${T.border}` }}
+                                >
+                                  EX
+                                </div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-semibold truncate" style={{ color: T.text }}>
+                                  {title}
+                                </p>
+                                <p className="text-[10px] font-mono" style={{ color: T.mutedLight }}>
+                                  {code}
+                                </p>
+                              </div>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                  </>
+                )}
+                <p className="mt-2 text-xs" style={{ color: T.muted }}>
+                  Need to edit Floor / Room locations for these artifacts? You can do so from their edit pages in the Artifacts list.
+                </p>
               </div>
 
               <div className="flex justify-end gap-2.5 pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setSelectedExhibitIds([]);
+                    setSearchQuery("");
+                  }}
                   className="rounded-xl px-4 py-2 text-xs font-semibold"
                   style={{ border: `1px solid ${T.border}`, color: T.text }}
                 >
@@ -566,7 +662,7 @@ export function ExhibitionDetail({
                 </button>
                 <button
                   type="button"
-                  disabled={!selectedExhibitId || isAssigning}
+                  disabled={selectedExhibitIds.length === 0 || isAssigning}
                   onClick={handleAssignExhibit}
                   className="rounded-xl px-4 py-2 text-xs font-semibold disabled:opacity-50"
                   style={{ background: T.primary, color: T.surface }}

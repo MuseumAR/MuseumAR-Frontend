@@ -137,8 +137,7 @@ export function CreateExhibitForm({
       if (audioFileVi) await uploadExhibitAudio(exhibitId, "vi", audioFileVi);
       if (audioFileEn) await uploadExhibitAudio(exhibitId, "en", audioFileEn);
       if (arFile) {
-        const arType = arFile.type.startsWith("image/") ? "OverlayImage" : "Model3D";
-        await uploadArAsset(exhibitId, arType, arFile);
+        await uploadArAsset(exhibitId, "Model3D", arFile);
       }
       if (selectedTagIds.length > 0) {
         await syncExhibitTags(exhibitId, selectedTagIds);
@@ -180,8 +179,8 @@ export function CreateExhibitForm({
               setImageFile(file);
               setImagePreview(URL.createObjectURL(file));
             }} />
-            <UploadBox label={arFile?.name ?? "AR asset (Image/3D)"} onClick={() => arRef.current?.click()} />
-            <input ref={arRef} type="file" accept="image/*,.glb,.gltf" className="hidden" onChange={(e) => {
+            <UploadBox label={arFile?.name ?? "3D Model (.glb/.gltf)"} onClick={() => arRef.current?.click()} />
+            <input ref={arRef} type="file" accept=".glb,.gltf" className="hidden" onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) setArFile(file);
             }} />

@@ -468,6 +468,7 @@ export type TicketDto = {
   id: number;
   ticketCode: string;
   ticketTypeName: string;
+  price?: number;
   purchaseDate: string;
   validDate?: string | null;
   status: string;
@@ -477,6 +478,7 @@ export type TicketDto = {
 export type TicketDetailDto = {
   id: number;
   ticketCode: string;
+  price?: number;
   status: string;
   purchaseDate: string;
   validDate?: string | null;
