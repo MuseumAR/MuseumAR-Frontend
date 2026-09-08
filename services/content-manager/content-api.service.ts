@@ -7,9 +7,13 @@ import {
   apiPutFormAuth,
 } from "@/services/api-client";
 import {
+  normalizeCategoryDto,
   normalizeContentVersionDto,
   normalizeExhibitDto,
   normalizeMuseumMapDto,
+  normalizeTagDto,
+  normalizeTagGroupDto,
+  normalizeThemeDto,
   normalizeTourRouteDto,
 } from "@/lib/normalize-dto";
 import type {
@@ -278,7 +282,9 @@ export function reorderRouteStops(routeId: number, exhibitIdsInOrder: number[]) 
 // ─── Taxonomy ─────────────────────────────────────────────────────────────────
 
 export function getCategories() {
-  return apiGet<CategoryDto[]>("/api/content/categories");
+  return apiGet<unknown[]>("/api/content/categories").then((data) =>
+    (Array.isArray(data) ? data : []).map(normalizeCategoryDto),
+  );
 }
 
 export function createCategory(payload: CreateCategoryDto) {
@@ -294,7 +300,9 @@ export function deleteCategory(id: number) {
 }
 
 export function getThemes() {
-  return apiGet<ThemeDto[]>("/api/content/themes");
+  return apiGet<unknown[]>("/api/content/themes").then((data) =>
+    (Array.isArray(data) ? data : []).map(normalizeThemeDto),
+  );
 }
 
 export function createTheme(payload: CreateThemeDto) {
@@ -314,7 +322,9 @@ export function getAgeGroups() {
 }
 
 export function getTagGroups() {
-  return apiGet<TagGroupDto[]>("/api/content/tag-groups");
+  return apiGet<unknown[]>("/api/content/tag-groups").then((data) =>
+    (Array.isArray(data) ? data : []).map(normalizeTagGroupDto),
+  );
 }
 
 export function createTagGroup(payload: CreateTagGroupDto) {
@@ -330,7 +340,9 @@ export function deleteTagGroup(id: number) {
 }
 
 export function getTags() {
-  return apiGet<TagDto[]>("/api/content/tags");
+  return apiGet<unknown[]>("/api/content/tags").then((data) =>
+    (Array.isArray(data) ? data : []).map(normalizeTagDto),
+  );
 }
 
 export function createTag(payload: CreateTagDto) {
@@ -346,7 +358,9 @@ export function deleteTag(id: number) {
 }
 
 export function getExhibitTags(exhibitId: number) {
-  return apiGet<TagDto[]>(`/api/content/exhibits/${exhibitId}/tags`);
+  return apiGet<unknown[]>(`/api/content/exhibits/${exhibitId}/tags`).then(
+    (data) => (Array.isArray(data) ? data : []).map(normalizeTagDto),
+  );
 }
 
 export function assignExhibitTags(exhibitId: number, tagIds: number[]) {

@@ -33,13 +33,44 @@ import {
   updateTheme,
 } from "./content-api.service";
 
+function pickLang<T extends { languageCode: string }>(
+  list: T[] | undefined,
+  lang: string,
+): T | undefined {
+  if (!list?.length) return undefined;
+  return (
+    list.find((t) => t.languageCode === lang) ??
+    list.find((t) => t.languageCode === "vi") ??
+    list.find((t) => t.languageCode === "en") ??
+    list[0]
+  );
+}
+
 export function categoryDisplayName(category: CategoryDto, lang = "vi"): string {
-  const translations = category.categoryTranslations ?? [];
-  const match =
-    translations.find((t) => t.languageCode === lang) ??
-    translations.find((t) => t.languageCode === "en") ??
-    translations[0];
+  const match = pickLang(category.categoryTranslations, lang);
   return match?.categoryName ?? `Category #${category.id}`;
+}
+
+export function themeDisplayName(theme: ThemeDto, lang = "vi"): string {
+  const match = pickLang(theme.translations, lang);
+  return match?.themeName || theme.themeName || `Theme #${theme.id}`;
+}
+
+export function tagGroupDisplayName(group: TagGroupDto, lang = "vi"): string {
+  const match = pickLang(group.translations, lang);
+  return match?.groupName || group.groupName || `Group #${group.id}`;
+}
+
+export function tagDisplayName(tag: TagDto, lang = "vi"): string {
+  const match = pickLang(tag.translations, lang);
+  return match?.tagName || tag.tagName || `Tag #${tag.id}`;
+}
+
+export function themeMatchesName(theme: ThemeDto, input: string): boolean {
+  const q = input.trim().toLowerCase();
+  if (!q) return false;
+  if (theme.themeName.toLowerCase() === q) return true;
+  return (theme.translations ?? []).some((t) => t.themeName.toLowerCase() === q);
 }
 
 export async function getCategoryOptions(): Promise<CategoryDto[]> {

@@ -16,11 +16,22 @@ export type ApiResponse<T = unknown> = {
  * Extra profile fields are optional — only filled if BE expands the payload.
  * PUT UpdateMuseumProfileDto can send the full profile set.
  */
+export type MuseumTranslationDto = {
+  languageCode: string;
+  name?: string | null;
+  description?: string | null;
+  address?: string | null;
+  openingHours?: string | null;
+};
+
 export type MuseumDto = {
   id: number;
   name: string;
+  nameEn?: string | null;
   description?: string | null;
+  descriptionEn?: string | null;
   address?: string | null;
+  addressEn?: string | null;
   city?: string | null;
   /** Not on current BE MuseumDto GET — kept for UI / future */
   province?: string | null;
@@ -30,15 +41,20 @@ export type MuseumDto = {
   status: string;
   thumbnailUrl?: string | null;
   openingHours?: string | null;
+  openingHoursEn?: string | null;
   contactPhone?: string | null;
   contactEmail?: string | null;
   website?: string | null;
+  translations?: MuseumTranslationDto[];
 };
 
 export type UpdateMuseumProfileDto = {
   name: string;
+  nameEn?: string | null;
   description?: string | null;
+  descriptionEn?: string | null;
   address?: string | null;
+  addressEn?: string | null;
   city?: string | null;
   province?: string | null;
   country?: string | null;
@@ -46,9 +62,11 @@ export type UpdateMuseumProfileDto = {
   longitude?: number | null;
   thumbnailUrl?: string | null;
   openingHours?: string | null;
+  openingHoursEn?: string | null;
   contactPhone?: string | null;
   contactEmail?: string | null;
   website?: string | null;
+  translations?: MuseumTranslationDto[];
 };
 
 /** @deprecated Prefer UpdateMuseumProfileDto — kept as alias for form compatibility */
@@ -104,14 +122,26 @@ export type DashboardStatsDto = {
 
 // ─── Room ─────────────────────────────────────────────────────────────────────
 
+export type RoomTranslationDto = {
+  languageCode: string;
+  roomName?: string | null;
+  description?: string | null;
+};
+
 export type RoomDto = {
   id: number;
   museumId: number;
   mapId?: number | null;
   roomCode: string;
   roomName: string;
+  roomNameEn?: string | null;
   floorNumber: number;
   description?: string | null;
+  descriptionEn?: string | null;
+  waypointId?: number | null;
+  centerX?: number | null;
+  centerY?: number | null;
+  translations?: RoomTranslationDto[];
   createdAt?: string;
   updatedAt?: string;
 };
@@ -121,16 +151,22 @@ export type CreateRoomDto = {
   mapId?: number | null;
   roomCode: string;
   roomName: string;
+  roomNameEn?: string | null;
   floorNumber?: number;
   description?: string | null;
+  descriptionEn?: string | null;
+  translations?: RoomTranslationDto[];
 };
 
 export type UpdateRoomDto = {
   mapId?: number | null;
   roomCode?: string;
   roomName?: string;
+  roomNameEn?: string | null;
   floorNumber?: number;
   description?: string | null;
+  descriptionEn?: string | null;
+  translations?: RoomTranslationDto[];
 };
 
 // ─── Exhibit ──────────────────────────────────────────────────────────────────
@@ -172,7 +208,9 @@ export type ExhibitDto = {
 export type ExhibitMetadataDto = {
   ageGroupId?: number | null;
   era?: string | null;
+  eraEn?: string | null;
   historicalEvent?: string | null;
+  historicalEventEn?: string | null;
 };
 
 export type CreateExhibitDto = {
@@ -661,11 +699,20 @@ export type CategoryDto = {
   categoryTranslations: CategoryTranslationDto[];
 };
 
+export type ThemeTranslationDto = {
+  themeId?: number;
+  languageCode: string;
+  themeName: string;
+  description?: string | null;
+};
+
 export type ThemeDto = {
   id: number;
   museumId?: number | null;
+  /** Fallback / VI name when translations are missing */
   themeName: string;
   description?: string | null;
+  translations: ThemeTranslationDto[];
 };
 
 export type AgeGroupDto = {
@@ -675,10 +722,23 @@ export type AgeGroupDto = {
   maxAge?: number | null;
 };
 
+export type TagGroupTranslationDto = {
+  tagGroupId?: number;
+  languageCode: string;
+  groupName: string;
+};
+
 export type TagGroupDto = {
   id: number;
   groupName: string;
   sortOrder: number;
+  translations: TagGroupTranslationDto[];
+};
+
+export type TagTranslationDto = {
+  tagId?: number;
+  languageCode: string;
+  tagName: string;
 };
 
 export type TagDto = {
@@ -686,6 +746,7 @@ export type TagDto = {
   tagGroupId: number;
   tagName: string;
   sortOrder: number;
+  translations: TagTranslationDto[];
 };
 
 export type CreateCategoryDto = {
@@ -707,17 +768,20 @@ export type CreateThemeDto = {
   museumId?: number | null;
   themeName: string;
   description?: string | null;
+  translations?: ThemeTranslationDto[];
 };
 
 export type CreateTagGroupDto = {
   groupName: string;
   sortOrder: number;
+  translations?: TagGroupTranslationDto[];
 };
 
 export type CreateTagDto = {
   tagGroupId: number;
   tagName: string;
   sortOrder: number;
+  translations?: TagTranslationDto[];
 };
 
 // ─── Navigation Graph ───────────────────────────────────────────────────────

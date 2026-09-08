@@ -2,6 +2,7 @@
 
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import type { MuseumProfile } from "@/types";
+import type { MuseumTranslationDto } from "@/types/api";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
@@ -15,9 +16,11 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(profile.name);
+  const [nameEn, setNameEn] = useState(profile.nameEn ?? "");
   const [address, setAddress] = useState(
     profile.address === "—" ? "" : profile.address,
   );
+  const [addressEn, setAddressEn] = useState(profile.addressEn ?? "");
   const [email, setEmail] = useState(profile.email === "—" ? "" : profile.email);
   const [phone, setPhone] = useState(profile.phone === "—" ? "" : profile.phone);
   const [openingHours, setOpeningHours] = useState(
@@ -26,6 +29,9 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
   const [closingHours, setClosingHours] = useState(
     HOURS.includes(profile.closingHours) ? profile.closingHours : "",
   );
+  const [openingHoursEn, setOpeningHoursEn] = useState(profile.openingHoursEn ?? "");
+  const [description, setDescription] = useState(profile.description ?? "");
+  const [descriptionEn, setDescriptionEn] = useState(profile.descriptionEn ?? "");
   const [imagePreview, setImagePreview] = useState<string | null>(profile.image);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,6 +58,7 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
         openingHours && closingHours
           ? `${openingHours} - ${closingHours}`
           : openingHours || closingHours || undefined;
+      const hoursEn = openingHoursEn.trim() || undefined;
 
       let currentThumbnailUrl = imagePreview ?? undefined;
 
@@ -59,13 +66,38 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
         currentThumbnailUrl = await uploadMuseumImage(imageFile);
       }
 
+      const translations: MuseumTranslationDto[] = [
+        {
+          languageCode: "vi",
+          name: name.trim(),
+          description: description.trim() || undefined,
+          address: address.trim() || undefined,
+          openingHours: hours,
+        },
+      ];
+      if (nameEn.trim() || addressEn.trim() || descriptionEn.trim() || hoursEn) {
+        translations.push({
+          languageCode: "en",
+          name: nameEn.trim() || undefined,
+          description: descriptionEn.trim() || undefined,
+          address: addressEn.trim() || undefined,
+          openingHours: hoursEn,
+        });
+      }
+
       await updateMuseumProfileEntry({
         name: name.trim(),
+        nameEn: nameEn.trim() || undefined,
+        description: description.trim() || undefined,
+        descriptionEn: descriptionEn.trim() || undefined,
         address: address.trim() || undefined,
+        addressEn: addressEn.trim() || undefined,
         contactEmail: email.trim() || undefined,
         contactPhone: phone.trim() || undefined,
         openingHours: hours,
+        openingHoursEn: hoursEn,
         thumbnailUrl: currentThumbnailUrl,
+        translations,
       });
       router.push("/museum-manager/museum-profile");
       router.refresh();
@@ -114,12 +146,31 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
 
           <div className="flex-1 space-y-5">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Museum name *" value={name} onChange={setName} />
-              <Field label="Address" value={address} onChange={setAddress} />
+              <Field label="Museum name (Vietnamese) *" value={name} onChange={setName} />
+              <Field label="Museum name (English)" value={nameEn} onChange={setNameEn} />
+              <Field label="Address (Vietnamese)" value={address} onChange={setAddress} />
+              <Field label="Address (English)" value={addressEn} onChange={setAddressEn} />
               <Field label="Contact email" value={email} onChange={setEmail} type="email" />
               <Field label="Phone number" value={phone} onChange={setPhone} type="tel" />
               <SelectField label="Opening hours" value={openingHours} onChange={setOpeningHours} />
               <SelectField label="Closing hours" value={closingHours} onChange={setClosingHours} />
+              <Field
+                label="Opening hours (English)"
+                value={openingHoursEn}
+                onChange={setOpeningHoursEn}
+              />
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextArea
+                label="Description (Vietnamese)"
+                value={description}
+                onChange={setDescription}
+              />
+              <TextArea
+                label="Description (English)"
+                value={descriptionEn}
+                onChange={setDescriptionEn}
+              />
             </div>
             {error && (
               <p
@@ -176,6 +227,29 @@ function Field({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+        style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+      />
+    </div>
+  );
+}
+
+function TextArea({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <label className="block text-sm" style={{ color: T.muted }}>{label}</label>
+      <textarea
+        rows={3}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
         style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
       />
     </div>

@@ -45,7 +45,9 @@ export function MuseumProfileView({ profile }: { profile: MuseumProfile | null }
           <div className="flex-1 space-y-5">
             <div className="grid grid-cols-2 gap-x-8 gap-y-5">
               <Info label={MUSEUM_PROFILE_LABELS.name!} value={profile.name} />
+              <Info label={MUSEUM_PROFILE_LABELS.nameEn!} value={profile.nameEn || "—"} />
               <Info label={MUSEUM_PROFILE_LABELS.address!} value={profile.address} />
+              <Info label={MUSEUM_PROFILE_LABELS.addressEn!} value={profile.addressEn || "—"} />
               <Info
                 label={MUSEUM_PROFILE_LABELS.email!}
                 value={profile.email}
@@ -62,6 +64,19 @@ export function MuseumProfileView({ profile }: { profile: MuseumProfile | null }
               <Box label={MUSEUM_PROFILE_LABELS.openingHours!} value={profile.openingHours} />
               <Box label={MUSEUM_PROFILE_LABELS.closingHours!} value={profile.closingHours} />
             </div>
+            {profile.openingHoursEn ? (
+              <Info label={MUSEUM_PROFILE_LABELS.openingHoursEn!} value={profile.openingHoursEn} />
+            ) : null}
+            {(profile.description || profile.descriptionEn) && (
+              <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+                {profile.description ? (
+                  <Info label={MUSEUM_PROFILE_LABELS.description!} value={profile.description} />
+                ) : null}
+                {profile.descriptionEn ? (
+                  <Info label={MUSEUM_PROFILE_LABELS.descriptionEn!} value={profile.descriptionEn} />
+                ) : null}
+              </div>
+            )}
           </div>
         </div>
 

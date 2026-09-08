@@ -17,6 +17,9 @@ import {
   deleteTagEntry,
   deleteTagGroupEntry,
   deleteThemeEntry,
+  tagDisplayName,
+  tagGroupDisplayName,
+  themeDisplayName,
   updateCategoryEntry,
   updateTagEntry,
   updateTagGroupEntry,
@@ -115,7 +118,8 @@ function CategoriesTab({
   const [editing, setEditing] = useState<CategoryDto | null>(null);
   const [nameVi, setNameVi] = useState("");
   const [nameEn, setNameEn] = useState("");
-  const [description, setDescription] = useState("");
+  const [descriptionVi, setDescriptionVi] = useState("");
+  const [descriptionEn, setDescriptionEn] = useState("");
   const [sortOrder, setSortOrder] = useState("0");
   const [status, setStatus] = useState("Active");
   const [parentId, setParentId] = useState("");
@@ -127,7 +131,8 @@ function CategoriesTab({
     setEditing(null);
     setNameVi("");
     setNameEn("");
-    setDescription("");
+    setDescriptionVi("");
+    setDescriptionEn("");
     setSortOrder("0");
     setStatus("Active");
     setParentId("");
@@ -141,7 +146,8 @@ function CategoriesTab({
     setEditing(item);
     setNameVi(vi?.categoryName ?? categoryDisplayName(item));
     setNameEn(en?.categoryName ?? "");
-    setDescription(vi?.description ?? en?.description ?? "");
+    setDescriptionVi(vi?.description ?? "");
+    setDescriptionEn(en?.description ?? "");
     setSortOrder(String(item.sortOrder ?? 0));
     setStatus(item.status || "Active");
     setParentId(item.parentId != null ? String(item.parentId) : "");
@@ -163,7 +169,7 @@ function CategoriesTab({
           categoryId: editing?.id ?? 0,
           languageCode: "vi",
           categoryName: nameVi.trim(),
-          description: description.trim() || undefined,
+          description: descriptionVi.trim() || undefined,
         },
       ];
       if (nameEn.trim()) {
@@ -171,7 +177,7 @@ function CategoriesTab({
           categoryId: editing?.id ?? 0,
           languageCode: "en",
           categoryName: nameEn.trim(),
-          description: description.trim() || undefined,
+          description: descriptionEn.trim() || undefined,
         });
       }
       const payload = {
@@ -248,8 +254,11 @@ function CategoriesTab({
                   ]}
                 />
               </Field>
-              <Field label="Description">
-                <Input value={description} onChange={setDescription} placeholder="Optional" />
+              <Field label="Description (VI)">
+                <Input value={descriptionVi} onChange={setDescriptionVi} placeholder="Optional" />
+              </Field>
+              <Field label="Description (EN)">
+                <Input value={descriptionEn} onChange={setDescriptionEn} placeholder="Optional" />
               </Field>
             </div>
             <FormActions busy={busy} onCancel={() => setShowForm(false)} />
@@ -259,10 +268,11 @@ function CategoriesTab({
 
       <DataTable
         empty="No categories yet."
-        headers={["ID", "Name", "Status", "Sort order", ""]}
+        headers={["ID", "Name (VI)", "Name (EN)", "Status", "Sort order", ""]}
         rows={categories.map((item) => [
           String(item.id),
-          categoryDisplayName(item),
+          categoryDisplayName(item, "vi"),
+          item.categoryTranslations?.find((t) => t.languageCode === "en")?.categoryName || "—",
           labelStatus(item.status),
           String(item.sortOrder),
           <RowActions
@@ -286,41 +296,66 @@ function ThemesTab({
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<ThemeDto | null>(null);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [nameVi, setNameVi] = useState("");
+  const [nameEn, setNameEn] = useState("");
+  const [descriptionVi, setDescriptionVi] = useState("");
+  const [descriptionEn, setDescriptionEn] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const { success, showSuccess } = useSuccessToast();
 
   function openCreate() {
     setEditing(null);
-    setName("");
-    setDescription("");
+    setNameVi("");
+    setNameEn("");
+    setDescriptionVi("");
+    setDescriptionEn("");
     setError(null);
     setShowForm(true);
   }
 
   function openEdit(item: ThemeDto) {
+    const vi = item.translations?.find((t) => t.languageCode === "vi");
+    const en = item.translations?.find((t) => t.languageCode === "en");
     setEditing(item);
-    setName(item.themeName);
-    setDescription(item.description ?? "");
+    setNameVi(vi?.themeName || item.themeName);
+    setNameEn(en?.themeName ?? "");
+    setDescriptionVi(vi?.description || item.description || "");
+    setDescriptionEn(en?.description ?? "");
     setError(null);
     setShowForm(true);
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) {
-      setError("Theme name is required.");
+    if (!nameVi.trim()) {
+      setError("Vietnamese theme name is required.");
       return;
     }
     setBusy(true);
     setError(null);
     try {
+      const translations = [
+        {
+          themeId: editing?.id ?? 0,
+          languageCode: "vi",
+          themeName: nameVi.trim(),
+          description: descriptionVi.trim() || undefined,
+        },
+      ];
+      if (nameEn.trim()) {
+        translations.push({
+          themeId: editing?.id ?? 0,
+          languageCode: "en",
+          themeName: nameEn.trim(),
+          description: descriptionEn.trim() || undefined,
+        });
+      }
       const payload = {
         museumId: museumId ?? editing?.museumId ?? undefined,
-        themeName: name.trim(),
-        description: description.trim() || undefined,
+        themeName: nameVi.trim(),
+        description: descriptionVi.trim() || undefined,
+        translations,
       };
       if (editing) await updateThemeEntry(editing.id, payload);
       else await createThemeEntry(payload);
@@ -358,11 +393,17 @@ function ThemesTab({
         <FormCard title={editing ? "Edit theme" : "New theme"}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Theme name *">
-                <Input value={name} onChange={setName} placeholder="Resistance" />
+              <Field label="Name (VI) *">
+                <Input value={nameVi} onChange={setNameVi} placeholder="Kháng chiến" />
               </Field>
-              <Field label="Description">
-                <Input value={description} onChange={setDescription} placeholder="Optional" />
+              <Field label="Name (EN)">
+                <Input value={nameEn} onChange={setNameEn} placeholder="Resistance" />
+              </Field>
+              <Field label="Description (VI)">
+                <Input value={descriptionVi} onChange={setDescriptionVi} placeholder="Optional" />
+              </Field>
+              <Field label="Description (EN)">
+                <Input value={descriptionEn} onChange={setDescriptionEn} placeholder="Optional" />
               </Field>
             </div>
             <FormActions busy={busy} onCancel={() => setShowForm(false)} />
@@ -372,10 +413,11 @@ function ThemesTab({
 
       <DataTable
         empty="No themes yet."
-        headers={["ID", "Name", "Description", ""]}
+        headers={["ID", "Name (VI)", "Name (EN)", "Description", ""]}
         rows={themes.map((item) => [
           String(item.id),
-          item.themeName,
+          themeDisplayName(item, "vi"),
+          item.translations?.find((t) => t.languageCode === "en")?.themeName || "—",
           item.description?.trim() || "—",
           <RowActions
             key={item.id}
@@ -392,7 +434,8 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<TagGroupDto | null>(null);
-  const [name, setName] = useState("");
+  const [nameVi, setNameVi] = useState("");
+  const [nameEn, setNameEn] = useState("");
   const [sortOrder, setSortOrder] = useState("0");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -400,15 +443,19 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
 
   function openCreate() {
     setEditing(null);
-    setName("");
+    setNameVi("");
+    setNameEn("");
     setSortOrder("0");
     setError(null);
     setShowForm(true);
   }
 
   function openEdit(item: TagGroupDto) {
+    const vi = item.translations?.find((t) => t.languageCode === "vi");
+    const en = item.translations?.find((t) => t.languageCode === "en");
     setEditing(item);
-    setName(item.groupName);
+    setNameVi(vi?.groupName || item.groupName);
+    setNameEn(en?.groupName ?? "");
     setSortOrder(String(item.sortOrder ?? 0));
     setError(null);
     setShowForm(true);
@@ -416,14 +463,32 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) {
-      setError("Group name is required.");
+    if (!nameVi.trim()) {
+      setError("Vietnamese group name is required.");
       return;
     }
     setBusy(true);
     setError(null);
     try {
-      const payload = { groupName: name.trim(), sortOrder: Number(sortOrder) || 0 };
+      const translations = [
+        {
+          tagGroupId: editing?.id ?? 0,
+          languageCode: "vi",
+          groupName: nameVi.trim(),
+        },
+      ];
+      if (nameEn.trim()) {
+        translations.push({
+          tagGroupId: editing?.id ?? 0,
+          languageCode: "en",
+          groupName: nameEn.trim(),
+        });
+      }
+      const payload = {
+        groupName: nameVi.trim(),
+        sortOrder: Number(sortOrder) || 0,
+        translations,
+      };
       if (editing) await updateTagGroupEntry(editing.id, payload);
       else await createTagGroupEntry(payload);
       setShowForm(false);
@@ -460,8 +525,11 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
         <FormCard title={editing ? "Edit tag group" : "New tag group"}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Group name *">
-                <Input value={name} onChange={setName} placeholder="Period" />
+              <Field label="Name (VI) *">
+                <Input value={nameVi} onChange={setNameVi} placeholder="Thời kỳ" />
+              </Field>
+              <Field label="Name (EN)">
+                <Input value={nameEn} onChange={setNameEn} placeholder="Period" />
               </Field>
               <Field label="Sort order">
                 <Input value={sortOrder} onChange={setSortOrder} type="number" />
@@ -474,10 +542,11 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
 
       <DataTable
         empty="No tag groups yet."
-        headers={["ID", "Name", "Sort order", ""]}
+        headers={["ID", "Name (VI)", "Name (EN)", "Sort order", ""]}
         rows={tagGroups.map((item) => [
           String(item.id),
-          item.groupName,
+          tagGroupDisplayName(item, "vi"),
+          item.translations?.find((t) => t.languageCode === "en")?.groupName || "—",
           String(item.sortOrder),
           <RowActions
             key={item.id}
@@ -499,13 +568,14 @@ function TagsTab({
 }) {
   const router = useRouter();
   const groupName = useMemo(() => {
-    const map = new Map(tagGroups.map((g) => [g.id, g.groupName]));
+    const map = new Map(tagGroups.map((g) => [g.id, tagGroupDisplayName(g)]));
     return (id: number) => map.get(id) ?? `#${id}`;
   }, [tagGroups]);
 
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<TagDto | null>(null);
-  const [name, setName] = useState("");
+  const [nameVi, setNameVi] = useState("");
+  const [nameEn, setNameEn] = useState("");
   const [tagGroupId, setTagGroupId] = useState(
     tagGroups[0] ? String(tagGroups[0].id) : "",
   );
@@ -516,7 +586,8 @@ function TagsTab({
 
   function openCreate() {
     setEditing(null);
-    setName("");
+    setNameVi("");
+    setNameEn("");
     setTagGroupId(tagGroups[0] ? String(tagGroups[0].id) : "");
     setSortOrder("0");
     setError(null);
@@ -524,8 +595,11 @@ function TagsTab({
   }
 
   function openEdit(item: TagDto) {
+    const vi = item.translations?.find((t) => t.languageCode === "vi");
+    const en = item.translations?.find((t) => t.languageCode === "en");
     setEditing(item);
-    setName(item.tagName);
+    setNameVi(vi?.tagName || item.tagName);
+    setNameEn(en?.tagName ?? "");
     setTagGroupId(String(item.tagGroupId));
     setSortOrder(String(item.sortOrder ?? 0));
     setError(null);
@@ -534,17 +608,32 @@ function TagsTab({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || !tagGroupId) {
-      setError("Tag name and group are required.");
+    if (!nameVi.trim() || !tagGroupId) {
+      setError("Vietnamese tag name and group are required.");
       return;
     }
     setBusy(true);
     setError(null);
     try {
+      const translations = [
+        {
+          tagId: editing?.id ?? 0,
+          languageCode: "vi",
+          tagName: nameVi.trim(),
+        },
+      ];
+      if (nameEn.trim()) {
+        translations.push({
+          tagId: editing?.id ?? 0,
+          languageCode: "en",
+          tagName: nameEn.trim(),
+        });
+      }
       const payload = {
         tagGroupId: Number(tagGroupId),
-        tagName: name.trim(),
+        tagName: nameVi.trim(),
         sortOrder: Number(sortOrder) || 0,
+        translations,
       };
       if (editing) await updateTagEntry(editing.id, payload);
       else await createTagEntry(payload);
@@ -588,8 +677,11 @@ function TagsTab({
         <FormCard title={editing ? "Edit tag" : "New tag"}>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Tag name *">
-                <Input value={name} onChange={setName} placeholder="Nguyen dynasty" />
+              <Field label="Name (VI) *">
+                <Input value={nameVi} onChange={setNameVi} placeholder="Triều Nguyễn" />
+              </Field>
+              <Field label="Name (EN)">
+                <Input value={nameEn} onChange={setNameEn} placeholder="Nguyen dynasty" />
               </Field>
               <Field label="Tag group *">
                 <Select
@@ -597,7 +689,7 @@ function TagsTab({
                   onChange={setTagGroupId}
                   options={tagGroups.map((g) => ({
                     value: String(g.id),
-                    label: g.groupName,
+                    label: tagGroupDisplayName(g),
                   }))}
                 />
               </Field>
@@ -612,10 +704,11 @@ function TagsTab({
 
       <DataTable
         empty="No tags yet."
-        headers={["ID", "Name", "Group", "Sort order", ""]}
+        headers={["ID", "Name (VI)", "Name (EN)", "Group", "Sort order", ""]}
         rows={tags.map((item) => [
           String(item.id),
-          item.tagName,
+          tagDisplayName(item, "vi"),
+          item.translations?.find((t) => t.languageCode === "en")?.tagName || "—",
           groupName(item.tagGroupId),
           String(item.sortOrder),
           <RowActions

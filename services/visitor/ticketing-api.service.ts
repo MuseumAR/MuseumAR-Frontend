@@ -1,6 +1,7 @@
 import { apiGet, apiGetAuth, apiPostAuth } from "@/services/api-client";
 import {
   normalizeCreateOrderResponse,
+  normalizeTicketDetailDto,
   normalizeTicketDto,
   normalizeTicketTypeDto,
 } from "@/lib/normalize-dto";
@@ -38,7 +39,9 @@ export function getMyTickets(lang?: string): Promise<TicketDto[]> {
 
 export function getTicketDetail(id: number, lang?: string): Promise<TicketDetailDto> {
   const query = lang ? `?lang=${encodeURIComponent(lang)}` : "";
-  return apiGetAuth<TicketDetailDto>(`/api/ticketing/my-tickets/${id}${query}`);
+  return apiGetAuth<unknown>(`/api/ticketing/my-tickets/${id}${query}`).then(
+    normalizeTicketDetailDto,
+  );
 }
 
 

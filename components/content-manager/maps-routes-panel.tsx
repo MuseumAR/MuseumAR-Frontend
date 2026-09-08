@@ -944,9 +944,11 @@ export function MapsRoutesPanel({
   // Room form state
   const [roomCode, setRoomCode] = useState("");
   const [roomName, setRoomName] = useState("");
+  const [roomNameEn, setRoomNameEn] = useState("");
   const [roomFloorNumber, setRoomFloorNumber] = useState("1");
   const [roomMapId, setRoomMapId] = useState("");
   const [roomDesc, setRoomDesc] = useState("");
+  const [roomDescEn, setRoomDescEn] = useState("");
   const [roomError, setRoomError] = useState<string | null>(null);
   const [deletingRoomId, setDeletingRoomId] = useState<number | null>(null);
   const { success, showSuccess } = useSuccessToast();
@@ -1099,12 +1101,32 @@ export function MapsRoutesPanel({
         mapId: roomMapId ? Number(roomMapId) : undefined,
         roomCode: roomCode.trim(),
         roomName: roomName.trim(),
+        roomNameEn: roomNameEn.trim() || undefined,
         floorNumber: Number(roomFloorNumber),
         description: roomDesc.trim() || undefined,
+        descriptionEn: roomDescEn.trim() || undefined,
+        translations: [
+          {
+            languageCode: "vi",
+            roomName: roomName.trim(),
+            description: roomDesc.trim() || undefined,
+          },
+          ...(roomNameEn.trim() || roomDescEn.trim()
+            ? [
+                {
+                  languageCode: "en",
+                  roomName: roomNameEn.trim() || undefined,
+                  description: roomDescEn.trim() || undefined,
+                },
+              ]
+            : []),
+        ],
       });
       setRoomCode("");
       setRoomName("");
+      setRoomNameEn("");
       setRoomDesc("");
+      setRoomDescEn("");
       setRoomMapId("");
       setRoomFloorNumber("1");
       setShowRoomForm(false);
@@ -1619,14 +1641,27 @@ export function MapsRoutesPanel({
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Room name * (e.g. Room 102 - Dong Son Culture)
+                    Room name (Vietnamese) * (e.g. Phòng 102 - Văn hóa Đông Sơn)
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Room 102 - Dong Son Culture"
+                    placeholder="Phòng 102 - Văn hóa Đông Sơn"
                     value={roomName}
                     onChange={(e) => setRoomName(e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-sm" style={{ color: T.muted }}>
+                    Room name (English)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Room 102 - Dong Son Culture"
+                    value={roomNameEn}
+                    onChange={(e) => setRoomNameEn(e.target.value)}
                     className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                     style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                   />
@@ -1665,13 +1700,26 @@ export function MapsRoutesPanel({
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Room description
+                    Room description (Vietnamese)
                   </label>
                   <textarea
                     rows={3}
                     placeholder="Describe the artifacts displayed in this room..."
                     value={roomDesc}
                     onChange={(e) => setRoomDesc(e.target.value)}
+                    className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
+                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                  />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="block text-sm" style={{ color: T.muted }}>
+                    Room description (English)
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Optional English description"
+                    value={roomDescEn}
+                    onChange={(e) => setRoomDescEn(e.target.value)}
                     className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
                     style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                   />
@@ -1736,6 +1784,11 @@ export function MapsRoutesPanel({
                     <h4 className="font-semibold text-base mb-1" style={{ color: T.text }}>
                       {room.roomName}
                     </h4>
+                    {room.roomNameEn && (
+                      <p className="text-xs mb-1" style={{ color: T.mutedLight }}>
+                        {room.roomNameEn}
+                      </p>
+                    )}
                     {room.description && (
                       <p className="text-xs line-clamp-2" style={{ color: T.muted }}>
                         {room.description}
