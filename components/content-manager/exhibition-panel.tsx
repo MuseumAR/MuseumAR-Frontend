@@ -8,7 +8,7 @@ import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
 import { labelStatus } from "@/lib/status-labels";
 import { createExhibitionEntry, uploadExhibitionImage } from "@/services/content-manager/exhibition.service";
-import { createThemeEntry } from "@/services/content-manager";
+import { createThemeEntry, themeDisplayName, themeMatchesName } from "@/services/content-manager";
 import type { ExhibitionDto, ThemeDto } from "@/types/api";
 
 function StatusBadge({ status }: { status: string }) {
@@ -73,9 +73,7 @@ export function ExhibitionPanel({
       let finalThemeId: number | undefined = undefined;
       const trimmedTheme = themeInput.trim();
       if (trimmedTheme) {
-        const existing = themes.find(
-          (t) => t.themeName.toLowerCase() === trimmedTheme.toLowerCase()
-        );
+        const existing = themes.find((t) => themeMatchesName(t, trimmedTheme));
         if (existing) {
           finalThemeId = existing.id;
         } else {
@@ -83,6 +81,7 @@ export function ExhibitionPanel({
             const newTheme = await createThemeEntry({
               museumId,
               themeName: trimmedTheme,
+              translations: [{ languageCode: "vi", themeName: trimmedTheme }],
             });
             finalThemeId = newTheme.id;
           } catch (err) {
@@ -198,7 +197,7 @@ export function ExhibitionPanel({
               />
               <datalist id="theme-suggestions">
                 {themes.map((theme) => (
-                  <option key={theme.id} value={theme.themeName} />
+                  <option key={theme.id} value={themeDisplayName(theme)} />
                 ))}
               </datalist>
             </div>

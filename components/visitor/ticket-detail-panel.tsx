@@ -337,8 +337,10 @@ export function TicketDetailPanel() {
               <dl className="grid gap-4 sm:grid-cols-2">
                 <Field label="Tên" value={detail.ticketType.name} />
                 <Field
-                  label="Giá"
-                  value={formatVnd(detail.ticketType.price)}
+                  label="Đơn giá"
+                  value={formatVnd(
+                    detail.price != null ? detail.price : detail.ticketType.price,
+                  )}
                 />
                 <div className="sm:col-span-2">
                   <Field

@@ -18,6 +18,7 @@ import {
 import {
   categoryDisplayName,
   syncExhibitTags,
+  tagDisplayName,
 } from "@/services/content-manager/taxonomy.service";
 import type { AgeGroupDto, CategoryDto, MuseumMapDto, RoomDto, TagDto } from "@/types/api";
 
@@ -50,7 +51,9 @@ export function CreateExhibitForm({
   const [categoryId, setCategoryId] = useState("");
   const [ageGroupId, setAgeGroupId] = useState("");
   const [era, setEra] = useState("");
+  const [eraEn, setEraEn] = useState("");
   const [historicalEvent, setHistoricalEvent] = useState("");
+  const [historicalEventEn, setHistoricalEventEn] = useState("");
   const [mapId, setMapId] = useState("");
   const [roomId, setRoomId] = useState("");
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
@@ -122,7 +125,9 @@ export function CreateExhibitForm({
         exhibitMetadata: {
           ageGroupId: ageGroupId ? Number(ageGroupId) : undefined,
           era: era.trim() || undefined,
+          eraEn: eraEn.trim() || undefined,
           historicalEvent: historicalEvent.trim() || undefined,
+          historicalEventEn: historicalEventEn.trim() || undefined,
         },
         translations: translationsPayload,
       });
@@ -231,14 +236,21 @@ export function CreateExhibitForm({
                 onChange={setRoomId}
                 options={availableRooms.map((r) => ({
                   value: String(r.id),
-                  label: `${r.roomCode} - ${r.roomName}`,
+                  label: `${r.roomCode} - ${r.roomName}${r.roomNameEn ? ` / ${r.roomNameEn}` : ""}`,
                 }))}
               />
-              <Field label="Era" value={era} onChange={setEra} placeholder="e.g. Nguyen dynasty" />
+              <Field label="Era (Vietnamese)" value={era} onChange={setEra} placeholder="e.g. Triều Nguyễn" />
+              <Field label="Era (English)" value={eraEn} onChange={setEraEn} placeholder="e.g. Nguyen dynasty" />
               <Field
-                label="Historical event"
+                label="Historical event (Vietnamese)"
                 value={historicalEvent}
                 onChange={setHistoricalEvent}
+                placeholder="Optional"
+              />
+              <Field
+                label="Historical event (English)"
+                value={historicalEventEn}
+                onChange={setHistoricalEventEn}
                 placeholder="Optional"
               />
             </div>
@@ -282,7 +294,7 @@ export function CreateExhibitForm({
                           color: active ? T.primaryDark : T.muted,
                         }}
                       >
-                        {tag.tagName}
+                        {tagDisplayName(tag)}
                       </button>
                     );
                   })}

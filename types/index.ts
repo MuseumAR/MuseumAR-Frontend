@@ -52,6 +52,9 @@ export type Artifact = {
   status: "Published" | "Draft" | "Pending";
   category: string;
   era: string;
+  eraEn?: string;
+  historicalEvent?: string;
+  historicalEventEn?: string;
   location: string;
   qrLinked: ActiveInactive;
   arModelStatus: ActiveInactive;
@@ -140,11 +143,16 @@ export type AnalyticsMetric = {
 // ─── Museum Profile ────────────────────────────────────────────────────────
 export type MuseumProfile = {
   name: string;
+  nameEn?: string;
   address: string;
+  addressEn?: string;
   email: string;
   phone: string;
   openingHours: string;
   closingHours: string;
+  openingHoursEn?: string;
+  description?: string;
+  descriptionEn?: string;
   image: string | null;
 };
 

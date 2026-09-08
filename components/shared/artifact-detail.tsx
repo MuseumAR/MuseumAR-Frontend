@@ -8,9 +8,10 @@ import { ARTIFACT_LABELS } from "@/lib/field-labels";
 import { getDisplayError } from "@/lib/validation";
 import { labelStatus } from "@/lib/status-labels";
 import type { ActiveInactive, Artifact } from "@/types";
-import type { ExhibitArassetDto } from "@/types/api";
+import type { ExhibitArassetDto, TagDto } from "@/types/api";
 import { deleteExhibit } from "@/services/content-manager/exhibit.service";
 import { getArAssets } from "@/services/content-manager/content-api.service";
+import { tagDisplayName } from "@/services/content-manager/taxonomy.service";
 
 interface Props {
   artifact: Artifact;
@@ -22,10 +23,7 @@ interface Props {
     description?: string | null;
     audioUrl?: string | null;
   }>;
-  tags?: Array<{
-    id: number;
-    tagName: string;
-  }>;
+  tags?: TagDto[];
 }
 
 export function ArtifactDetail({
@@ -128,6 +126,14 @@ export function ArtifactDetail({
               const currentTitle = activeTab === "vi" ? (translationVi?.title || artifact.name) : (translationEn?.title || "— (Not translated to English)");
               const currentDesc = activeTab === "vi" ? (translationVi?.description || artifact.description || "No description yet.") : (translationEn?.description || "No description available.");
               const currentAudioUrl = activeTab === "vi" ? (translationVi?.audioUrl || artifact.audioUrl) : translationEn?.audioUrl;
+              const currentEra =
+                activeTab === "en" && artifact.eraEn
+                  ? artifact.eraEn
+                  : artifact.era;
+              const currentEvent =
+                activeTab === "en" && artifact.historicalEventEn
+                  ? artifact.historicalEventEn
+                  : artifact.historicalEvent;
 
               return (
                 <>
@@ -145,7 +151,10 @@ export function ArtifactDetail({
 
                   <dl className="space-y-2 text-sm">
                     <InfoRow label={ARTIFACT_LABELS.category!} value={artifact.category} />
-                    <InfoRow label={ARTIFACT_LABELS.era!} value={artifact.era} />
+                    <InfoRow label={ARTIFACT_LABELS.era!} value={currentEra} />
+                    {currentEvent ? (
+                      <InfoRow label="Historical event" value={currentEvent} />
+                    ) : null}
                     <InfoRow label={ARTIFACT_LABELS.location!} value={artifact.location} />
                     <ActiveRow label={ARTIFACT_LABELS.qrLinked!} value={artifact.qrLinked} />
                     <ActiveRow label={ARTIFACT_LABELS.arModelStatus!} value={artifact.arModelStatus} />
@@ -164,7 +173,7 @@ export function ArtifactDetail({
                             color: T.primaryDark,
                           }}
                         >
-                          {tag.tagName}
+                          {tagDisplayName(tag, activeTab)}
                         </span>
                       ))}
                     </div>

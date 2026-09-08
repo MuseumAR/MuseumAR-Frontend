@@ -83,6 +83,11 @@ export function MuseumManagementPanel({ museum }: { museum: MuseumDto | null }) 
               </h2>
               <StatusBadge status={museum.status} />
             </div>
+            {museum.nameEn ? (
+              <p className="text-sm" style={{ color: T.muted, fontFamily: sans }}>
+                {museum.nameEn}
+              </p>
+            ) : null}
 
             {(() => {
               const addressParts = museum.address
@@ -111,12 +116,14 @@ export function MuseumManagementPanel({ museum }: { museum: MuseumDto | null }) 
                   <InfoRow label="ID" value={String(museum.id)} />
                   <InfoRow label="City" value={displayCity} />
                   <InfoRow label="Address" value={museum.address ?? "—"} />
+                  <InfoRow label="Address (English)" value={museum.addressEn ?? "—"} />
                   <InfoRow label="Province" value={displayProvince} />
                   <InfoRow label="Country" value={displayCountry} />
                   <InfoRow label="Phone" value={museum.contactPhone ?? "—"} />
                   <InfoRow label="Email" value={museum.contactEmail ?? "—"} />
                   <InfoRow label="Website" value={museum.website ?? "—"} />
                   <InfoRow label="Opening hours" value={museum.openingHours ?? "—"} />
+                  <InfoRow label="Opening hours (English)" value={museum.openingHoursEn ?? "—"} />
                 </div>
               );
             })()}
@@ -131,6 +138,19 @@ export function MuseumManagementPanel({ museum }: { museum: MuseumDto | null }) 
                   style={{ color: T.muted, fontFamily: sans }}
                 >
                   {museum.description}
+                </p>
+              </div>
+            )}
+            {museum.descriptionEn && (
+              <div>
+                <p className="text-xs font-medium" style={{ color: T.mutedLight }}>
+                  Description (English)
+                </p>
+                <p
+                  className="mt-1 text-sm leading-relaxed"
+                  style={{ color: T.muted, fontFamily: sans }}
+                >
+                  {museum.descriptionEn}
                 </p>
               </div>
             )}

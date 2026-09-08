@@ -26,3 +26,11 @@ export function updateRoom(id: number, payload: UpdateRoomDto) {
 export function deleteRoom(id: number) {
   return apiDeleteAuth<null>(`/api/Content/rooms/${id}`);
 }
+
+export function roomDisplayName(room: RoomDto, lang = "vi"): string {
+  if (lang === "en") {
+    const en = room.translations?.find((t) => t.languageCode === "en");
+    return en?.roomName || room.roomNameEn || room.roomName;
+  }
+  return room.roomName;
+}

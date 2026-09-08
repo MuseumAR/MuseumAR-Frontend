@@ -18,7 +18,7 @@ import {
   assignExhibitsToExhibition,
   removeExhibitFromExhibition,
 } from "@/services/content-manager/content-api.service";
-import { createThemeEntry } from "@/services/content-manager/taxonomy.service";
+import { createThemeEntry, themeDisplayName, themeMatchesName } from "@/services/content-manager/taxonomy.service";
 import type { ExhibitionDto, ExhibitDto, ThemeDto } from "@/types/api";
 
 function StatusBadge({ status }: { status: string }) {
@@ -169,9 +169,7 @@ export function ExhibitionDetail({
       let finalThemeId: number | undefined = undefined;
       const trimmedTheme = themeInput.trim();
       if (trimmedTheme) {
-        const existing = themes.find(
-          (t) => t.themeName.toLowerCase() === trimmedTheme.toLowerCase()
-        );
+        const existing = themes.find((t) => themeMatchesName(t, trimmedTheme));
         if (existing) {
           finalThemeId = existing.id;
         } else {
@@ -179,6 +177,7 @@ export function ExhibitionDetail({
             const newTheme = await createThemeEntry({
               museumId: exhibition.museumId,
               themeName: trimmedTheme,
+              translations: [{ languageCode: "vi", themeName: trimmedTheme }],
             });
             finalThemeId = newTheme.id;
           } catch (err) {
@@ -312,7 +311,7 @@ export function ExhibitionDetail({
                   />
                   <datalist id="theme-suggestions">
                     {themes.map((theme) => (
-                      <option key={theme.id} value={theme.themeName} />
+                      <option key={theme.id} value={themeDisplayName(theme)} />
                     ))}
                   </datalist>
                 </div>

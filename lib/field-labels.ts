@@ -120,11 +120,16 @@ export const STAFF_LABELS: Labels<StaffMember> = {
 
 export const MUSEUM_PROFILE_LABELS: Labels<MuseumProfile> = {
   name: "Museum Name",
+  nameEn: "Name (English)",
   address: "Address",
+  addressEn: "Address (English)",
   email: "Contact Email",
   phone: "Phone Number",
   openingHours: "Opening Hours",
   closingHours: "Closing Hours",
+  openingHoursEn: "Opening Hours (English)",
+  description: "Description",
+  descriptionEn: "Description (English)",
 };
 
 export const MUSEUM_MANAGER_STATS_LABELS: Labels<MuseumManagerStats> = {

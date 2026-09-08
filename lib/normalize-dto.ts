@@ -34,6 +34,15 @@ function pickNum(
   return Number.isFinite(n) ? n : undefined;
 }
 
+function firstNonEmpty(
+  ...vals: Array<string | null | undefined>
+): string | null {
+  for (const v of vals) {
+    if (v && v.trim()) return v;
+  }
+  return null;
+}
+
 /** Normalize exhibit payload — BE acronyms often serialize as qRCodeData / aROverlayUrl. */
 export function normalizeExhibitDto(raw: unknown): import("@/types/api").ExhibitDto {
   const o = asRecord(raw);
@@ -80,8 +89,11 @@ export function normalizeExhibitDto(raw: unknown): import("@/types/api").Exhibit
       ? {
           ageGroupId: pickNum(meta, "ageGroupId", "AgeGroupId") ?? null,
           era: pickStr(meta, "era", "Era") ?? null,
+          eraEn: pickStr(meta, "eraEn", "EraEn") ?? null,
           historicalEvent:
             pickStr(meta, "historicalEvent", "HistoricalEvent") ?? null,
+          historicalEventEn:
+            pickStr(meta, "historicalEventEn", "HistoricalEventEn") ?? null,
         }
       : null,
     translations: (Array.isArray(translationsRaw) ? translationsRaw : []).map(
@@ -141,11 +153,32 @@ export function normalizeMuseumDto(raw: unknown): import("@/types/api").MuseumDt
     province = "Quận 1";
   }
 
+  const transRaw = pickField<unknown[]>(o, "translations", "Translations") ?? [];
+  const translations: import("@/types/api").MuseumTranslationDto[] = (
+    Array.isArray(transRaw) ? transRaw : []
+  ).map((item) => {
+    const t = asRecord(item);
+    return {
+      languageCode: String(pickField(t, "languageCode", "LanguageCode") ?? "vi"),
+      name: pickStr(t, "name", "Name") ?? null,
+      description: pickStr(t, "description", "Description") ?? null,
+      address: pickStr(t, "address", "Address") ?? null,
+      openingHours: pickStr(t, "openingHours", "OpeningHours") ?? null,
+    };
+  });
+  const en = translations.find((t) => t.languageCode === "en");
+
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
     name: pickStr(o, "name", "Name") ?? "",
+    nameEn: firstNonEmpty(pickStr(o, "nameEn", "NameEn"), en?.name),
     description: pickStr(o, "description", "Description") ?? null,
+    descriptionEn: firstNonEmpty(
+      pickStr(o, "descriptionEn", "DescriptionEn"),
+      en?.description,
+    ),
     address,
+    addressEn: firstNonEmpty(pickStr(o, "addressEn", "AddressEn"), en?.address),
     city,
     province,
     country,
@@ -154,9 +187,14 @@ export function normalizeMuseumDto(raw: unknown): import("@/types/api").MuseumDt
     status: String(pickField(o, "status", "Status") ?? "Active"),
     thumbnailUrl: pickStr(o, "thumbnailUrl", "ThumbnailUrl") ?? null,
     openingHours: pickStr(o, "openingHours", "OpeningHours") ?? null,
+    openingHoursEn: firstNonEmpty(
+      pickStr(o, "openingHoursEn", "OpeningHoursEn"),
+      en?.openingHours,
+    ),
     contactPhone: pickStr(o, "contactPhone", "ContactPhone") ?? null,
     contactEmail: pickStr(o, "contactEmail", "ContactEmail") ?? null,
     website: pickStr(o, "website", "Website") ?? null,
+    translations,
   };
 }
 
@@ -303,16 +341,85 @@ export function normalizeCreateOrderResponse(
 
 export function normalizeRoomDto(raw: unknown): import("@/types/api").RoomDto {
   const o = asRecord(raw);
+  const transRaw = pickField<unknown[]>(o, "translations", "Translations") ?? [];
+  const translations: import("@/types/api").RoomTranslationDto[] = (
+    Array.isArray(transRaw) ? transRaw : []
+  ).map((item) => {
+    const t = asRecord(item);
+    return {
+      languageCode: String(pickField(t, "languageCode", "LanguageCode") ?? "vi"),
+      roomName: pickStr(t, "roomName", "RoomName") ?? null,
+      description: pickStr(t, "description", "Description") ?? null,
+    };
+  });
+  const en = translations.find((t) => t.languageCode === "en");
+
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
     museumId: Number(pickField(o, "museumId", "MuseumId") ?? 0),
     mapId: pickNum(o, "mapId", "MapId") ?? null,
     roomCode: String(pickField(o, "roomCode", "RoomCode") ?? ""),
     roomName: pickStr(o, "roomName", "RoomName") ?? "",
+    roomNameEn: firstNonEmpty(pickStr(o, "roomNameEn", "RoomNameEn"), en?.roomName),
     floorNumber: Number(pickField(o, "floorNumber", "FloorNumber") ?? 1),
     description: pickStr(o, "description", "Description") ?? null,
+    descriptionEn: firstNonEmpty(
+      pickStr(o, "descriptionEn", "DescriptionEn"),
+      en?.description,
+    ),
+    waypointId: pickNum(o, "waypointId", "WaypointId") ?? null,
+    centerX: pickNum(o, "centerX", "CenterX") ?? null,
+    centerY: pickNum(o, "centerY", "CenterY") ?? null,
+    translations,
     createdAt: pickStr(o, "createdAt", "CreatedAt") ?? undefined,
     updatedAt: pickStr(o, "updatedAt", "UpdatedAt") ?? undefined,
+  };
+}
+
+export function normalizeTicketDetailDto(
+  raw: unknown,
+): import("@/types/api").TicketDetailDto {
+  const o = asRecord(raw);
+  const tt = asRecord(pickField(o, "ticketType", "TicketType"));
+  const museum = asRecord(pickField(o, "museum", "Museum"));
+  const exhibitionRaw = pickField(o, "exhibition", "Exhibition");
+  const exhibition = exhibitionRaw != null ? asRecord(exhibitionRaw) : null;
+  const order = asRecord(pickField(o, "order", "Order"));
+
+  return {
+    id: Number(pickField(o, "id", "Id") ?? 0),
+    ticketCode: String(pickField(o, "ticketCode", "TicketCode") ?? ""),
+    price: pickNum(o, "price", "Price") ?? undefined,
+    status: String(pickField(o, "status", "Status") ?? ""),
+    purchaseDate: String(pickField(o, "purchaseDate", "PurchaseDate") ?? ""),
+    validDate: pickStr(o, "validDate", "ValidDate") ?? null,
+    ticketType: {
+      id: Number(pickField(tt, "id", "Id") ?? 0),
+      name: pickStr(tt, "name", "Name") ?? "",
+      price: Number(pickField(tt, "price", "Price") ?? 0),
+      description: pickStr(tt, "description", "Description") ?? null,
+    },
+    museum: {
+      id: Number(pickField(museum, "id", "Id") ?? 0),
+      name: pickStr(museum, "name", "Name") ?? "",
+      address: pickStr(museum, "address", "Address") ?? null,
+    },
+    exhibition: exhibition
+      ? {
+          id: Number(pickField(exhibition, "id", "Id") ?? 0),
+          name: pickStr(exhibition, "name", "Name") ?? "",
+        }
+      : null,
+    order: {
+      orderCode: String(pickField(order, "orderCode", "OrderCode") ?? ""),
+      totalAmount: Number(pickField(order, "totalAmount", "TotalAmount") ?? 0),
+      currency: String(pickField(order, "currency", "Currency") ?? "VND"),
+      paymentStatus: String(pickField(order, "paymentStatus", "PaymentStatus") ?? ""),
+      paymentMethod: pickStr(order, "paymentMethod", "PaymentMethod") ?? null,
+      paidAt: pickStr(order, "paidAt", "PaidAt") ?? null,
+    },
+    qrCodeData: pickStr(o, "qrCodeData", "QrCodeData", "QRCodeData") ?? null,
+    qrCodeImageUrl: pickStr(o, "qrCodeImageUrl", "QrCodeImageUrl", "QRCodeImageUrl") ?? null,
   };
 }
 
@@ -440,5 +547,111 @@ export function normalizeContentVersionDto(
       pickStr(o, "changeDescription", "ChangeDescription") ?? null,
     status: String(pickField(o, "status", "Status") ?? ""),
     createdAt: String(pickField(o, "createdAt", "CreatedAt") ?? ""),
+  };
+}
+
+function langOf(raw: unknown): string {
+  const o = asRecord(raw);
+  return String(pickField(o, "languageCode", "LanguageCode") ?? "");
+}
+
+export function normalizeCategoryDto(
+  raw: unknown,
+): import("@/types/api").CategoryDto {
+  const o = asRecord(raw);
+  const transRaw =
+    pickField<unknown[]>(
+      o,
+      "categoryTranslations",
+      "CategoryTranslations",
+      "translations",
+      "Translations",
+    ) ?? [];
+  const categoryTranslations = (Array.isArray(transRaw) ? transRaw : []).map(
+    (item) => {
+      const t = asRecord(item);
+      return {
+        id: pickNum(t, "id", "Id") ?? null,
+        categoryId: Number(pickField(t, "categoryId", "CategoryId") ?? 0),
+        languageCode: langOf(item),
+        categoryName: pickStr(t, "categoryName", "CategoryName") ?? "",
+        description: pickStr(t, "description", "Description") ?? null,
+      };
+    },
+  );
+  return {
+    id: Number(pickField(o, "id", "Id") ?? 0),
+    museumId: pickNum(o, "museumId", "MuseumId") ?? null,
+    parentId: pickNum(o, "parentId", "ParentId") ?? null,
+    sortOrder: Number(pickField(o, "sortOrder", "SortOrder") ?? 0),
+    iconUrl: pickStr(o, "iconUrl", "IconUrl") ?? null,
+    status: String(pickField(o, "status", "Status") ?? "Active"),
+    categoryTranslations,
+  };
+}
+
+export function normalizeThemeDto(raw: unknown): import("@/types/api").ThemeDto {
+  const o = asRecord(raw);
+  const transRaw = pickField<unknown[]>(o, "translations", "Translations") ?? [];
+  const translations = (Array.isArray(transRaw) ? transRaw : []).map((item) => {
+    const t = asRecord(item);
+    return {
+      themeId: pickNum(t, "themeId", "ThemeId") ?? undefined,
+      languageCode: langOf(item),
+      themeName: pickStr(t, "themeName", "ThemeName") ?? "",
+      description: pickStr(t, "description", "Description") ?? null,
+    };
+  });
+  const vi = translations.find((t) => t.languageCode === "vi");
+  return {
+    id: Number(pickField(o, "id", "Id") ?? 0),
+    museumId: pickNum(o, "museumId", "MuseumId") ?? null,
+    themeName: pickStr(o, "themeName", "ThemeName") ?? vi?.themeName ?? "",
+    description:
+      pickStr(o, "description", "Description") ?? vi?.description ?? null,
+    translations,
+  };
+}
+
+export function normalizeTagGroupDto(
+  raw: unknown,
+): import("@/types/api").TagGroupDto {
+  const o = asRecord(raw);
+  const transRaw = pickField<unknown[]>(o, "translations", "Translations") ?? [];
+  const translations = (Array.isArray(transRaw) ? transRaw : []).map((item) => {
+    const t = asRecord(item);
+    return {
+      tagGroupId: pickNum(t, "tagGroupId", "TagGroupId") ?? undefined,
+      languageCode: langOf(item),
+      groupName: pickStr(t, "groupName", "GroupName") ?? "",
+    };
+  });
+  const vi = translations.find((t) => t.languageCode === "vi");
+  return {
+    id: Number(pickField(o, "id", "Id") ?? 0),
+    groupName: pickStr(o, "groupName", "GroupName") ?? vi?.groupName ?? "",
+    sortOrder: Number(pickField(o, "sortOrder", "SortOrder") ?? 0),
+    translations,
+  };
+}
+
+export function normalizeTagDto(raw: unknown): import("@/types/api").TagDto {
+  const o = asRecord(raw);
+  const transRaw = pickField<unknown[]>(o, "translations", "Translations") ?? [];
+  const translations = (Array.isArray(transRaw) ? transRaw : []).map((item) => {
+    const t = asRecord(item);
+    return {
+      tagId: pickNum(t, "tagId", "TagId") ?? undefined,
+      languageCode: langOf(item),
+      tagName: pickStr(t, "tagName", "TagName") ?? "",
+    };
+  });
+  const vi = translations.find((t) => t.languageCode === "vi");
+  return {
+    id: Number(pickField(o, "id", "Id") ?? 0),
+    tagGroupId: Number(pickField(o, "tagGroupId", "TagGroupId") ?? 0),
+    tagName: pickStr(o, "tagName", "TagName") ?? vi?.tagName ?? "",
+    sortOrder: Number(pickField(o, "sortOrder", "SortOrder") ?? 0),
+    translations,
   };
 }

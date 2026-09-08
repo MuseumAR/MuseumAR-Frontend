@@ -21,6 +21,7 @@ import {
 import {
   categoryDisplayName,
   syncExhibitTags,
+  tagDisplayName,
 } from "@/services/content-manager/taxonomy.service";
 import { ArAssetsSection } from "@/components/content-manager/ar-assets-section";
 
@@ -35,7 +36,9 @@ export function UpdateArtifactForm({
   initialCategoryId,
   initialAgeGroupId,
   initialEra,
+  initialEraEn,
   initialHistoricalEvent,
+  initialHistoricalEventEn,
   initialTagIds,
   initialMapId,
   initialRoomId,
@@ -51,7 +54,9 @@ export function UpdateArtifactForm({
   initialCategoryId?: number | null;
   initialAgeGroupId?: number | null;
   initialEra?: string;
+  initialEraEn?: string;
   initialHistoricalEvent?: string;
+  initialHistoricalEventEn?: string;
   initialTagIds?: number[];
   initialMapId?: number | null;
   initialRoomId?: number | null;
@@ -86,7 +91,9 @@ export function UpdateArtifactForm({
     initialAgeGroupId != null ? String(initialAgeGroupId) : "",
   );
   const [era, setEra] = useState(initialEra ?? "");
+  const [eraEn, setEraEn] = useState(initialEraEn ?? "");
   const [historicalEvent, setHistoricalEvent] = useState(initialHistoricalEvent ?? "");
+  const [historicalEventEn, setHistoricalEventEn] = useState(initialHistoricalEventEn ?? "");
   const [mapId, setMapId] = useState(initialMapId != null ? String(initialMapId) : "");
   const [roomId, setRoomId] = useState(initialRoomId != null ? String(initialRoomId) : "");
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>(initialTagIds ?? []);
@@ -167,7 +174,9 @@ export function UpdateArtifactForm({
         exhibitMetadata: {
           ageGroupId: ageGroupId ? Number(ageGroupId) : undefined,
           era: era.trim() || undefined,
+          eraEn: eraEn.trim() || undefined,
           historicalEvent: historicalEvent.trim() || undefined,
+          historicalEventEn: historicalEventEn.trim() || undefined,
         },
         translations: translationsPayload,
       });
@@ -328,14 +337,21 @@ export function UpdateArtifactForm({
                 onChange={setRoomId}
                 options={availableRooms.map((r) => ({
                   value: String(r.id),
-                  label: `${r.roomCode} - ${r.roomName}`,
+                  label: `${r.roomCode} - ${r.roomName}${r.roomNameEn ? ` / ${r.roomNameEn}` : ""}`,
                 }))}
               />
-              <Field label="Era" value={era} onChange={setEra} placeholder="e.g. Nguyen dynasty" />
+              <Field label="Era (Vietnamese)" value={era} onChange={setEra} placeholder="e.g. Triều Nguyễn" />
+              <Field label="Era (English)" value={eraEn} onChange={setEraEn} placeholder="e.g. Nguyen dynasty" />
               <Field
-                label="Historical event"
+                label="Historical event (Vietnamese)"
                 value={historicalEvent}
                 onChange={setHistoricalEvent}
+                placeholder="Optional"
+              />
+              <Field
+                label="Historical event (English)"
+                value={historicalEventEn}
+                onChange={setHistoricalEventEn}
                 placeholder="Optional"
               />
             </div>
@@ -383,7 +399,7 @@ export function UpdateArtifactForm({
                           color: active ? T.primaryDark : T.muted,
                         }}
                       >
-                        {tag.tagName}
+                        {tagDisplayName(tag)}
                       </button>
                     );
                   })}
