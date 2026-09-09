@@ -74,6 +74,7 @@ export function ArtifactDetail({
     <div className="px-8 pb-10">
       <Link
         href={backPath}
+        prefetch={false}
         className="mb-6 inline-flex items-center gap-2 text-sm"
         style={{ color: T.muted }}
       >
@@ -315,6 +316,7 @@ export function ArtifactDetail({
             </button>
             <Link
               href={`/content-manager/artifact/${artifact.id}/edit`}
+              prefetch={false}
               className="rounded-xl border px-5 py-1.5 text-sm"
               style={{ borderColor: "rgba(79,125,74,0.35)", color: T.success }}
             >

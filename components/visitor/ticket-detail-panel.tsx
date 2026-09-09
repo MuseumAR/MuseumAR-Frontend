@@ -114,6 +114,7 @@ export function TicketDetailPanel() {
       <main className="mx-auto max-w-3xl px-4 pb-20 pt-28 sm:px-8">
         <Link
           href="/tickets/mine"
+          prefetch={false}
           className="mb-6 inline-flex items-center gap-1.5 text-sm transition-opacity hover:opacity-80"
           style={{ color: C.muted }}
         >
@@ -146,6 +147,7 @@ export function TicketDetailPanel() {
             <p>{loadError}</p>
             <Link
               href="/tickets/mine"
+              prefetch={false}
               className="mt-6 inline-flex rounded-full px-5 py-2.5 text-sm font-medium"
               style={{
                 background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
@@ -172,6 +174,7 @@ export function TicketDetailPanel() {
             </p>
             <Link
               href="/tickets/mine"
+              prefetch={false}
               className="mt-6 inline-flex rounded-full px-5 py-2.5 text-sm font-medium"
               style={{
                 background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,

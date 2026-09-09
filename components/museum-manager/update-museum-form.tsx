@@ -112,6 +112,7 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
     <div className="px-8 pb-10">
       <Link
         href="/museum-manager/museum-profile"
+        prefetch={false}
         className="mb-6 inline-flex items-center gap-2 text-sm"
         style={{ color: T.muted }}
       >
@@ -186,6 +187,7 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
         <div className="mt-8 flex justify-end gap-3">
           <Link
             href="/museum-manager/museum-profile"
+            prefetch={false}
             className="rounded-xl px-5 py-2 text-sm"
             style={{ border: `1px solid ${T.border}`, color: T.muted }}
           >

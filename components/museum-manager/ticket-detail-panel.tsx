@@ -315,6 +315,7 @@ export function TicketDetailPanel({
     <div className="px-8 pb-10 space-y-6">
       <Link
         href="/museum-manager/ticket-application"
+        prefetch={false}
         className="inline-flex items-center gap-2 text-sm transition-colors hover:text-stone-800"
         style={{ color: T.muted }}
       >

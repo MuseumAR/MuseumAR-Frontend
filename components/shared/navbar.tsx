@@ -45,6 +45,7 @@ function GuestAuthActions() {
       <VisitorLanguageToggle />
       <Link
         href="/login"
+        prefetch={false}
         className="inline-flex items-center justify-center rounded-full px-4 py-1.5 text-sm transition-all duration-200"
         style={{ color: C.muted }}
         onMouseEnter={(e) => {
@@ -60,6 +61,7 @@ function GuestAuthActions() {
       </Link>
       <Link
         href="/register"
+        prefetch={false}
         className="inline-flex items-center justify-center rounded-full px-5 py-1.5 text-sm font-medium transition-all hover:opacity-85"
         style={{
           background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
@@ -111,6 +113,7 @@ function UserMenu() {
       {hasDashboard && (
         <Link
           href={dashboardPath}
+          prefetch={false}
           className="hidden items-center gap-2 rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:opacity-90 sm:inline-flex"
           style={{
             background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
@@ -193,6 +196,7 @@ function UserMenu() {
             {hasDashboard && (
               <Link
                 href={dashboardPath}
+                prefetch={false}
                 className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors sm:hidden"
                 style={{ color: C.text }}
                 onClick={() => setOpen(false)}
@@ -211,6 +215,7 @@ function UserMenu() {
 
             <Link
               href="/tickets/mine"
+              prefetch={false}
               className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors"
               style={{ color: C.text }}
               onClick={() => setOpen(false)}
@@ -228,6 +233,7 @@ function UserMenu() {
 
             <Link
               href="/change-password"
+              prefetch={false}
               className="flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors"
               style={{ color: C.text }}
               onClick={() => setOpen(false)}
@@ -308,6 +314,7 @@ export function Navbar() {
     >
       <Link
         href="/"
+        prefetch={false}
         className="flex items-center gap-3"
         style={{ fontFamily: "var(--font-be-vietnam), system-ui, sans-serif" }}
       >
@@ -337,6 +344,7 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
+              prefetch={false}
               onClick={(e) => handleNavClick(e, link.href)}
               className="inline-flex items-center justify-center rounded-full px-4 py-1.5 text-sm transition-all duration-200"
               style={{

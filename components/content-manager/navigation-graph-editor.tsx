@@ -14,6 +14,9 @@ import {
   Sparkles,
   Layers,
   Link as LinkIcon,
+  ArrowUpDown,
+  Unlink,
+  ExternalLink,
 } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
@@ -47,14 +50,14 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
   const [selectedMapId, setSelectedMapId] = useState<number>(maps[0]?.id ?? 0);
   const [mode, setMode] = useState<Mode>("select");
 
+  // All museum waypoints and edges are held in state to support cross-floor navigation
   const [waypoints, setWaypoints] = useState<WaypointDto[]>([]);
   const [edges, setEdges] = useState<WaypointEdgeDto[]>([]);
   const [loadedMapId, setLoadedMapId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const loading = selectedMapId !== loadedMapId;
 
-  // Map image failed state (derived so switching maps does not need an effect)
+  // Map image failed state
   const [failedMapId, setFailedMapId] = useState<number | null>(null);
   const mapImgFailed = failedMapId === selectedMapId;
 
@@ -64,7 +67,11 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
   // Selected waypoint state
   const [selectedWpId, setSelectedWpId] = useState<string | null>(null);
 
-  // Waypoint form state
+  // Cross-floor connection form state
+  const [crossTargetWpId, setCrossTargetWpId] = useState<string>("");
+  const [crossDistance, setCrossDistance] = useState<number>(3.0);
+
+  // Waypoint creation form state
   const [wpType, setWpType] = useState<string>("HALLWAY");
   const [wpRoomId, setWpRoomId] = useState<number | undefined>(undefined);
   const [wpName, setWpName] = useState<string>("");
@@ -83,19 +90,24 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     [maps, selectedMapId]
   );
 
+  const selectedFloor = currentMap?.floorNumber ?? 1;
+
+  // Filter waypoints belonging to current floor plan
   const currentFloorWaypoints = useMemo(() => {
     if (!currentMap) return [];
-    // BE graph-by-map returns only waypoints with MapId == mapId
     return waypoints.filter(
-      (w) => w.mapId == null || w.mapId === 0 || w.mapId === currentMap.id,
+      (w) =>
+        w.mapId === currentMap.id ||
+        ((w.mapId == null || w.mapId === 0) && w.floorNumber === selectedFloor),
     );
-  }, [waypoints, currentMap]);
+  }, [waypoints, currentMap, selectedFloor]);
 
+  // Filter edges where at least one node is on this floor
   const currentFloorEdges = useMemo(() => {
     const currentWpIds = new Set(currentFloorWaypoints.map((w) => String(w.id)));
     return edges.filter(
       (e) =>
-        currentWpIds.has(String(e.fromWaypointId)) || currentWpIds.has(String(e.toWaypointId)),
+        currentWpIds.has(String(e.fromWaypointId)) && currentWpIds.has(String(e.toWaypointId)),
     );
   }, [edges, currentFloorWaypoints]);
 
@@ -152,7 +164,8 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     if (!path?.length || !currentMap) return [];
 
     const onThisMap = (w: WaypointDto) =>
-      w.mapId == null || w.mapId === 0 || w.mapId === currentMap.id;
+      w.mapId === currentMap.id ||
+      ((w.mapId == null || w.mapId === 0) && w.floorNumber === selectedFloor);
 
     const segments: { from: WaypointDto; to: WaypointDto }[] = [];
     for (let i = 1; i < path.length; i++) {
@@ -163,14 +176,16 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
       }
     }
     return segments;
-  }, [testResult, currentMap]);
+  }, [testResult, currentMap, selectedFloor]);
 
   const instructionsOnFloor = useMemo(() => {
     if (!testResult?.instructions?.length || !currentMap) return [];
     const pathIdsOnMap = new Set(
       (testResult.pathWaypoints || [])
         .filter(
-          (w) => w.mapId == null || w.mapId === 0 || w.mapId === currentMap.id,
+          (w) =>
+            w.mapId === currentMap.id ||
+            ((w.mapId == null || w.mapId === 0) && w.floorNumber === selectedFloor),
         )
         .map((w) => String(w.id)),
     );
@@ -180,7 +195,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
         pathIdsOnMap.has(String(inst.waypointId)) ||
         inst.floorNumber === floor,
     );
-  }, [testResult, currentMap]);
+  }, [testResult, currentMap, selectedFloor]);
 
   const resolveWaypoint = (waypointId: string | number) => {
     const id = String(waypointId);
@@ -191,54 +206,31 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     );
   };
 
-  const selectedFloor = currentMap?.floorNumber ?? 0;
-
-  // Seed waypoints often have mapId=0, so graph-by-map is empty — fall back to museum graph.
+  // Load all museum waypoints & edges so cross-floor linking works seamlessly
   useEffect(() => {
-    if (!selectedMapId) return;
+    if (!museumId) return;
     let cancelled = false;
-
-    const belongsToMap = (w: WaypointDto) =>
-      w.mapId === selectedMapId ||
-      ((w.mapId == null || w.mapId === 0) && w.floorNumber === selectedFloor);
 
     (async () => {
       try {
-        let data = await getNavigationGraphByMap(selectedMapId);
+        const data = await getNavigationGraphByMuseum(museumId);
         if (cancelled) return;
-
-        if (!(data.waypoints?.length) && museumId) {
-          const museumGraph = await getNavigationGraphByMuseum(museumId);
-          if (cancelled) return;
-          const nextWaypoints = (museumGraph.waypoints || []).filter(belongsToMap);
-          const wpIds = new Set(nextWaypoints.map((w) => String(w.id)));
-          const nextEdges = (museumGraph.edges || []).filter(
-            (e) =>
-              wpIds.has(String(e.fromWaypointId)) || wpIds.has(String(e.toWaypointId)),
-          );
-          data = { museumId, waypoints: nextWaypoints, edges: nextEdges };
-        }
-
         setWaypoints(data.waypoints || []);
         setEdges(data.edges || []);
-        setSelectedWpId(null);
-        setWpRoomId(undefined);
         setLoadedMapId(selectedMapId);
       } catch (err) {
         if (!cancelled) {
           setError(
-            getDisplayError(err, "Could not load the map graph. The navigation API may be unavailable."),
+            getDisplayError(err, "Could not load the navigation graph. The API may be unavailable."),
           );
         }
-      } finally {
-        if (!cancelled) setLoadedMapId(selectedMapId);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [selectedMapId, selectedFloor, museumId]);
+  }, [museumId]);
 
   // Handle map click for adding waypoint
   const handleMapClick = async (e: React.MouseEvent<HTMLDivElement>) => {
@@ -286,20 +278,19 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
 
   // Handle waypoint click
   const handleWaypointClick = async (wp: WaypointDto, e: React.MouseEvent) => {
-    // Add mode: let the click reach the map so a new hallway/stair can be placed
-    // even if the cursor is over an existing room marker.
     if (mode === "add_waypoint") return;
     e.stopPropagation();
 
     if (mode === "select") {
       setSelectedWpId(wp.id);
+      setCrossTargetWpId("");
     } else if (mode === "connect_edge") {
       if (!edgeStartWpId) {
         setEdgeStartWpId(wp.id);
       } else if (edgeStartWpId === wp.id) {
         setEdgeStartWpId(null);
       } else {
-        // Connect startWp and target Wp
+        // Connect startWp and target Wp (supports same floor and cross-floor)
         const startWp = waypoints.find((w) => w.id === edgeStartWpId);
         if (startWp) {
           const isStartRoom = isRoomWaypoint(startWp) || (startWp.roomId != null && startWp.roomId !== 0);
@@ -313,9 +304,19 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
             return;
           }
 
+          const isCrossFloor = startWp.floorNumber !== wp.floorNumber;
           const dx = wp.locationX - startWp.locationX;
           const dy = wp.locationY - startWp.locationY;
-          const dist = Math.round(Math.sqrt(dx * dx + dy * dy) * 10) / 10;
+          const dist = isCrossFloor
+            ? 3.0
+            : Math.round(Math.sqrt(dx * dx + dy * dy) * 10) / 10 || 1.0;
+
+          const edgeType =
+            startWp.waypointType === "ELEVATOR" || wp.waypointType === "ELEVATOR"
+              ? "ELEVATOR"
+              : isCrossFloor
+              ? "STAIR"
+              : "WALK";
 
           setSaving(true);
           try {
@@ -324,7 +325,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
               fromWaypointId: edgeStartWpId,
               toWaypointId: wp.id,
               distance: dist > 0 ? dist : 1.0,
-              edgeType: startWp.floorNumber !== wp.floorNumber ? "STAIR" : "WALK",
+              edgeType: edgeType,
               isBidirectional: true,
             });
             setEdges((prev) => [...prev, newEdge]);
@@ -362,6 +363,83 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
       setEdges((prev) => prev.filter((e) => e.id !== id));
     } catch (err) {
       setError("Could not delete edge.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Selected Waypoint & Cross-floor analysis
+  const selectedWp = useMemo(
+    () => (selectedWpId ? waypoints.find((w) => w.id === selectedWpId) : null),
+    [waypoints, selectedWpId]
+  );
+
+  const isSelectedWpTransit = useMemo(() => {
+    if (!selectedWp) return false;
+    const type = String(selectedWp.waypointType ?? "").toUpperCase();
+    return type === "STAIR" || type === "STAIRS" || type === "ELEVATOR";
+  }, [selectedWp]);
+
+  // Other floor Stair/Elevator waypoints available for linking
+  const crossStairOptions = useMemo(() => {
+    if (!selectedWp || !isSelectedWpTransit) return [];
+    return waypoints.filter(
+      (w) =>
+        w.id !== selectedWp.id &&
+        (String(w.waypointType ?? "").toUpperCase() === "STAIR" ||
+          String(w.waypointType ?? "").toUpperCase() === "STAIRS" ||
+          String(w.waypointType ?? "").toUpperCase() === "ELEVATOR") &&
+        (w.floorNumber !== selectedWp.floorNumber || (w.mapId && w.mapId !== selectedWp.mapId))
+    );
+  }, [waypoints, selectedWp, isSelectedWpTransit]);
+
+  // Existing cross-floor connections for the selected waypoint
+  const existingCrossFloorConnections = useMemo(() => {
+    if (!selectedWp) return [];
+    return edges
+      .filter(
+        (e) => String(e.fromWaypointId) === String(selectedWp.id) || String(e.toWaypointId) === String(selectedWp.id)
+      )
+      .map((e) => {
+        const otherWpId =
+          String(e.fromWaypointId) === String(selectedWp.id) ? e.toWaypointId : e.fromWaypointId;
+        const otherWp = waypoints.find((w) => String(w.id) === String(otherWpId));
+        return {
+          edge: e,
+          otherWp,
+        };
+      })
+      .filter(
+        (item) =>
+          item.otherWp &&
+          (item.otherWp.floorNumber !== selectedWp.floorNumber ||
+            item.edge.edgeType === "STAIR" ||
+            item.edge.edgeType === "ELEVATOR")
+      );
+  }, [edges, waypoints, selectedWp]);
+
+  // Quick connect cross-floor handler (Method 1)
+  const handleConnectCrossFloor = async () => {
+    if (!selectedWp || !crossTargetWpId) return;
+    const targetWp = waypoints.find((w) => w.id === crossTargetWpId);
+    if (!targetWp) return;
+
+    setSaving(true);
+    try {
+      const isElevator =
+        selectedWp.waypointType === "ELEVATOR" || targetWp.waypointType === "ELEVATOR";
+      const newEdge = await createEdge({
+        museumId: museumId,
+        fromWaypointId: selectedWp.id,
+        toWaypointId: targetWp.id,
+        distance: crossDistance > 0 ? crossDistance : 3.0,
+        edgeType: isElevator ? "ELEVATOR" : "STAIR",
+        isBidirectional: true,
+      });
+      setEdges((prev) => [...prev, newEdge]);
+      setCrossTargetWpId("");
+    } catch (err) {
+      setError(getDisplayError(err, "Không thể kết nối liên tầng. Vui lòng thử lại."));
     } finally {
       setSaving(false);
     }
@@ -426,27 +504,32 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     if (mapForFloor) setSelectedMapId(mapForFloor.id);
   };
 
-  /** Phòng (DOOR / ROOM) vs hành lang — màu theo type, không theo roomId dính. */
   const getWpColor = (wp: Pick<WaypointDto, "waypointType" | "roomId"> | string) => {
     const type = typeof wp === "string" ? wp : wp.waypointType;
     const isRoomPoint = typeof wp === "string"
       ? type === "DOOR" || type === "ROOM"
       : isRoomWaypoint(wp);
 
-    if (isRoomPoint) return "#16A34A"; // xanh lá — điểm phòng
+    if (isRoomPoint) return "#16A34A"; // green
 
     switch (type) {
       case "STAIR":
-        return "#EA580C"; // cam — cầu thang
+      case "STAIRS":
+        return "#EA580C"; // orange - stairs
       case "ELEVATOR":
-        return "#7C3AED"; // tím — thang máy
+        return "#7C3AED"; // purple - elevator
       case "LOBBY":
-        return "#DB2777"; // hồng — sảnh
+        return "#DB2777"; // pink - lobby
       case "HALLWAY":
       default:
-        return "#2563EB"; // xanh dương — hành lang
+        return "#2563EB"; // blue - hallway
     }
   };
+
+  const startWpConnecting = useMemo(() => {
+    if (!edgeStartWpId) return null;
+    return waypoints.find((w) => w.id === edgeStartWpId) || null;
+  }, [waypoints, edgeStartWpId]);
 
   return (
     <div className="space-y-6">
@@ -472,7 +555,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
           <select
             value={selectedMapId}
             onChange={(e) => setSelectedMapId(Number(e.target.value))}
-            className="rounded-xl px-3 py-1.5 text-sm font-medium outline-none"
+            className="rounded-xl px-3 py-1.5 text-sm font-medium outline-none shadow-sm"
             style={{ background: "white", border: `1px solid ${T.border}`, color: T.text }}
           >
             {maps.map((m) => (
@@ -485,7 +568,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
       </div>
 
       {error && (
-        <div className="flex items-center justify-between rounded-xl px-4 py-2.5 text-sm" style={{ background: "rgba(220,38,38,0.1)", color: "#DC2626" }}>
+        <div className="flex items-center justify-between rounded-xl px-4 py-2.5 text-sm shadow-sm" style={{ background: "rgba(220,38,38,0.1)", color: "#DC2626" }}>
           <span>{error}</span>
           <button onClick={() => setError(null)}>
             <X className="h-4 w-4" />
@@ -498,7 +581,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
         {/* Left Toolbar & Sidebar */}
         <div className="space-y-6 lg:col-span-1">
           {/* Mode Selector */}
-          <div className="rounded-2xl p-4 space-y-3" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+          <div className="rounded-2xl p-4 space-y-3 shadow-sm" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
             <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>
               Editor tools
             </span>
@@ -506,7 +589,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
               <button
                 onClick={() => { setMode("select"); setEdgeStartWpId(null); }}
                 className={`flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2 text-sm font-medium transition ${
-                  mode === "select" ? "shadow-sm" : ""
+                  mode === "select" ? "shadow-sm font-bold" : ""
                 }`}
                 style={{
                   background: mode === "select" ? T.primaryDark : "rgba(200,155,69,0.06)",
@@ -519,7 +602,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
               <button
                 onClick={() => { setMode("add_waypoint"); setEdgeStartWpId(null); }}
                 className={`flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2 text-sm font-medium transition ${
-                  mode === "add_waypoint" ? "shadow-sm" : ""
+                  mode === "add_waypoint" ? "shadow-sm font-bold" : ""
                 }`}
                 style={{
                   background: mode === "add_waypoint" ? T.primaryDark : "rgba(200,155,69,0.06)",
@@ -532,7 +615,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
               <button
                 onClick={() => { setMode("connect_edge"); setEdgeStartWpId(null); }}
                 className={`flex w-full items-center gap-2.5 rounded-xl px-3.5 py-2 text-sm font-medium transition ${
-                  mode === "connect_edge" ? "shadow-sm" : ""
+                  mode === "connect_edge" ? "shadow-sm font-bold" : ""
                 }`}
                 style={{
                   background: mode === "connect_edge" ? T.primaryDark : "rgba(200,155,69,0.06)",
@@ -594,27 +677,41 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
             )}
 
             {mode === "connect_edge" && (
-              <div className="pt-3 border-t text-xs space-y-1.5" style={{ borderColor: T.border, color: T.muted }}>
-                {edgeStartWpId ? (
-                  <p className="font-semibold text-emerald-600">
-                    ✅ Selected waypoint #{edgeStartWpId}. Click a second waypoint to connect them.
-                  </p>
+              <div className="pt-3 border-t text-xs space-y-2" style={{ borderColor: T.border, color: T.muted }}>
+                {startWpConnecting ? (
+                  <div className="rounded-xl p-2.5 text-xs space-y-1" style={{ background: "rgba(16,185,129,0.1)", color: "#065F46" }}>
+                    <p className="font-bold flex items-center gap-1">
+                      ✅ Đã chọn điểm bắt đầu:
+                    </p>
+                    <p className="text-[11px]">
+                      {startWpConnecting.name || startWpConnecting.id} (Tầng {startWpConnecting.floorNumber})
+                    </p>
+                    <p className="text-[10px] text-emerald-700 italic">
+                      👉 Click điểm thứ 2 trên bản đồ này (hoặc đổi sang tầng khác để click nối).
+                    </p>
+                    <button
+                      onClick={() => setEdgeStartWpId(null)}
+                      className="mt-1 text-[10px] font-bold text-red-600 underline"
+                    >
+                      Hủy chọn điểm này
+                    </button>
+                  </div>
                 ) : (
-                  <p>👉 Click the first waypoint, then the second to connect them.</p>
+                  <p>👉 Click điểm waypoint thứ nhất, sau đó click điểm thứ hai để kết nối.</p>
                 )}
                 <p className="text-[11px] rounded-lg p-2 leading-relaxed" style={{ background: "rgba(200,155,69,0.08)", color: T.primaryDark }}>
-                  ⚠️ <strong>Quy tắc nối đường:</strong> Không nối trực tiếp 2 phòng với nhau. Phải nối phòng ra điểm hành lang (Hallway), sảnh (Lobby) hoặc cầu thang (Stairs) trước.
+                  ⚠️ <strong>Quy tắc nối:</strong> Không nối trực tiếp 2 phòng. Hãy nối qua điểm Hành lang (Hallway) hoặc Cầu thang (Stairs).
                 </p>
               </div>
             )}
           </div>
 
           {/* Test Route Section */}
-          <div className="rounded-2xl p-4 space-y-3" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
+          <div className="rounded-2xl p-4 space-y-3 shadow-sm" style={{ background: T.surface, border: `1px solid ${T.border}` }}>
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-amber-600" />
               <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>
-                Test path (A*)
+                Test path (A* Dijkstra)
               </span>
             </div>
 
@@ -627,9 +724,11 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                   className="w-full rounded-xl px-3 py-1.5 text-xs border mt-0.5"
                   style={{ background: "white", borderColor: T.border }}
                 >
-                  <option value="">-- Select room --</option>
-                  {roomsOnSelectedMap.map((r) => (
-                    <option key={r.id} value={r.id}>{r.roomName}</option>
+                  <option value="">-- Select room (all floors) --</option>
+                  {rooms.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.roomName} {r.floorNumber ? `(Tầng ${r.floorNumber})` : ""}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -642,9 +741,11 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                   className="w-full rounded-xl px-3 py-1.5 text-xs border mt-0.5"
                   style={{ background: "white", borderColor: T.border }}
                 >
-                  <option value="">-- Select room --</option>
-                  {roomsOnSelectedMap.map((r) => (
-                    <option key={r.id} value={r.id}>{r.roomName}</option>
+                  <option value="">-- Select destination --</option>
+                  {rooms.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.roomName} {r.floorNumber ? `(Tầng ${r.floorNumber})` : ""}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -652,7 +753,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
               <button
                 onClick={handleRunTest}
                 disabled={!testFromRoomId || !testToRoomId || testingPath}
-                className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-white transition disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-xl py-2 text-xs font-bold text-white transition disabled:opacity-50 shadow-sm"
                 style={{ background: T.primaryDark }}
               >
                 <Navigation className="h-3.5 w-3.5" />
@@ -712,34 +813,42 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
 
         {/* Center / Right Canvas Display */}
         <div className="space-y-4 lg:col-span-3">
-          {/* Color legend */}
-          <div className="flex flex-wrap items-center gap-3 text-[11px] font-medium" style={{ color: T.muted }}>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#16A34A" }} />
-              Room / Door
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#2563EB" }} />
-              Hallway
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#EA580C" }} />
-              Stairs
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#7C3AED" }} />
-              Elevator
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#DB2777" }} />
-              Lobby
-            </span>
+          {/* Color legend & Cross-floor connecting banner */}
+          <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] font-medium" style={{ color: T.muted }}>
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#16A34A" }} />
+                Room / Door
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#2563EB" }} />
+                Hallway
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#EA580C" }} />
+                Stairs (Cầu thang)
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#7C3AED" }} />
+                Elevator (Thang máy)
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: "#DB2777" }} />
+                Lobby
+              </span>
+            </div>
+
+            {startWpConnecting && (
+              <span className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold bg-emerald-100 text-emerald-800 animate-pulse">
+                🔗 Đang nối từ: {startWpConnecting.name || startWpConnecting.id} (Tầng {startWpConnecting.floorNumber})
+              </span>
+            )}
           </div>
 
           <div
             ref={containerRef}
             onClick={handleMapClick}
-            className={`relative min-h-[500px] w-full overflow-hidden rounded-2xl border shadow-inner ${
+            className={`relative min-h-[520px] w-full overflow-hidden rounded-2xl border shadow-inner ${
               mode === "add_waypoint" ? "cursor-crosshair" : "cursor-default"
             }`}
             style={{ background: "#F4F0E8", borderColor: T.border }}
@@ -752,7 +861,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                 onError={() => setFailedMapId(selectedMapId)}
               />
             ) : (
-              <div className="flex h-[500px] flex-col items-center justify-center gap-2 p-6 text-center text-sm text-slate-500">
+              <div className="flex h-[520px] flex-col items-center justify-center gap-2 p-6 text-center text-sm text-slate-500">
                 <MapPin className="h-8 w-8 text-amber-600/50" />
                 <p className="font-semibold text-slate-700">{currentMap?.mapName || "Floor plan map"}</p>
                 <p className="text-xs text-slate-400">
@@ -781,7 +890,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                     y2={`${w2.locationY}%`}
                     stroke={onPath && testResult ? "#CBD5E1" : "#94A3B8"}
                     strokeWidth="3"
-                    strokeDasharray={edge.edgeType === "STAIR" ? "6,6" : "none"}
+                    strokeDasharray={edge.edgeType === "STAIR" || edge.edgeType === "ELEVATOR" ? "6,6" : "none"}
                     opacity={testResult && !onPath ? 0.35 : 1}
                   />
                 );
@@ -827,6 +936,10 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                   String(wp.id);
               const roomLabel = getRoomLabel(wp);
               const isRoomPoint = isRoomWaypoint(wp);
+              const isTransitPoint =
+                wp.waypointType === "STAIR" ||
+                wp.waypointType === "STAIRS" ||
+                wp.waypointType === "ELEVATOR";
 
               return (
                 <div
@@ -835,7 +948,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                   style={{
                     left: `${wp.locationX}%`,
                     top: `${wp.locationY}%`,
-                    zIndex: isRoomPoint || onPath ? 25 : 10,
+                    zIndex: isRoomPoint || isTransitPoint || onPath ? 25 : 10,
                   }}
                   className={`absolute -translate-x-1/2 -translate-y-1/2 flex cursor-pointer flex-col items-center ${
                     testResult && !onPath ? "opacity-40" : ""
@@ -855,6 +968,11 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                       {roomLabel}
                     </span>
                   )}
+                  {isTransitPoint && (
+                    <span className="mb-1 max-w-[110px] truncate rounded-md bg-orange-950/80 px-1 py-0.2 text-[9px] font-semibold text-white shadow-sm ring-1 ring-orange-400">
+                      {wp.waypointType === "ELEVATOR" ? "🛗 Thang máy" : "🪜 Cầu thang"}
+                    </span>
+                  )}
                   <span
                     style={{ backgroundColor: getWpColor(wp) }}
                     className={`flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-bold text-white shadow-md transition transform hover:scale-125 ${
@@ -871,7 +989,9 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                         ? "B"
                         : isRoomPoint
                           ? "P"
-                          : (wp.waypointType || "H")[0]}
+                          : isTransitPoint
+                            ? "S"
+                            : (wp.waypointType || "H")[0]}
                   </span>
                 </div>
               );
@@ -918,37 +1038,141 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
             })}
           </div>
 
-          {/* Selected Waypoint Details Card */}
-          {selectedWpId && (
-            <div className="flex items-center justify-between rounded-xl p-3 border text-xs" style={{ background: "white", borderColor: T.border }}>
-              <div className="flex items-center gap-3">
-                <div
-                  className="h-3 w-3 rounded-full"
-                  style={{
-                    backgroundColor: getWpColor(
-                      waypoints.find((w) => w.id === selectedWpId) || "HALLWAY",
-                    ),
-                  }}
-                />
-                <div>
-                  <span className="font-bold">Waypoint #{selectedWpId}</span>
-                  <span className="ml-2 text-slate-500">
-                    ({waypoints.find((w) => w.id === selectedWpId)?.waypointType}
-                    {waypoints.find((w) => w.id === selectedWpId)?.roomId
-                      ? ` · Room #${waypoints.find((w) => w.id === selectedWpId)?.roomId}`
-                      : ""}
-                    ) - X: {waypoints.find((w) => w.id === selectedWpId)?.locationX}%, Y:{" "}
-                    {waypoints.find((w) => w.id === selectedWpId)?.locationY}%
-                  </span>
+          {/* Selected Waypoint Details & Cross-Floor Quick Connect Panel */}
+          {selectedWp && (
+            <div className="rounded-2xl p-4 border space-y-3 shadow-sm" style={{ background: "white", borderColor: T.border }}>
+              {/* Basic Info Bar */}
+              <div className="flex flex-wrap items-center justify-between gap-3 text-xs border-b pb-3" style={{ borderColor: T.border }}>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="h-3.5 w-3.5 rounded-full shadow-sm"
+                    style={{ backgroundColor: getWpColor(selectedWp) }}
+                  />
+                  <div>
+                    <span className="font-bold text-sm text-slate-800">
+                      Waypoint #{selectedWp.id}
+                    </span>
+                    <span className="ml-2.5 rounded-md px-2 py-0.5 text-[11px] font-semibold bg-slate-100 text-slate-700">
+                      {selectedWp.waypointType} (Tầng {selectedWp.floorNumber})
+                    </span>
+                    {selectedWp.roomId ? (
+                      <span className="ml-2 font-medium text-emerald-700">
+                        · Room #{selectedWp.roomId} ({roomById.get(selectedWp.roomId)?.roomName})
+                      </span>
+                    ) : null}
+                    <span className="ml-2 text-slate-400">
+                      · X: {selectedWp.locationX}%, Y: {selectedWp.locationY}%
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleDeleteWp(selectedWp.id)}
+                    className="flex items-center gap-1 text-red-600 font-semibold px-2.5 py-1 rounded-lg hover:bg-red-50 transition"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Xóa điểm này
+                  </button>
                 </div>
               </div>
 
-              <button
-                onClick={() => handleDeleteWp(selectedWpId)}
-                className="flex items-center gap-1 text-red-600 font-semibold hover:underline"
-              >
-                <Trash2 className="h-3.5 w-3.5" /> Delete waypoint
-              </button>
+              {/* Special Transit / Cross-Floor Connection Section */}
+              {isSelectedWpTransit && (
+                <div className="rounded-xl p-3.5 space-y-3 text-xs" style={{ background: "rgba(234,88,12,0.06)", border: "1px solid rgba(234,88,12,0.2)" }}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 font-bold text-orange-900">
+                      <ArrowUpDown className="h-4 w-4 text-orange-600" />
+                      <span>Kết nối cầu thang / thang máy liên tầng (Cross-floor connection)</span>
+                    </div>
+                    <span className="text-[11px] text-orange-700 font-medium">
+                      Điểm hiện tại: <strong>Tầng {selectedWp.floorNumber}</strong>
+                    </span>
+                  </div>
+
+                  {/* Connect Dropdown & Action Form */}
+                  <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                    <label className="text-xs font-semibold text-slate-700 whitespace-nowrap">
+                      Nối sang tầng khác:
+                    </label>
+                    <select
+                      value={crossTargetWpId}
+                      onChange={(e) => setCrossTargetWpId(e.target.value)}
+                      className="flex-1 min-w-[200px] rounded-xl px-3 py-1.5 text-xs font-medium border bg-white outline-none shadow-sm"
+                      style={{ borderColor: T.border }}
+                    >
+                      <option value="">-- Chọn điểm Cầu thang / Thang máy ở tầng khác --</option>
+                      {crossStairOptions.map((w) => (
+                        <option key={w.id} value={w.id}>
+                          [Tầng {w.floorNumber}] {w.name || w.code || `Waypoint #${w.id}`} ({w.waypointType})
+                        </option>
+                      ))}
+                    </select>
+
+                    <div className="flex items-center gap-1">
+                      <span className="text-slate-500 text-[11px]">Khoảng cách:</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="50"
+                        step="0.5"
+                        value={crossDistance}
+                        onChange={(e) => setCrossDistance(Number(e.target.value))}
+                        className="w-16 rounded-xl px-2 py-1 text-xs border text-center font-medium bg-white"
+                        style={{ borderColor: T.border }}
+                        title="Độ dài / chi phí leo cầu thang (mét)"
+                      />
+                      <span className="text-slate-500 text-[11px]">m</span>
+                    </div>
+
+                    <button
+                      onClick={handleConnectCrossFloor}
+                      disabled={!crossTargetWpId || saving}
+                      className="flex items-center gap-1.5 rounded-xl px-4 py-1.5 text-xs font-bold text-white transition disabled:opacity-50 shadow-sm"
+                      style={{ background: "#EA580C" }}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      {saving ? "Đang nối..." : "Nối liên tầng"}
+                    </button>
+                  </div>
+
+                  {crossStairOptions.length === 0 && (
+                    <p className="text-[11px] text-orange-800/80 italic">
+                      💡 Chưa có điểm Cầu thang (STAIR) hoặc Thang máy (ELEVATOR) nào ở các tầng khác. Hãy tạo điểm Cầu thang ở các tầng còn lại để kết nối.
+                    </p>
+                  )}
+
+                  {/* Existing Connected Stairs List */}
+                  {existingCrossFloorConnections.length > 0 && (
+                    <div className="pt-2 border-t border-orange-200/60 space-y-1.5">
+                      <span className="text-[11px] font-bold text-slate-700">
+                        📋 Các tầng đang thông với điểm này:
+                      </span>
+                      <div className="flex flex-wrap gap-2 pt-0.5">
+                        {existingCrossFloorConnections.map(({ edge, otherWp }) => (
+                          <div
+                            key={edge.id}
+                            className="flex items-center gap-2 rounded-lg bg-white px-2.5 py-1 text-xs border border-orange-200 shadow-sm"
+                          >
+                            <span className="font-semibold text-emerald-800">
+                              ➔ Tầng {otherWp?.floorNumber ?? "?"} ({otherWp?.name || otherWp?.code || otherWp?.id})
+                            </span>
+                            <span className="text-[10px] text-slate-500">
+                              · {edge.edgeType} ({edge.distance}m)
+                            </span>
+                            <button
+                              onClick={() => handleDeleteEdge(edge.id)}
+                              className="text-red-500 hover:text-red-700 transition p-0.5"
+                              title="Gỡ cạnh nối liên tầng này"
+                            >
+                              <Unlink className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

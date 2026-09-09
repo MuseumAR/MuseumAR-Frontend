@@ -39,6 +39,7 @@ export function AuthPageShell({
     >
       <Link
         href={backHref}
+        prefetch={false}
         className="group absolute left-6 top-5 z-50 flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium transition-all duration-200"
         style={{
           background: "rgba(255,248,231,0.80)",
