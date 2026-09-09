@@ -159,7 +159,7 @@ export function CreateExhibitForm({
 
   return (
     <div className="px-8 pb-10">
-      <Link href="/content-manager/artifact" className="mb-6 inline-flex items-center gap-2 text-sm" style={{ color: T.muted }}>
+      <Link href="/content-manager/artifact" prefetch={false} className="mb-6 inline-flex items-center gap-2 text-sm" style={{ color: T.muted }}>
         <span>←</span> Back to artifacts
       </Link>
       <h1 className="mb-8 text-3xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>

@@ -86,6 +86,7 @@ export function ContentVersionsPanel({
             Create a version, then open{" "}
             <Link
               href="/content-manager/offline-packages"
+              prefetch={false}
               className="font-medium underline-offset-2 hover:underline"
               style={{ color: T.primaryDark }}
             >

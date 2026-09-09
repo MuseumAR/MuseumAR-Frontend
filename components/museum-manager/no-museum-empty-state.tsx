@@ -25,6 +25,7 @@ export function NoMuseumEmptyState({
       </p>
       <Link
         href="/museum-manager/museum-profile/create"
+        prefetch={false}
         className="mt-6 inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium transition-opacity hover:opacity-90"
         style={{
           background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,

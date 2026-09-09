@@ -228,6 +228,7 @@ export function ExhibitionDetail({
     <div className="px-8 pb-10">
       <Link
         href="/content-manager/exhibition"
+        prefetch={false}
         className="mb-6 inline-flex items-center gap-2 text-sm"
         style={{ color: T.muted }}
       >

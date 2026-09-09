@@ -31,7 +31,7 @@ export function Sidebar({ role }: { role: DashboardRole }) {
       }}
     >
       <div className="px-6 py-7" style={{ borderBottom: `1px solid ${T.border}` }}>
-        <Link href="/" className="flex items-center gap-3">
+        <Link href="/" prefetch={false} className="flex items-center gap-3">
           <div
             className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold"
             style={{
@@ -70,6 +70,7 @@ export function Sidebar({ role }: { role: DashboardRole }) {
             <Link
               key={item.href}
               href={item.href}
+              prefetch={false}
               className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all duration-200"
               style={{
                 background: active ? "rgba(200,155,69,0.18)" : "transparent",
@@ -130,6 +131,7 @@ export function Sidebar({ role }: { role: DashboardRole }) {
           <div className="mt-3 flex gap-2">
             <Link
               href="/"
+              prefetch={false}
               className="flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs transition-colors"
               style={{
                 background: "rgba(200,155,69,0.08)",

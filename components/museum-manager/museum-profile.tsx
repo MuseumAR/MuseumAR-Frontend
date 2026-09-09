@@ -83,6 +83,7 @@ export function MuseumProfileView({ profile }: { profile: MuseumProfile | null }
         <div className="mt-6 flex justify-end gap-3">
           <Link
             href="/museum-manager/museum-profile/edit"
+            prefetch={false}
             className="rounded-xl border px-5 py-1.5 text-sm"
             style={{ borderColor: "rgba(79,125,74,0.35)", color: T.success }}
           >

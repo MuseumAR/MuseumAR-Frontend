@@ -61,6 +61,7 @@ export function AppStatusPage({
           ) : (
             <Link
               href={primaryHref ?? "/"}
+              prefetch={false}
               className="inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm font-medium"
               style={{
                 background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
@@ -73,6 +74,7 @@ export function AppStatusPage({
           {secondaryHref && secondaryLabel ? (
             <Link
               href={secondaryHref}
+              prefetch={false}
               className="inline-flex items-center justify-center rounded-full px-5 py-2.5 text-sm"
               style={{ color: C.muted }}
             >

@@ -244,6 +244,7 @@ export function ExhibitTable({
                         <div className="flex items-center gap-1">
                           <Link
                             href={`${basePath}/artifact/${row.exhibitCode}`}
+                            prefetch={false}
                             className="rounded-lg p-2 transition-colors"
                             style={{ color: T.muted }}
                             aria-label="View"
@@ -253,6 +254,7 @@ export function ExhibitTable({
                           {canEdit && (
                             <Link
                               href={`${basePath}/artifact/${row.exhibitCode}/edit`}
+                              prefetch={false}
                               className="rounded-lg p-2 transition-colors"
                               style={{ color: T.muted }}
                               aria-label="Edit"

@@ -237,6 +237,7 @@ export function ExhibitionPanel({
             <Link
               key={item.id}
               href={`/content-manager/exhibition/${item.id}`}
+              prefetch={false}
               className="block rounded-3xl p-6 transition-colors hover:opacity-95"
               style={{ background: T.surface, border: `1px solid ${T.border}` }}
             >

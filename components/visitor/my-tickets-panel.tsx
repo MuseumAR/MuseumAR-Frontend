@@ -72,6 +72,7 @@ export function MyTicketsPanel() {
         <header className="mb-10">
           <Link
             href="/tickets"
+            prefetch={false}
             className="mb-4 inline-flex items-center gap-1.5 text-sm transition-opacity hover:opacity-80"
             style={{ color: C.muted }}
           >
@@ -146,6 +147,7 @@ export function MyTicketsPanel() {
             </p>
             <Link
               href="/tickets"
+              prefetch={false}
               className="mt-5 inline-flex rounded-full px-5 py-2 text-sm font-medium transition-opacity hover:opacity-90"
               style={{
                 background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
@@ -224,6 +226,7 @@ export function MyTicketsPanel() {
                       <td className="px-5 py-4 text-right">
                         <Link
                           href={`/tickets/mine/${ticket.id}`}
+                          prefetch={false}
                           className="text-sm font-medium transition-opacity hover:opacity-80"
                           style={{ color: C.secondary }}
                         >

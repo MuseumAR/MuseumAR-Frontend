@@ -91,6 +91,7 @@ export function TopBar() {
           >
             <Link
               href="/change-password"
+              prefetch={false}
               className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors"
               style={{ color: T.text }}
             >
