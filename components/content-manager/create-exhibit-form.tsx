@@ -7,11 +7,12 @@ import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import {
   getDisplayError,
   getFirstValidationError,
+  validateArModelFile,
   validateCreateArtifact,
 } from "@/lib/validation";
 import { createExhibit } from "@/services/content-manager/exhibit.service";
 import {
-  uploadArAsset,
+  uploadArModel3d,
   uploadExhibitAudio,
   uploadExhibitImage,
 } from "@/services/content-manager/content-api.service";
@@ -138,14 +139,24 @@ export function CreateExhibitForm({
       }
 
       const displayTitle = titleVi.trim() || titleEn.trim() || "Artifact";
-      if (imageFile) await uploadExhibitImage(exhibitId, imageFile, displayTitle);
-      if (audioFileVi) await uploadExhibitAudio(exhibitId, "vi", audioFileVi);
-      if (audioFileEn) await uploadExhibitAudio(exhibitId, "en", audioFileEn);
-      if (arFile) {
-        await uploadArAsset(exhibitId, "Model3D", arFile);
+      const uploadErrors: string[] = [];
+      async function tryUpload(label: string, fn: () => Promise<unknown>) {
+        try {
+          await fn();
+        } catch (err) {
+          uploadErrors.push(`${label}: ${getDisplayError(err, "failed")}`);
+        }
       }
+
+      if (arFile) await tryUpload("3D model", () => uploadArModel3d(exhibitId, arFile));
+      if (imageFile) await tryUpload("Image", () => uploadExhibitImage(exhibitId, imageFile, displayTitle));
+      if (audioFileVi) await tryUpload("Vietnamese audio", () => uploadExhibitAudio(exhibitId, "vi", audioFileVi));
+      if (audioFileEn) await tryUpload("English audio", () => uploadExhibitAudio(exhibitId, "en", audioFileEn));
       if (selectedTagIds.length > 0) {
-        await syncExhibitTags(exhibitId, selectedTagIds);
+        await tryUpload("Tags", () => syncExhibitTags(exhibitId, selectedTagIds));
+      }
+      if (uploadErrors.length > 0) {
+        throw new Error(`Artifact created, but some files failed: ${uploadErrors.join(" ")}`);
       }
 
       router.push("/content-manager/artifact");
@@ -187,7 +198,15 @@ export function CreateExhibitForm({
             <UploadBox label={arFile?.name ?? "3D Model (.glb/.gltf)"} onClick={() => arRef.current?.click()} />
             <input ref={arRef} type="file" accept=".glb,.gltf" className="hidden" onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) setArFile(file);
+              if (!file) return;
+              const validation = validateArModelFile(file);
+              if (!validation.valid) {
+                setError(getFirstValidationError(validation));
+                e.target.value = "";
+                return;
+              }
+              setError(null);
+              setArFile(file);
             }} />
             <UploadBox label={audioFileVi?.name ?? "Vietnamese audio"} onClick={() => audioRefVi.current?.click()} />
             <input ref={audioRefVi} type="file" accept="audio/*" className="hidden" onChange={(e) => {

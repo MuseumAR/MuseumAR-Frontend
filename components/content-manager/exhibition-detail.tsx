@@ -13,8 +13,9 @@ import {
   uploadExhibitionImage,
 } from "@/services/content-manager/exhibition.service";
 import {
-  getExhibits,
   getExhibitsByExhibition,
+  getAllExhibitListItems,
+  exhibitListItemToStub,
   assignExhibitsToExhibition,
   removeExhibitFromExhibition,
 } from "@/services/content-manager/content-api.service";
@@ -81,7 +82,7 @@ export function ExhibitionDetail({
     try {
       const [linked, all] = await Promise.all([
         getExhibitsByExhibition(exhibition.id).catch(() => []),
-        getExhibits().catch(() => []),
+        getAllExhibitListItems().then((items) => items.map(exhibitListItemToStub)).catch(() => []),
       ]);
       setExhibitsInExhibition(linked);
       setAllMuseumExhibits(all);
@@ -96,7 +97,9 @@ export function ExhibitionDetail({
     let cancelled = false;
     Promise.all([
       getExhibitsByExhibition(exhibition.id).catch(() => [] as ExhibitDto[]),
-      getExhibits().catch(() => [] as ExhibitDto[]),
+      getAllExhibitListItems()
+        .then((items) => items.map(exhibitListItemToStub))
+        .catch(() => [] as ExhibitDto[]),
     ]).then(([linked, all]) => {
       if (cancelled) return;
       setExhibitsInExhibition(linked);

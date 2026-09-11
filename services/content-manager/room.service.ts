@@ -4,23 +4,34 @@ import {
   apiPostAuth,
   apiPutAuth,
 } from "@/services/api-client";
-import { normalizeRoomDto } from "@/lib/normalize-dto";
+import { normalizeRoomDto, unwrapArray } from "@/lib/normalize-dto";
 import type { CreateRoomDto, RoomDto, UpdateRoomDto } from "@/types/api";
 
-export async function getRoomList(museumId: number): Promise<RoomDto[]> {
-  const res = await apiGet<unknown[]>(`/api/Content/rooms/museum/${museumId}`);
-  if (Array.isArray(res)) {
-    return res.map(normalizeRoomDto);
-  }
-  return [];
+export async function getRoomList(
+  museumId: number,
+  opts?: { mapId?: number },
+): Promise<RoomDto[]> {
+  const params = new URLSearchParams();
+  if (opts?.mapId) params.set("mapId", String(opts.mapId));
+  const qs = params.toString();
+  const res = await apiGet<unknown>(
+    `/api/Content/rooms/museum/${museumId}${qs ? `?${qs}` : ""}`,
+  );
+  return unwrapArray(res).map(normalizeRoomDto);
+}
+
+export function getRoomById(id: number) {
+  return apiGet<unknown>(`/api/Content/rooms/${id}`).then(normalizeRoomDto);
 }
 
 export function createRoom(payload: CreateRoomDto) {
-  return apiPostAuth<RoomDto>("/api/Content/rooms", payload);
+  return apiPostAuth<unknown>("/api/Content/rooms", payload).then(normalizeRoomDto);
 }
 
 export function updateRoom(id: number, payload: UpdateRoomDto) {
-  return apiPutAuth<RoomDto>(`/api/Content/rooms/${id}`, payload);
+  return apiPutAuth<unknown>(`/api/Content/rooms/${id}`, payload).then(
+    normalizeRoomDto,
+  );
 }
 
 export function deleteRoom(id: number) {

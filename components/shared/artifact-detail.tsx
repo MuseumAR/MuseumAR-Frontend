@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { ARTIFACT_LABELS } from "@/lib/field-labels";
-import { getDisplayError } from "@/lib/validation";
+import { getDisplayError, formatFileSize } from "@/lib/validation";
 import { labelStatus } from "@/lib/status-labels";
 import type { ActiveInactive, Artifact } from "@/types";
 import type { ExhibitArassetDto, TagDto } from "@/types/api";
@@ -24,6 +24,7 @@ interface Props {
     audioUrl?: string | null;
   }>;
   tags?: TagDto[];
+  initialArAssets?: ExhibitArassetDto[] | null;
 }
 
 export function ArtifactDetail({
@@ -32,23 +33,28 @@ export function ArtifactDetail({
   variant = "museum-manager",
   translations = [],
   tags = [],
+  initialArAssets,
 }: Props) {
   const router = useRouter();
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [arAssets, setArAssets] = useState<ExhibitArassetDto[]>([]);
+  const [arAssets, setArAssets] = useState<ExhibitArassetDto[]>(initialArAssets ?? []);
   const [activeTab, setActiveTab] = useState<"vi" | "en">("vi");
 
   const exhibitId =
     artifact.exhibitId ?? Number(artifact.id.replace(/^EX-/i, ""));
 
   useEffect(() => {
+    if (initialArAssets != null) {
+      setArAssets(initialArAssets);
+      return;
+    }
     if (exhibitId && !Number.isNaN(exhibitId) && exhibitId > 0) {
       getArAssets(exhibitId)
         .then((assets: ExhibitArassetDto[]) => setArAssets(assets || []))
         .catch(() => setArAssets([]));
     }
-  }, [exhibitId]);
+  }, [exhibitId, initialArAssets]);
 
   async function handleDelete() {
     if (!exhibitId || Number.isNaN(exhibitId)) {
@@ -219,8 +225,13 @@ export function ArtifactDetail({
                             </a>
                           ) : (
                             <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-emerald-700 hover:underline my-1.5">
-                              📎 Download file ({typeName})
+                              📎 {asset.fileName || `Download file (${typeName})`}
                             </a>
+                          )}
+                          {asset.fileSizeBytes != null && asset.fileSizeBytes > 0 && (
+                            <p className="text-[10px]" style={{ color: T.mutedLight }}>
+                              {formatFileSize(asset.fileSizeBytes)}
+                            </p>
                           )}
                           {asset.description && (
                             <p className="text-[10px] max-w-[160px] truncate" style={{ color: T.muted }}>{asset.description}</p>
@@ -315,7 +326,7 @@ export function ArtifactDetail({
               {isDeleting ? "Deleting…" : "Delete"}
             </button>
             <Link
-              href={`/content-manager/artifact/${artifact.id}/edit`}
+              href={`/content-manager/artifact/${artifact.exhibitId ?? artifact.id}/edit`}
               prefetch={false}
               className="rounded-xl border px-5 py-1.5 text-sm"
               style={{ borderColor: "rgba(79,125,74,0.35)", color: T.success }}

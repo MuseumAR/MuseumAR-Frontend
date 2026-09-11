@@ -1,11 +1,13 @@
-import type { ExhibitDto, CreateExhibitDto } from "@/types/api";
+import type { ExhibitDto, ExhibitListItemDto, CreateExhibitDto } from "@/types/api";
 import type { Artifact } from "@/types";
+import { exhibitHasArModel } from "@/lib/normalize-dto";
 import { safeFetch } from "@/lib/fetch-safe";
 import {
   createExhibit,
   deleteExhibit,
   getExhibitById as fetchExhibitById,
   getExhibits,
+  getExhibitsPaged,
   publishExhibit,
   unpublishExhibit,
   updateExhibit,
@@ -58,7 +60,7 @@ function mapExhibitToArtifact(exhibit: ExhibitDto): Artifact {
     qrLinked: exhibit.qrCodeData ? "Active" : "Inactive",
     qrCodeData: defaultQrData,
     qrCodeImageUrl: defaultQrImage,
-    arModelStatus: exhibit.arOverlayUrl ? "Active" : "Inactive",
+    arModelStatus: exhibitHasArModel(exhibit) ? "Active" : "Inactive",
     audio: translation?.audioUrl ? "Active" : "Inactive",
     audioUrl: translation?.audioUrl ?? null,
     image: exhibit.thumbnailUrl ?? null,
@@ -66,40 +68,89 @@ function mapExhibitToArtifact(exhibit: ExhibitDto): Artifact {
   };
 }
 
-export async function getArtifactById(id: string): Promise<Artifact | null> {
-  const cleanIdStr = id.replace(/^EX-/i, "").trim();
-  const numericId = Number(cleanIdStr);
+function parseNumericExhibitId(id: string): number | null {
+  const raw = decodeURIComponent(id).trim();
+  if (/^\d+$/.test(raw)) return Number(raw);
+  const stripped = raw.replace(/^EX-/i, "");
+  if (/^\d+$/.test(stripped)) return Number(stripped);
+  return null;
+}
 
-  if (!Number.isNaN(numericId) && numericId > 0) {
+function slugMatches(
+  item: { id: number; exhibitCode?: string | null },
+  slug: string,
+): boolean {
+  const s = slug.toLowerCase();
+  const code = (item.exhibitCode || "").toLowerCase();
+  return (
+    code === s ||
+    String(item.id) === s ||
+    `ex-${item.id}` === s ||
+    code === `ex-${s}`
+  );
+}
+
+function mapListItemToArtifact(item: ExhibitListItemDto): Artifact {
+  const code = item.exhibitCode ?? `EX-${item.id}`;
+  return {
+    id: code,
+    exhibitId: item.id,
+    name: item.title ?? `Exhibit ${item.id}`,
+    arModel: "—",
+    arOverlayUrl: null,
+    arMarkerUrl: null,
+    status: mapExhibitStatus(item.status),
+    category: "—",
+    era: "—",
+    location: item.roomName
+      ? [item.floorNumber != null ? `Floor ${item.floorNumber}` : null, item.roomName]
+          .filter(Boolean)
+          .join(" · ")
+      : "Not assigned",
+    qrLinked: item.hasQr ? "Active" : "Inactive",
+    arModelStatus: item.hasArModel ? "Active" : "Inactive",
+    audio: item.hasAudio ? "Active" : "Inactive",
+    image: item.thumbnailUrl ?? null,
+    description: "",
+  };
+}
+
+export async function getArtifactById(id: string): Promise<Artifact | null> {
+  const slug = decodeURIComponent(id).trim();
+  if (!slug) return null;
+
+  async function loadByNumericId(numericId: number): Promise<Artifact | null> {
     try {
       const exhibit = await fetchExhibitById(numericId);
-      if (exhibit && (String(exhibit.id) === cleanIdStr || exhibit.exhibitCode === id)) {
-        return mapExhibitToArtifact(exhibit);
-      }
+      return exhibit?.id ? mapExhibitToArtifact(exhibit) : null;
     } catch {
-      // Fallthrough to searching all exhibits list if ID fetch fails
+      return null;
     }
   }
 
-  return safeFetch(async () => {
-    const exhibits = await getExhibits();
-    const targetIdLower = id.toLowerCase();
-    const targetCleanLower = cleanIdStr.toLowerCase();
+  const numericId = parseNumericExhibitId(slug);
+  if (numericId != null) {
+    const byId = await loadByNumericId(numericId);
+    if (byId) return byId;
+  }
 
-    const exhibit = exhibits.find((item) => {
-      const itemCodeLower = (item.exhibitCode || "").toLowerCase();
-      const defaultCodeLower = `ex-${item.id}`.toLowerCase();
-
-      return (
-        itemCodeLower === targetIdLower ||
-        defaultCodeLower === targetIdLower ||
-        itemCodeLower === `ex-${targetCleanLower}` ||
-        String(item.id) === targetCleanLower ||
-        String(item.id) === targetIdLower
-      );
+  try {
+    const page = await getExhibitsPaged({
+      page: 1,
+      pageSize: 20,
+      search: slug,
+      includeUnpublished: true,
     });
-    return exhibit ? mapExhibitToArtifact(exhibit) : null;
-  }, null);
+    const match =
+      page.items.find((item) => slugMatches(item, slug)) ??
+      page.items.find((item) =>
+        (item.exhibitCode || "").toLowerCase().includes(slug.toLowerCase()),
+      );
+    if (!match) return null;
+    return (await loadByNumericId(match.id)) ?? mapListItemToArtifact(match);
+  } catch {
+    return null;
+  }
 }
 
 export async function getArtifacts(): Promise<Artifact[]> {

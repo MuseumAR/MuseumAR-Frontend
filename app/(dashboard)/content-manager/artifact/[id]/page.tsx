@@ -25,6 +25,7 @@ export default async function ArtifactDetailPage({
       variant="content-manager"
       translations={exhibit?.translations ?? []}
       tags={exhibitTags}
+      initialArAssets={exhibit?.arAssets}
     />
   );
 }
