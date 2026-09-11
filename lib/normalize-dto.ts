@@ -34,6 +34,25 @@ function pickNum(
   return Number.isFinite(n) ? n : undefined;
 }
 
+function pickBool(raw: Record<string, unknown>, ...keys: string[]): boolean {
+  const v = pickField<unknown>(raw, ...keys);
+  if (typeof v === "boolean") return v;
+  if (typeof v === "number") return v !== 0;
+  if (typeof v === "string") return v.toLowerCase() === "true" || v === "1";
+  return false;
+}
+
+export function unwrapArray(raw: unknown): unknown[] {
+  if (Array.isArray(raw)) return raw;
+  const o = asRecord(raw);
+  const nested = pickField<unknown>(o, "$values", "items", "Items", "$Values");
+  return Array.isArray(nested) ? nested : [];
+}
+
+function isModel3dAsset(assetType?: string | null): boolean {
+  return (assetType ?? "").replace(/\s/g, "").toLowerCase() === "model3d";
+}
+
 function firstNonEmpty(
   ...vals: Array<string | null | undefined>
 ): string | null {
@@ -43,12 +62,77 @@ function firstNonEmpty(
   return null;
 }
 
+export function normalizeExhibitArassetDto(
+  raw: unknown,
+): import("@/types/api").ExhibitArassetDto {
+  const o = asRecord(raw);
+  return {
+    id: Number(pickField(o, "id", "Id") ?? 0),
+    exhibitId: Number(pickField(o, "exhibitId", "ExhibitId") ?? 0),
+    assetUrl: pickStr(o, "assetUrl", "AssetUrl") ?? null,
+    assetType: pickStr(o, "assetType", "AssetType") ?? null,
+    description: pickStr(o, "description", "Description") ?? null,
+    fileSizeBytes: pickNum(o, "fileSizeBytes", "FileSizeBytes") ?? null,
+    fileName: pickStr(o, "fileName", "FileName") ?? null,
+    createdAt: pickStr(o, "createdAt", "CreatedAt") ?? "",
+  };
+}
+
+export function normalizeExhibitListItemDto(
+  raw: unknown,
+): import("@/types/api").ExhibitListItemDto {
+  const o = asRecord(raw);
+  return {
+    id: Number(pickField(o, "id", "Id") ?? 0),
+    exhibitCode: pickStr(o, "exhibitCode", "ExhibitCode") ?? null,
+    status: String(pickField(o, "status", "Status") ?? ""),
+    title: pickStr(o, "title", "Title") ?? null,
+    thumbnailUrl: pickStr(o, "thumbnailUrl", "ThumbnailUrl") ?? null,
+    hasArModel: pickBool(o, "hasArModel", "HasArModel"),
+    arModelCount: pickNum(o, "arModelCount", "ArModelCount") ?? 0,
+    hasAudio: pickBool(o, "hasAudio", "HasAudio"),
+    hasQr: pickBool(o, "hasQr", "HasQr"),
+    roomId: pickNum(o, "roomId", "RoomId") ?? null,
+    roomName: pickStr(o, "roomName", "RoomName") ?? null,
+    mapId: pickNum(o, "mapId", "MapId") ?? null,
+    floorNumber: pickNum(o, "floorNumber", "FloorNumber") ?? null,
+  };
+}
+
+export function normalizePagedResult<T>(
+  raw: unknown,
+  mapItem: (item: unknown) => T,
+): import("@/types/api").PagedResultDto<T> {
+  const o = asRecord(raw);
+  const items = unwrapArray(pickField(o, "items", "Items") ?? raw).map(mapItem);
+  return {
+    totalItems: pickNum(o, "totalItems", "TotalItems") ?? items.length,
+    page: pickNum(o, "page", "Page") ?? 1,
+    pageSize: pickNum(o, "pageSize", "PageSize") ?? items.length,
+    totalPages: pickNum(o, "totalPages", "TotalPages") ?? 1,
+    items,
+  };
+}
+
+export function exhibitHasArModel(
+  exhibit: Pick<import("@/types/api").ExhibitDto, "hasArModel" | "arAssets">,
+): boolean {
+  if (exhibit.hasArModel) return true;
+  return (exhibit.arAssets ?? []).some((asset) => isModel3dAsset(asset.assetType));
+}
+
 /** Normalize exhibit payload — BE acronyms often serialize as qRCodeData / aROverlayUrl. */
 export function normalizeExhibitDto(raw: unknown): import("@/types/api").ExhibitDto {
   const o = asRecord(raw);
   const translationsRaw = pickField<unknown[]>(o, "translations", "Translations") ?? [];
   const metaRaw = pickField<unknown>(o, "exhibitMetadata", "ExhibitMetadata");
   const meta = asRecord(metaRaw);
+  const arAssets = unwrapArray(
+    pickField(o, "arAssets", "ArAssets") ?? [],
+  ).map(normalizeExhibitArassetDto);
+  const hasArModel =
+    pickBool(o, "hasArModel", "HasArModel") ||
+    arAssets.some((asset) => isModel3dAsset(asset.assetType));
 
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
@@ -85,6 +169,8 @@ export function normalizeExhibitDto(raw: unknown): import("@/types/api").Exhibit
     roomId: pickNum(o, "roomId", "RoomId") ?? null,
     roomCode: pickStr(o, "roomCode", "RoomCode") ?? null,
     roomName: pickStr(o, "roomName", "RoomName") ?? null,
+    hasArModel,
+    arAssets,
     exhibitMetadata: metaRaw
       ? {
           ageGroupId: pickNum(meta, "ageGroupId", "AgeGroupId") ?? null,

@@ -41,7 +41,7 @@ import {
   removeRouteStop,
   updateRouteEntry,
 } from "@/services/content-manager/maps-routes.service";
-import { createRoom, deleteRoom } from "@/services/content-manager/room.service";
+import { createRoom, deleteRoom, updateRoom } from "@/services/content-manager/room.service";
 import { updateMuseumMap, deleteMuseumMap } from "@/services/content-manager/content-api.service";
 import { NavigationGraphEditor } from "@/components/content-manager/navigation-graph-editor";
 import { SuccessBanner, useSuccessToast } from "@/components/shared/success-banner";
@@ -911,7 +911,7 @@ function RouteDetailModal({
 
 export function MapsRoutesPanel({
   maps,
-  routes,
+  routes = [],
   rooms = [],
   museumId,
   exhibitions = [],
@@ -919,7 +919,7 @@ export function MapsRoutesPanel({
   exhibits = [],
 }: {
   maps: MuseumMapDto[];
-  routes: TourRouteDto[];
+  routes?: TourRouteDto[];
   rooms?: RoomDto[];
   museumId: number;
   exhibitions?: ExhibitionDto[];
@@ -945,12 +945,12 @@ export function MapsRoutesPanel({
   const [roomCode, setRoomCode] = useState("");
   const [roomName, setRoomName] = useState("");
   const [roomNameEn, setRoomNameEn] = useState("");
-  const [roomFloorNumber, setRoomFloorNumber] = useState("1");
   const [roomMapId, setRoomMapId] = useState("");
   const [roomDesc, setRoomDesc] = useState("");
   const [roomDescEn, setRoomDescEn] = useState("");
   const [roomError, setRoomError] = useState<string | null>(null);
   const [deletingRoomId, setDeletingRoomId] = useState<number | null>(null);
+  const [editingRoom, setEditingRoom] = useState<RoomDto | null>(null);
   const { success, showSuccess } = useSuccessToast();
 
   // Route form state
@@ -1087,7 +1087,65 @@ export function MapsRoutesPanel({
     setRouteError(null);
   }
 
-  async function handleCreateRoom(e: React.FormEvent) {
+  const floorMaps = useMemo(
+    () => maps.filter((m) => mapKind(m) === "floor"),
+    [maps],
+  );
+
+  function resetRoomForm() {
+    setEditingRoom(null);
+    setRoomCode("");
+    setRoomName("");
+    setRoomNameEn("");
+    setRoomDesc("");
+    setRoomDescEn("");
+    setRoomMapId("");
+    setRoomError(null);
+    setShowRoomForm(false);
+  }
+
+  function openCreateRoom() {
+    if (showRoomForm) {
+      resetRoomForm();
+      return;
+    }
+    setEditingRoom(null);
+    setRoomError(null);
+    setShowRoomForm(true);
+  }
+
+  function openEditRoom(room: RoomDto) {
+    setEditingRoom(room);
+    setRoomCode(room.roomCode);
+    setRoomName(room.roomName);
+    setRoomNameEn(room.roomNameEn ?? "");
+    setRoomMapId(room.mapId ? String(room.mapId) : "");
+    setRoomDesc(room.description ?? "");
+    setRoomDescEn(room.descriptionEn ?? "");
+    setRoomError(null);
+    setShowRoomForm(true);
+  }
+
+  function roomTranslations() {
+    return [
+      {
+        languageCode: "vi",
+        roomName: roomName.trim(),
+        description: roomDesc.trim() || undefined,
+      },
+      ...(roomNameEn.trim() || roomDescEn.trim()
+        ? [
+            {
+              languageCode: "en",
+              roomName: roomNameEn.trim() || undefined,
+              description: roomDescEn.trim() || undefined,
+            },
+          ]
+        : []),
+    ];
+  }
+
+  async function handleSaveRoom(e: React.FormEvent) {
     e.preventDefault();
     if (!roomCode.trim() || !roomName.trim()) {
       setRoomError("Please enter a room code and room name.");
@@ -1095,45 +1153,36 @@ export function MapsRoutesPanel({
     }
     setSubmitting("room");
     setRoomError(null);
+    const mapId = roomMapId ? Number(roomMapId) : null;
     try {
-      await createRoom({
-        museumId,
-        mapId: roomMapId ? Number(roomMapId) : undefined,
-        roomCode: roomCode.trim(),
-        roomName: roomName.trim(),
-        roomNameEn: roomNameEn.trim() || undefined,
-        floorNumber: Number(roomFloorNumber),
-        description: roomDesc.trim() || undefined,
-        descriptionEn: roomDescEn.trim() || undefined,
-        translations: [
-          {
-            languageCode: "vi",
-            roomName: roomName.trim(),
-            description: roomDesc.trim() || undefined,
-          },
-          ...(roomNameEn.trim() || roomDescEn.trim()
-            ? [
-                {
-                  languageCode: "en",
-                  roomName: roomNameEn.trim() || undefined,
-                  description: roomDescEn.trim() || undefined,
-                },
-              ]
-            : []),
-        ],
-      });
-      setRoomCode("");
-      setRoomName("");
-      setRoomNameEn("");
-      setRoomDesc("");
-      setRoomDescEn("");
-      setRoomMapId("");
-      setRoomFloorNumber("1");
-      setShowRoomForm(false);
-      showSuccess("Room created.");
+      if (editingRoom) {
+        await updateRoom(editingRoom.id, {
+          mapId,
+          roomCode: roomCode.trim(),
+          roomName: roomName.trim(),
+          roomNameEn: roomNameEn.trim() || undefined,
+          description: roomDesc.trim() || undefined,
+          descriptionEn: roomDescEn.trim() || undefined,
+          translations: roomTranslations(),
+        });
+        showSuccess("Room updated.");
+      } else {
+        await createRoom({
+          museumId,
+          mapId: mapId ?? undefined,
+          roomCode: roomCode.trim(),
+          roomName: roomName.trim(),
+          roomNameEn: roomNameEn.trim() || undefined,
+          description: roomDesc.trim() || undefined,
+          descriptionEn: roomDescEn.trim() || undefined,
+          translations: roomTranslations(),
+        });
+        showSuccess("Room created.");
+      }
+      resetRoomForm();
       router.refresh();
     } catch (err) {
-      setRoomError(getDisplayError(err, "Could not create room."));
+      setRoomError(getDisplayError(err, editingRoom ? "Could not update room." : "Could not create room."));
     } finally {
       setSubmitting(null);
     }
@@ -1234,11 +1283,12 @@ export function MapsRoutesPanel({
         <Info className="mt-0.5 h-5 w-5 shrink-0" style={{ color: T.primaryDark }} />
         <div className="space-y-1 text-sm" style={{ color: T.muted }}>
           <p style={{ color: T.text }}>
-            <strong>Maps & Routes</strong> manage 2D floor plans and suggested tour routes for the mobile app.
+            <strong>Maps & rooms</strong> manage 2D floor plans, exhibition rooms, and indoor navigation for the mobile app.
           </p>
           <p>
             <strong>Museum maps</strong> — floor or area layout images.{" "}
-            <strong>Tour routes</strong> — suggested paths with stops, descriptions, and estimated duration.
+            <strong>Exhibition rooms</strong> — official rooms assigned to a floor map.{" "}
+            <strong>Navigation graph</strong> — walkable paths from room A to room B.
           </p>
         </div>
       </div>
@@ -1246,7 +1296,6 @@ export function MapsRoutesPanel({
       <div className="flex flex-wrap gap-3">
         {tabBtn("maps", "Museum maps", maps.length, MapPin)}
         {tabBtn("rooms", "Exhibition rooms", rooms.length, Compass)}
-        {tabBtn("routes", "Tour routes", routes.length, Route)}
         {tabBtn("graph", "Navigation graph", 1, Navigation)}
       </div>
 
@@ -1603,7 +1652,7 @@ export function MapsRoutesPanel({
             </p>
             <button
               type="button"
-              onClick={() => setShowRoomForm((v) => !v)}
+              onClick={openCreateRoom}
               className="inline-flex items-center gap-2 rounded-2xl px-5 py-2.5 text-sm font-medium"
               style={{
                 background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
@@ -1617,12 +1666,12 @@ export function MapsRoutesPanel({
 
           {showRoomForm && (
             <form
-              onSubmit={handleCreateRoom}
+              onSubmit={handleSaveRoom}
               className="rounded-3xl p-6"
               style={{ background: T.surface, border: `1px solid ${T.border}` }}
             >
               <h3 className="mb-4 text-lg font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-                Add a new exhibition room
+                {editingRoom ? "Edit exhibition room" : "Add a new exhibition room"}
               </h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
@@ -1668,20 +1717,6 @@ export function MapsRoutesPanel({
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Floor number *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    min={1}
-                    value={roomFloorNumber}
-                    onChange={(e) => setRoomFloorNumber(e.target.value)}
-                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
-                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="block text-sm" style={{ color: T.muted }}>
                     Link floor map (optional)
                   </label>
                   <select
@@ -1691,7 +1726,7 @@ export function MapsRoutesPanel({
                     style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                   >
                     <option value="">-- No specific map --</option>
-                    {maps.map((m) => (
+                    {floorMaps.map((m) => (
                       <option key={m.id} value={m.id}>
                         Floor {m.floorNumber} {m.mapName ? `(${m.mapName})` : ""}
                       </option>
@@ -1735,7 +1770,7 @@ export function MapsRoutesPanel({
               <div className="mt-6 flex justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setShowRoomForm(false)}
+                  onClick={resetRoomForm}
                   className="rounded-xl px-5 py-2 text-sm font-medium"
                   style={{ border: `1px solid ${T.border}`, color: T.muted }}
                 >
@@ -1747,7 +1782,13 @@ export function MapsRoutesPanel({
                   className="rounded-xl px-6 py-2 text-sm font-medium text-white transition-opacity disabled:opacity-50"
                   style={{ background: T.primary }}
                 >
-                  {submitting === "room" ? "Creating..." : "Save new room"}
+                  {submitting === "room"
+                    ? editingRoom
+                      ? "Saving..."
+                      : "Creating..."
+                    : editingRoom
+                      ? "Save room"
+                      : "Save new room"}
                 </button>
               </div>
             </form>
@@ -1761,7 +1802,7 @@ export function MapsRoutesPanel({
               <Compass className="mx-auto mb-3 h-10 w-10 opacity-30" style={{ color: T.muted }} />
               <p className="font-semibold" style={{ color: T.text }}>No exhibition rooms yet</p>
               <p className="mt-1 text-sm" style={{ color: T.muted }}>
-                Register official rooms so you can assign artifacts and build tour routes.
+                Register official rooms so you can assign artifacts and build indoor navigation.
               </p>
             </div>
           ) : (
@@ -1797,14 +1838,24 @@ export function MapsRoutesPanel({
                   </div>
                   <div className="mt-4 pt-3 flex items-center justify-between text-xs border-t" style={{ borderColor: T.border }}>
                     <span style={{ color: T.mutedLight }}>ID #{room.id}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteRoom(room.id)}
-                      disabled={deletingRoomId === room.id}
-                      className="text-red-500 hover:text-red-700 font-medium transition-colors"
-                    >
-                      {deletingRoomId === room.id ? "Deleting..." : "Delete room"}
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => openEditRoom(room)}
+                        className="font-medium transition-colors"
+                        style={{ color: T.primaryDark }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteRoom(room.id)}
+                        disabled={deletingRoomId === room.id}
+                        className="text-red-500 hover:text-red-700 font-medium transition-colors"
+                      >
+                        {deletingRoomId === room.id ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

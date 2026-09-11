@@ -201,8 +201,34 @@ export type ExhibitDto = {
   roomId?: number | null;
   roomCode?: string | null;
   roomName?: string | null;
+  hasArModel?: boolean;
+  arAssets?: ExhibitArassetDto[];
   exhibitMetadata?: ExhibitMetadataDto | null;
   translations: ExhibitTranslationDto[];
+};
+
+export type ExhibitListItemDto = {
+  id: number;
+  exhibitCode?: string | null;
+  status: string;
+  title?: string | null;
+  thumbnailUrl?: string | null;
+  hasArModel: boolean;
+  arModelCount: number;
+  hasAudio: boolean;
+  hasQr: boolean;
+  roomId?: number | null;
+  roomName?: string | null;
+  mapId?: number | null;
+  floorNumber?: number | null;
+};
+
+export type PagedResultDto<T> = {
+  totalItems: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  items: T[];
 };
 
 export type ExhibitMetadataDto = {
@@ -260,7 +286,33 @@ export type ExhibitArassetDto = {
   assetUrl?: string | null;
   assetType?: string | null;
   description?: string | null;
+  fileSizeBytes?: number | null;
+  fileName?: string | null;
   createdAt: string;
+};
+
+export type SignUploadRequestDto = {
+  fileName: string;
+  fileSize: number;
+  contentType?: string;
+};
+
+export type SignUploadResponseDto = {
+  cloudName: string;
+  apiKey: string;
+  timestamp: number;
+  signature: string;
+  folder: string;
+  publicId: string;
+  uploadUrl: string;
+  maxBytes: number;
+};
+
+export type ConfirmUploadDto = {
+  publicId: string;
+  secureUrl: string;
+  bytes: number;
+  assetType?: string;
 };
 
 // ─── Content version ──────────────────────────────────────────────────────────
@@ -876,6 +928,7 @@ export type ArAssetScanDto = {
   fileUrl: string;
   fileType: string;
   fileSize: number;
+  fileSizeBytes?: number;
 };
 
 export type ExhibitScanResultDto = {
@@ -891,6 +944,7 @@ export type ExhibitScanResultDto = {
   thumbnailUrl?: string | null;
   aroverlayUrl?: string | null;
   armarkerUrl?: string | null;
+  hasArModel?: boolean;
   images: string[];
   arAssets: ArAssetScanDto[];
 };

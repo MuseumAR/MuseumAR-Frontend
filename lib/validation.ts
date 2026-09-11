@@ -259,6 +259,28 @@ export function validateCreateTicketType(
   return result(errors);
 }
 
+export const CLOUDINARY_DEFAULT_MAX_BYTES = 10 * 1024 * 1024;
+
+export function formatFileSize(bytes: number): string {
+  if (bytes >= 1024 * 1024) {
+    const mb = bytes / (1024 * 1024);
+    return `${mb >= 10 ? mb.toFixed(0) : mb.toFixed(1)} MB`;
+  }
+  if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${bytes} B`;
+}
+
+export function validateArModelFile(
+  file: File,
+  maxBytes = CLOUDINARY_DEFAULT_MAX_BYTES,
+): ValidationResult {
+  const errors: Record<string, string> = {};
+  if (file.size > maxBytes) {
+    errors.arFile = `3D model is too large (${formatFileSize(file.size)}). Maximum is ${formatFileSize(maxBytes)}.`;
+  }
+  return result(errors);
+}
+
 const API_MESSAGE_MAP: Record<string, string> = {
   "Invalid credentials.": "Email hoặc mật khẩu không đúng.",
   "Invalid credentials or account is inactive.":

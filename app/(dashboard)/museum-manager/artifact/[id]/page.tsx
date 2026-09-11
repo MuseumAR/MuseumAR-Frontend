@@ -25,6 +25,7 @@ export default async function ArtifactDetailPage({
       backPath="/museum-manager/artifact"
       translations={exhibit?.translations ?? []}
       tags={exhibitTags}
+      initialArAssets={exhibit?.arAssets}
     />
   );
 }

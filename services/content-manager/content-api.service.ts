@@ -1,24 +1,34 @@
 import {
   apiDeleteAuth,
   apiGet,
+  apiGetAuth,
   apiPostAuth,
   apiPostFormAuth,
   apiPutAuth,
   apiPutFormAuth,
 } from "@/services/api-client";
+import { getAccessToken } from "@/services/auth/auth.storage";
 import {
+  asRecord,
+  exhibitHasArModel,
   normalizeCategoryDto,
   normalizeContentVersionDto,
+  normalizeExhibitArassetDto,
   normalizeExhibitDto,
+  normalizeExhibitListItemDto,
   normalizeMuseumMapDto,
+  normalizePagedResult,
   normalizeTagDto,
   normalizeTagGroupDto,
   normalizeThemeDto,
   normalizeTourRouteDto,
+  unwrapArray,
 } from "@/lib/normalize-dto";
+import { AppError, formatFileSize } from "@/lib/validation";
 import type {
   AgeGroupDto,
   CategoryDto,
+  ConfirmUploadDto,
   CreateCategoryDto,
   CreateExhibitDto,
   CreateExhibitionDto,
@@ -28,12 +38,14 @@ import type {
   CreateThemeDto,
   CreateTourRouteDto,
   CreateTourRouteStopDto,
-  ExhibitArassetDto,
   ExhibitDto,
+  ExhibitListItemDto,
   ExhibitTranslationDto,
   ExhibitionDto,
   MuseumMapDto,
   OfflinePackageDto,
+  SignUploadRequestDto,
+  SignUploadResponseDto,
   TagDto,
   TagGroupDto,
   ThemeDto,
@@ -41,30 +53,126 @@ import type {
   UpdateTourRouteDto,
 } from "@/types/api";
 
+export type GetExhibitsPagedParams = {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: string;
+  includeUnpublished?: boolean;
+  accessToken?: string | null;
+};
+
 export function getExhibits(includeUnpublished = true) {
   const query = includeUnpublished ? "?includeUnpublished=true" : "";
   return apiGet<unknown[]>(`/api/content/exhibits${query}`).then((data) =>
-    (Array.isArray(data) ? data : []).map(normalizeExhibitDto),
+    unwrapArray(data).map(normalizeExhibitDto),
   );
+}
+
+export function getExhibitsPaged(params: GetExhibitsPagedParams = {}) {
+  const query = new URLSearchParams();
+  query.set("page", String(params.page ?? 1));
+  query.set("pageSize", String(params.pageSize ?? 50));
+  if (params.search) query.set("search", params.search);
+  if (params.status) query.set("status", params.status);
+  if (params.includeUnpublished ?? true) query.set("includeUnpublished", "true");
+  const path = `/api/content/exhibits/paged?${query.toString()}`;
+  const token = params.accessToken ?? getAccessToken();
+  const req = token ? apiGetAuth<unknown>(path, token) : apiGet<unknown>(path);
+  return req.then((data) => normalizePagedResult(data, normalizeExhibitListItemDto));
+}
+
+export async function getAllExhibitListItems(
+  includeUnpublished = true,
+): Promise<ExhibitListItemDto[]> {
+  try {
+    const first = await getExhibitsPaged({
+      page: 1,
+      pageSize: 50,
+      includeUnpublished,
+    });
+    const items = [...first.items];
+    const pageSize = first.pageSize || 50;
+    const totalPages = Math.min(Math.max(1, first.totalPages), 100);
+    for (let page = 2; page <= totalPages; page++) {
+      const next = await getExhibitsPaged({
+        page,
+        pageSize,
+        includeUnpublished,
+      });
+      items.push(...next.items);
+    }
+    return items;
+  } catch (pagedError) {
+    try {
+      const full = await getExhibits(includeUnpublished);
+      return full.map(exhibitDtoToListItem);
+    } catch {
+      throw pagedError;
+    }
+  }
+}
+
+export function exhibitDtoToListItem(exhibit: ExhibitDto): ExhibitListItemDto {
+  return {
+    id: exhibit.id,
+    exhibitCode: exhibit.exhibitCode,
+    status: exhibit.status,
+    title: exhibit.translations[0]?.title ?? null,
+    thumbnailUrl: exhibit.thumbnailUrl ?? null,
+    hasArModel: exhibitHasArModel(exhibit),
+    arModelCount: (exhibit.arAssets ?? []).filter((a) =>
+      (a.assetType ?? "").replace(/\s/g, "").toLowerCase() === "model3d",
+    ).length,
+    hasAudio: !!exhibit.translations.some((t) => t.audioUrl),
+    hasQr: !!exhibit.qrCodeData,
+    roomId: exhibit.roomId ?? null,
+    roomName: exhibit.roomName ?? null,
+    mapId: exhibit.mapId ?? null,
+    floorNumber: exhibit.floorNumber ?? null,
+  };
+}
+
+export function exhibitListItemToStub(item: ExhibitListItemDto): ExhibitDto {
+  return {
+    id: item.id,
+    museumId: 0,
+    exhibitCode: item.exhibitCode,
+    status: item.status,
+    thumbnailUrl: item.thumbnailUrl,
+    hasArModel: item.hasArModel,
+    floorNumber: item.floorNumber,
+    roomId: item.roomId,
+    roomName: item.roomName,
+    mapId: item.mapId,
+    translations: [
+      {
+        exhibitId: item.id,
+        languageCode: "vi",
+        title: item.title || `Exhibit #${item.id}`,
+      },
+    ],
+  };
 }
 
 export function getExhibitById(id: number, includeUnpublished = true) {
   const query = includeUnpublished ? "?includeUnpublished=true" : "";
-  return apiGet<unknown>(`/api/content/exhibits/${id}${query}`).then(
-    normalizeExhibitDto,
-  );
+  const path = `/api/content/exhibits/${id}${query}`;
+  const token = getAccessToken();
+  const req = token ? apiGetAuth<unknown>(path, token) : apiGet<unknown>(path);
+  return req.then(normalizeExhibitDto);
 }
 
 export async function createExhibit(payload: CreateExhibitDto) {
-  const data = await apiPostAuth<ExhibitDto | number>("/api/content/exhibits", payload);
+  const data = await apiPostAuth<unknown>("/api/content/exhibits", payload);
   if (typeof data === "number") {
     return { id: data } as ExhibitDto;
   }
-  const id = Number((data as ExhibitDto)?.id);
-  if (!Number.isFinite(id) || id <= 0) {
+  const normalized = normalizeExhibitDto(data);
+  if (!Number.isFinite(normalized.id) || normalized.id <= 0) {
     throw new Error("Create exhibit succeeded but no id was returned.");
   }
-  return data;
+  return normalized;
 }
 
 export function updateExhibit(id: number, payload: CreateExhibitDto) {
@@ -117,7 +225,9 @@ export function publishContentVersion(id: number) {
 }
 
 export function getArAssets(exhibitId: number) {
-  return apiGet<ExhibitArassetDto[]>(`/api/content/exhibits/${exhibitId}/ar-assets`);
+  return apiGet<unknown>(`/api/content/exhibits/${exhibitId}/ar-assets`).then(
+    (data) => unwrapArray(data).map(normalizeExhibitArassetDto),
+  );
 }
 
 export function uploadArAsset(
@@ -130,10 +240,107 @@ export function uploadArAsset(
   formData.append("assetType", assetType);
   formData.append("file", file);
   if (description) formData.append("description", description);
-  return apiPostFormAuth<ExhibitArassetDto>(
+  return apiPostFormAuth<unknown>(
     `/api/content/exhibits/${exhibitId}/ar-assets/upload`,
     formData,
+  ).then(normalizeExhibitArassetDto);
+}
+
+function normalizeSignUploadResponse(raw: unknown): SignUploadResponseDto {
+  const o = asRecord(raw);
+  return {
+    cloudName: String(o.cloudName ?? o.CloudName ?? ""),
+    apiKey: String(o.apiKey ?? o.ApiKey ?? ""),
+    timestamp: Number(o.timestamp ?? o.Timestamp ?? 0),
+    signature: String(o.signature ?? o.Signature ?? ""),
+    folder: String(o.folder ?? o.Folder ?? ""),
+    publicId: String(o.publicId ?? o.PublicId ?? ""),
+    uploadUrl: String(o.uploadUrl ?? o.UploadUrl ?? ""),
+    maxBytes: Number(o.maxBytes ?? o.MaxBytes ?? 0),
+  };
+}
+
+export function signArAssetUpload(
+  exhibitId: number,
+  payload: SignUploadRequestDto,
+) {
+  return apiPostAuth<unknown>(
+    `/api/content/exhibits/${exhibitId}/ar-assets/sign-upload`,
+    payload,
+  ).then(normalizeSignUploadResponse);
+}
+
+export function confirmArAssetUpload(
+  exhibitId: number,
+  payload: ConfirmUploadDto,
+) {
+  return apiPostAuth<unknown>(
+    `/api/content/exhibits/${exhibitId}/ar-assets/confirm-upload`,
+    payload,
+  ).then(normalizeExhibitArassetDto);
+}
+
+function isMissingEndpoint(error: unknown) {
+  return (
+    error instanceof AppError &&
+    (error.statusCode === 404 || error.statusCode === 405)
   );
+}
+
+/** Signed Cloudinary upload for GLB; falls back to multipart if sign-upload is missing. */
+export async function uploadArModel3d(exhibitId: number, file: File) {
+  let signed = false;
+  try {
+    const sign = await signArAssetUpload(exhibitId, {
+      fileName: file.name,
+      fileSize: file.size,
+      contentType: file.type || "model/gltf-binary",
+    });
+    signed = true;
+    const maxBytes = sign.maxBytes > 0 ? sign.maxBytes : 10 * 1024 * 1024;
+    if (file.size > maxBytes) {
+      throw new AppError(
+        `3D model is too large (${formatFileSize(file.size)}). Maximum is ${formatFileSize(maxBytes)}.`,
+      );
+    }
+    if (!sign.uploadUrl || !sign.signature) {
+      throw new AppError("Upload signing failed.");
+    }
+
+    const form = new FormData();
+    form.append("file", file);
+    form.append("api_key", sign.apiKey);
+    form.append("timestamp", String(sign.timestamp));
+    form.append("signature", sign.signature);
+    form.append("folder", sign.folder);
+    form.append("public_id", sign.publicId);
+
+    const res = await fetch(sign.uploadUrl, { method: "POST", body: form });
+    if (!res.ok) {
+      throw new AppError(
+        `Could not upload 3D model (${res.status}).`,
+        res.status,
+      );
+    }
+    const json = asRecord(await res.json());
+    const publicId = String(json.public_id ?? sign.publicId);
+    const secureUrl = String(json.secure_url ?? json.url ?? "");
+    const bytes = Number(json.bytes ?? file.size);
+    if (!secureUrl) {
+      throw new AppError("3D upload did not return a file URL.");
+    }
+    return confirmArAssetUpload(exhibitId, {
+      publicId,
+      secureUrl,
+      bytes,
+      assetType: "Model3D",
+    });
+  } catch (error) {
+    if (!signed && isMissingEndpoint(error)) {
+      return uploadArAsset(exhibitId, "Model3D", file);
+    }
+    throw error;
+  }
 }
 
 export function deleteArAsset(id: number) {

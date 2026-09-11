@@ -8,13 +8,14 @@ import { labelStatus } from "@/lib/status-labels";
 import {
   getDisplayError,
   getFirstValidationError,
+  validateArModelFile,
   validateCreateArtifact,
 } from "@/lib/validation";
 import type { Artifact } from "@/types";
 import type { AgeGroupDto, CategoryDto, MuseumMapDto, RoomDto, TagDto } from "@/types/api";
 import {
   updateExhibit,
-  uploadArAsset,
+  uploadArModel3d,
   uploadExhibitAudio,
   uploadExhibitImage,
 } from "@/services/content-manager";
@@ -182,15 +183,25 @@ export function UpdateArtifactForm({
       });
 
       const displayTitle = titleVi.trim() || titleEn.trim() || artifact.name;
-      if (imageFile) await uploadExhibitImage(exhibitId, imageFile, displayTitle);
-      if (audioFileVi) await uploadExhibitAudio(exhibitId, "vi", audioFileVi);
-      if (audioFileEn) await uploadExhibitAudio(exhibitId, "en", audioFileEn);
-      if (arFile) {
-        await uploadArAsset(exhibitId, "Model3D", arFile);
+      const uploadErrors: string[] = [];
+      async function tryUpload(label: string, fn: () => Promise<unknown>) {
+        try {
+          await fn();
+        } catch (err) {
+          uploadErrors.push(`${label}: ${getDisplayError(err, "failed")}`);
+        }
       }
-      await syncExhibitTags(exhibitId, selectedTagIds);
 
-      router.push(`/content-manager/artifact/${artifact.id}`);
+      if (arFile) await tryUpload("3D model", () => uploadArModel3d(exhibitId, arFile));
+      if (imageFile) await tryUpload("Image", () => uploadExhibitImage(exhibitId, imageFile, displayTitle));
+      if (audioFileVi) await tryUpload("Vietnamese audio", () => uploadExhibitAudio(exhibitId, "vi", audioFileVi));
+      if (audioFileEn) await tryUpload("English audio", () => uploadExhibitAudio(exhibitId, "en", audioFileEn));
+      await tryUpload("Tags", () => syncExhibitTags(exhibitId, selectedTagIds));
+      if (uploadErrors.length > 0) {
+        throw new Error(`Artifact updated, but some files failed: ${uploadErrors.join(" ")}`);
+      }
+
+      router.push(`/content-manager/artifact/${artifact.exhibitId ?? artifact.id}`);
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Could not update artifact."));
@@ -202,7 +213,7 @@ export function UpdateArtifactForm({
   return (
     <div className="px-8 pb-10">
       <Link
-        href={`/content-manager/artifact/${artifact.id}`}
+        href={`/content-manager/artifact/${artifact.exhibitId ?? artifact.id}`}
         prefetch={false}
         className="mb-6 inline-flex items-center gap-2 text-sm"
         style={{ color: T.muted }}
@@ -260,6 +271,13 @@ export function UpdateArtifactForm({
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (!file) return;
+                const validation = validateArModelFile(file);
+                if (!validation.valid) {
+                  setError(getFirstValidationError(validation));
+                  e.target.value = "";
+                  return;
+                }
+                setError(null);
                 setArFile(file);
               }}
             />
@@ -426,7 +444,7 @@ export function UpdateArtifactForm({
 
         <div className="mt-8 flex justify-end gap-3">
           <Link
-            href={`/content-manager/artifact/${artifact.id}`}
+            href={`/content-manager/artifact/${artifact.exhibitId ?? artifact.id}`}
             prefetch={false}
             className="rounded-xl px-5 py-2 text-sm"
             style={{ border: `1px solid ${T.border}`, color: T.muted }}
