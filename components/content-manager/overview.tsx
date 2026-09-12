@@ -1,10 +1,6 @@
 import Link from "next/link";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { ExhibitTable } from "@/components/content-manager/exhibit-table";
-import {
-  getExhibitRows,
-  getExhibitStats,
-} from "@/services/content-manager/exhibit.service";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 
 const QUICK_LINKS = [
@@ -15,12 +11,7 @@ const QUICK_LINKS = [
   { href: "/content-manager/maps-routes", label: "Maps & Routes" },
 ];
 
-export async function ContentManagerOverview() {
-  const [stats, rows] = await Promise.all([
-    getExhibitStats(),
-    getExhibitRows(),
-  ]);
-
+export function ContentManagerOverview() {
   return (
     <div className="space-y-8 px-8 pb-10">
       <section>
@@ -33,11 +24,11 @@ export async function ContentManagerOverview() {
           </h2>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
-          <StatCard label="Total artifacts" value={stats.total} icon="layers" watermark="scroll" />
-          <StatCard label="Published" value={stats.published} icon="box" watermark="column" />
-          <StatCard label="Drafts" value={stats.draft} icon="layers" watermark="vase" />
-          <StatCard label="With AR" value={stats.withAr} icon="box" watermark="map" />
-          <StatCard label="With QR" value={stats.withQr} icon="qrCode" watermark="scroll" />
+          <StatCard label="Total artifacts" value={0} icon="layers" watermark="scroll" />
+          <StatCard label="Published" value={0} icon="box" watermark="column" />
+          <StatCard label="Drafts" value={0} icon="layers" watermark="vase" />
+          <StatCard label="With AR" value={0} icon="box" watermark="map" />
+          <StatCard label="With QR" value={0} icon="qrCode" watermark="scroll" />
         </div>
       </section>
 
@@ -65,7 +56,7 @@ export async function ContentManagerOverview() {
       </section>
 
       <section>
-        <ExhibitTable data={rows} showCreate={false} />
+        <ExhibitTable showCreate={false} />
       </section>
     </div>
   );

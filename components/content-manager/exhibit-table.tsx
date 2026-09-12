@@ -2,20 +2,20 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
-import { Eye, Pencil, Search, Send, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, Eye, Pencil, Search, Send, Trash2 } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
 import { SuccessBanner, useSuccessToast } from "@/components/shared/success-banner";
 import { labelStatus } from "@/lib/status-labels";
 import {
   deleteExhibit,
+  EXHIBIT_PAGE_SIZE,
+  getExhibitPage,
   publishExhibit,
   unpublishExhibit,
   type ExhibitRow,
 } from "@/services/content-manager/exhibit.service";
-
-const PAGE_SIZE = 8;
 
 const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   Published: { bg: "rgba(79,125,74,0.12)", color: T.success },
@@ -23,14 +23,13 @@ const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
 };
 
 export function ExhibitTable({
-  data,
   showCreate = true,
   basePath = "/content-manager",
   canEdit = true,
   canPublish = true,
   canDelete = true,
 }: {
-  data: ExhibitRow[];
+  data?: ExhibitRow[];
   showCreate?: boolean;
   basePath?: string;
   canEdit?: boolean;
@@ -38,26 +37,58 @@ export function ExhibitTable({
   canDelete?: boolean;
 }) {
   const router = useRouter();
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [rows, setRows] = useState<ExhibitRow[]>([]);
+  const [totalItems, setTotalItems] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
   const [actingId, setActingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { success, showSuccess } = useSuccessToast();
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return data;
-    return data.filter(
-      (row) =>
-        row.title.toLowerCase().includes(q) ||
-        row.exhibitCode.toLowerCase().includes(q) ||
-        row.status.toLowerCase().includes(q),
-    );
-  }, [data, search]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const next = searchInput.trim();
+      setSearch((prev) => {
+        if (prev !== next) setPage(1);
+        return next;
+      });
+    }, 350);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const rows = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    getExhibitPage({ page, pageSize: EXHIBIT_PAGE_SIZE, search })
+      .then((result) => {
+        if (cancelled) return;
+        if (result.rows.length === 0 && page > 1 && result.totalItems > 0) {
+          setPage((p) => Math.max(1, p - 1));
+          return;
+        }
+        setRows(result.rows);
+        setTotalItems(result.totalItems);
+        setTotalPages(result.totalPages);
+        setError(null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setRows([]);
+        setTotalItems(0);
+        setTotalPages(1);
+        setError(getDisplayError(err, "Could not load artifacts."));
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [page, search, reloadKey]);
 
   async function handlePublish(id: number, published: boolean) {
     setActingId(id);
@@ -66,6 +97,7 @@ export function ExhibitTable({
       if (published) await unpublishExhibit(id);
       else await publishExhibit(id);
       showSuccess(published ? "Artifact unpublished." : "Artifact published.");
+      setReloadKey((k) => k + 1);
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Action failed."));
@@ -81,6 +113,7 @@ export function ExhibitTable({
     try {
       await deleteExhibit(id);
       showSuccess("Artifact deleted.");
+      setReloadKey((k) => k + 1);
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Could not delete artifact."));
@@ -88,6 +121,8 @@ export function ExhibitTable({
       setActingId(null);
     }
   }
+
+  const currentPage = Math.min(page, totalPages);
 
   return (
     <div className="space-y-5">
@@ -104,11 +139,8 @@ export function ExhibitTable({
             <input
               type="search"
               placeholder="Search artifacts..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
               className="w-full rounded-2xl py-2.5 pl-11 pr-4 text-sm outline-none"
               style={{
                 background: T.surface,
@@ -150,7 +182,11 @@ export function ExhibitTable({
           boxShadow: "0 6px 20px rgba(43,29,14,0.05)",
         }}
       >
-        {rows.length === 0 ? (
+        {loading && rows.length === 0 ? (
+          <div className="px-8 py-16 text-center text-sm" style={{ color: T.muted }}>
+            Loading artifacts…
+          </div>
+        ) : rows.length === 0 ? (
           <div className="px-8 py-16 text-center text-sm" style={{ color: T.muted }}>
             No artifacts found.
           </div>
@@ -243,7 +279,7 @@ export function ExhibitTable({
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-1">
                           <Link
-                            href={`${basePath}/artifact/${row.exhibitCode}`}
+                            href={`${basePath}/artifact/${row.id}`}
                             prefetch={false}
                             className="rounded-lg p-2 transition-colors"
                             style={{ color: T.muted }}
@@ -253,7 +289,7 @@ export function ExhibitTable({
                           </Link>
                           {canEdit && (
                             <Link
-                              href={`${basePath}/artifact/${row.exhibitCode}/edit`}
+                              href={`${basePath}/artifact/${row.id}/edit`}
                               prefetch={false}
                               className="rounded-lg p-2 transition-colors"
                               style={{ color: T.muted }}
@@ -297,25 +333,39 @@ export function ExhibitTable({
         )}
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm" style={{ color: T.muted }}>
+          <span className="font-medium" style={{ color: T.text }}>
+            {totalItems}
+          </span>
+          {` artifacts`}
+          {totalPages > 1 ? ` · page ${currentPage} / ${totalPages}` : ""}
+        </p>
+        {totalPages > 1 && (
+          <div className="flex items-center gap-2">
             <button
-              key={p}
               type="button"
-              onClick={() => setPage(p)}
-              className="flex h-9 w-9 items-center justify-center rounded-full text-sm"
-              style={{
-                background: p === currentPage ? T.primary : T.surface,
-                color: p === currentPage ? T.surface : T.muted,
-                border: `1px solid ${p === currentPage ? T.primary : T.border}`,
-              }}
+              disabled={loading || currentPage <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm disabled:opacity-40"
+              style={{ border: `1px solid ${T.border}`, color: T.text, background: T.surface }}
             >
-              {p}
+              <ChevronLeft className="h-4 w-4" />
+              Previous
             </button>
-          ))}
-        </div>
-      )}
+            <button
+              type="button"
+              disabled={loading || currentPage >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+              className="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm disabled:opacity-40"
+              style={{ border: `1px solid ${T.border}`, color: T.text, background: T.surface }}
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
