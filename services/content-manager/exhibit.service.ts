@@ -4,7 +4,9 @@ import {
   createExhibit,
   deleteExhibit,
   getExhibitById as fetchExhibitById,
+  getExhibitStatsApi,
   getExhibits,
+  getExhibitsPaged,
   publishExhibit,
   unpublishExhibit,
   updateExhibit,
@@ -47,6 +49,27 @@ export function mapExhibitToRow(exhibit: ExhibitDto): ExhibitRow {
 
 export async function getExhibitRows(): Promise<ExhibitRow[]> {
   return safeFetch(async () => {
+    // Fast path: use paged endpoint with slim DTO (Mục 2 & 3)
+    try {
+      const paged = await getExhibitsPaged({ pageSize: 50, includeUnpublished: true });
+      if (paged?.items && Array.isArray(paged.items)) {
+        return paged.items.map((item) => ({
+          id: item.id,
+          title: item.title ?? `Exhibit #${item.id}`,
+          exhibitCode: item.exhibitCode ?? `EX-${item.id}`,
+          status: item.status,
+          hasAr: item.hasArModel,
+          hasQr: item.hasQr,
+          hasAudio: item.hasAudio,
+          thumbnailUrl: item.thumbnailUrl ?? null,
+          floorNumber: item.floorNumber ?? null,
+          roomCode: null,
+          roomName: item.roomName ?? null,
+        }));
+      }
+    } catch {
+      // Fallback to legacy full list if paged fails
+    }
     const exhibits = await getExhibits();
     return exhibits.map(mapExhibitToRow);
   }, []);
@@ -54,13 +77,14 @@ export async function getExhibitRows(): Promise<ExhibitRow[]> {
 
 export async function getExhibitStats() {
   return safeFetch(async () => {
-    const exhibits = await getExhibits();
+    // Call backend stats API (Mục 1)
+    const stats = await getExhibitStatsApi();
     return {
-      total: exhibits.length,
-      published: exhibits.filter((e) => e.status === "Published").length,
-      draft: exhibits.filter((e) => e.status === "Draft").length,
-      withAr: exhibits.filter((e) => e.arOverlayUrl || e.arMarkerUrl).length,
-      withQr: exhibits.filter((e) => e.qrCodeData).length,
+      total: stats.total,
+      published: stats.published,
+      draft: stats.draft,
+      withAr: stats.withArModel ?? stats.withAr ?? 0,
+      withQr: stats.withQr,
     };
   }, { total: 0, published: 0, draft: 0, withAr: 0, withQr: 0 });
 }

@@ -48,9 +48,68 @@ export function getExhibits(includeUnpublished = true) {
   );
 }
 
+export function getExhibitStatsApi() {
+  return apiGet<{
+    total: number;
+    published: number;
+    draft: number;
+    withArModel: number;
+    withAr?: number;
+    withQr: number;
+  }>("/api/content/exhibits/stats");
+}
+
+export function getExhibitsPaged(params?: {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: string;
+  includeUnpublished?: boolean;
+  lang?: string;
+}) {
+  const query = new URLSearchParams();
+  if (params?.page) query.set("page", String(params.page));
+  if (params?.pageSize) query.set("pageSize", String(params.pageSize));
+  if (params?.search) query.set("search", params.search);
+  if (params?.status) query.set("status", params.status);
+  if (params?.includeUnpublished !== undefined)
+    query.set("includeUnpublished", String(params.includeUnpublished));
+  if (params?.lang) query.set("lang", params.lang);
+
+  const qs = query.toString() ? `?${query.toString()}` : "";
+  return apiGet<{
+    totalItems: number;
+    page: number;
+    pageSize: number;
+    totalPages: number;
+    items: Array<{
+      id: number;
+      exhibitCode?: string;
+      status: string;
+      title?: string;
+      thumbnailUrl?: string | null;
+      hasArModel: boolean;
+      arModelCount?: number;
+      hasAudio: boolean;
+      hasQr: boolean;
+      roomId?: number | null;
+      roomName?: string | null;
+      mapId?: number | null;
+      floorNumber?: number | null;
+    }>;
+  }>(`/api/content/exhibits/paged${qs}`);
+}
+
 export function getExhibitById(id: number, includeUnpublished = true) {
   const query = includeUnpublished ? "?includeUnpublished=true" : "";
   return apiGet<unknown>(`/api/content/exhibits/${id}${query}`).then(
+    normalizeExhibitDto,
+  );
+}
+
+export function getExhibitByCode(code: string, includeUnpublished = true) {
+  const query = includeUnpublished ? "?includeUnpublished=true" : "";
+  return apiGet<unknown>(`/api/content/exhibits/by-code/${encodeURIComponent(code)}${query}`).then(
     normalizeExhibitDto,
   );
 }

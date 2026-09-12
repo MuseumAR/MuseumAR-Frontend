@@ -142,7 +142,8 @@ function requireToken(accessToken?: string | null) {
 }
 
 export function apiGet<T>(path: string) {
-  return request<T>(path);
+  const token = withAuth();
+  return request<T>(path, token ? { accessToken: token } : undefined);
 }
 
 export function apiGetAuth<T>(path: string, accessToken?: string | null) {
