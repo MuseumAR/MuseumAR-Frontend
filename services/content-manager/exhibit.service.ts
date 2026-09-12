@@ -6,6 +6,7 @@ import {
   deleteExhibit,
   getAllExhibitListItems,
   getExhibitById as fetchExhibitById,
+  getExhibitStatsApi,
   getExhibits,
   getExhibitsPaged,
   publishExhibit,
@@ -129,6 +130,19 @@ export async function getExhibitRows(): Promise<ExhibitRow[]> {
     const items = await getAllExhibitListItems();
     return items.map(mapListItemToRow);
   }, []);
+}
+
+export async function getExhibitStats() {
+  return safeFetch(async () => {
+    const stats = await getExhibitStatsApi();
+    return {
+      total: stats.total,
+      published: stats.published,
+      draft: stats.draft,
+      withAr: stats.withArModel ?? stats.withAr ?? 0,
+      withQr: stats.withQr,
+    };
+  }, { total: 0, published: 0, draft: 0, withAr: 0, withQr: 0 });
 }
 
 export async function getExhibitDetail(id: number) {

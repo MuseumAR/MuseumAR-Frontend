@@ -69,6 +69,17 @@ export function getExhibits(includeUnpublished = true) {
   );
 }
 
+export function getExhibitStatsApi() {
+  return apiGet<{
+    total: number;
+    published: number;
+    draft: number;
+    withArModel: number;
+    withAr?: number;
+    withQr: number;
+  }>("/api/content/exhibits/stats");
+}
+
 export function getExhibitsPaged(params: GetExhibitsPagedParams = {}) {
   const query = new URLSearchParams();
   query.set("page", String(params.page ?? 1));
@@ -161,6 +172,13 @@ export function getExhibitById(id: number, includeUnpublished = true) {
   const token = getAccessToken();
   const req = token ? apiGetAuth<unknown>(path, token) : apiGet<unknown>(path);
   return req.then(normalizeExhibitDto);
+}
+
+export function getExhibitByCode(code: string, includeUnpublished = true) {
+  const query = includeUnpublished ? "?includeUnpublished=true" : "";
+  return apiGet<unknown>(`/api/content/exhibits/by-code/${encodeURIComponent(code)}${query}`).then(
+    normalizeExhibitDto,
+  );
 }
 
 export async function createExhibit(payload: CreateExhibitDto) {
