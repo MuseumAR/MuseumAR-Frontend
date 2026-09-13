@@ -5,6 +5,7 @@ import { safeFetch } from "@/lib/fetch-safe";
 import {
   createExhibit,
   deleteExhibit,
+  getExhibitByCode,
   getExhibitById as fetchExhibitById,
   getExhibits,
   getExhibitsPaged,
@@ -119,19 +120,29 @@ export async function getArtifactById(id: string): Promise<Artifact | null> {
   const slug = decodeURIComponent(id).trim();
   if (!slug) return null;
 
-  async function loadByNumericId(numericId: number): Promise<Artifact | null> {
+  async function loadByKey(key: number | string): Promise<Artifact | null> {
     try {
-      const exhibit = await fetchExhibitById(numericId);
+      const exhibit = await fetchExhibitById(key);
       return exhibit?.id ? mapExhibitToArtifact(exhibit) : null;
     } catch {
       return null;
     }
   }
 
+  const byIdOrCode = await loadByKey(slug);
+  if (byIdOrCode) return byIdOrCode;
+
   const numericId = parseNumericExhibitId(slug);
-  if (numericId != null) {
-    const byId = await loadByNumericId(numericId);
+  if (numericId != null && String(numericId) !== slug) {
+    const byId = await loadByKey(numericId);
     if (byId) return byId;
+  }
+
+  try {
+    const byCode = await getExhibitByCode(slug);
+    if (byCode?.id) return mapExhibitToArtifact(byCode);
+  } catch {
+    // fall through to paged search
   }
 
   try {
@@ -147,7 +158,7 @@ export async function getArtifactById(id: string): Promise<Artifact | null> {
         (item.exhibitCode || "").toLowerCase().includes(slug.toLowerCase()),
       );
     if (!match) return null;
-    return (await loadByNumericId(match.id)) ?? mapListItemToArtifact(match);
+    return (await loadByKey(match.id)) ?? mapListItemToArtifact(match);
   } catch {
     return null;
   }

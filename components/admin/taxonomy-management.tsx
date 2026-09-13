@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { labelStatus } from "@/lib/status-labels";
@@ -17,6 +16,10 @@ import {
   deleteTagEntry,
   deleteTagGroupEntry,
   deleteThemeEntry,
+  getCategoryOptions,
+  getTagGroupOptions,
+  getTagOptions,
+  getThemeOptions,
   tagDisplayName,
   tagGroupDisplayName,
   themeDisplayName,
@@ -24,6 +27,7 @@ import {
   updateTagEntry,
   updateTagGroupEntry,
   updateThemeEntry,
+  upsertCategoryTranslationEntry,
 } from "@/services/content-manager/taxonomy.service";
 import type {
   CategoryDto,
@@ -34,6 +38,16 @@ import type {
 
 type Tab = "categories" | "themes" | "tag-groups" | "tags";
 
+function entityId(res: unknown, fallback?: number | null): number | null {
+  if (fallback != null && fallback > 0) return fallback;
+  if (typeof res === "number" && Number.isFinite(res) && res > 0) return res;
+  if (res && typeof res === "object" && "id" in res) {
+    const id = Number((res as { id?: number }).id);
+    if (Number.isFinite(id) && id > 0) return id;
+  }
+  return null;
+}
+
 const TABS: { id: Tab; label: string }[] = [
   { id: "categories", label: "Categories" },
   { id: "themes", label: "Themes" },
@@ -42,19 +56,39 @@ const TABS: { id: Tab; label: string }[] = [
 ];
 
 export function TaxonomyManagementPanel({
-  categories,
-  themes,
-  tagGroups,
-  tags,
   museumId,
 }: {
-  categories: CategoryDto[];
-  themes: ThemeDto[];
-  tagGroups: TagGroupDto[];
-  tags: TagDto[];
   museumId: number | null;
 }) {
   const [tab, setTab] = useState<Tab>("categories");
+  const [ready, setReady] = useState(false);
+  const [categories, setCategories] = useState<CategoryDto[]>([]);
+  const [themes, setThemes] = useState<ThemeDto[]>([]);
+  const [tagGroups, setTagGroups] = useState<TagGroupDto[]>([]);
+  const [tags, setTags] = useState<TagDto[]>([]);
+
+  const reload = useCallback(async () => {
+    const [nextCategories, nextThemes, nextGroups, nextTags] = await Promise.all([
+      getCategoryOptions(),
+      getThemeOptions(),
+      getTagGroupOptions(),
+      getTagOptions(),
+    ]);
+    setCategories(nextCategories);
+    setThemes(nextThemes);
+    setTagGroups(nextGroups);
+    setTags(nextTags);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void reload().finally(() => {
+      if (!cancelled) setReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [reload]);
 
   const count =
     tab === "categories"
@@ -64,6 +98,16 @@ export function TaxonomyManagementPanel({
         : tab === "tag-groups"
           ? tagGroups.length
           : tags.length;
+
+  if (!ready) {
+    return (
+      <div className="space-y-6 px-8 pb-10">
+        <p className="text-sm" style={{ fontFamily: cinzel, color: T.muted }}>
+          Loading taxonomy…
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 px-8 pb-10">
@@ -97,11 +141,13 @@ export function TaxonomyManagementPanel({
       </div>
 
       {tab === "categories" && (
-        <CategoriesTab categories={categories} museumId={museumId} />
+        <CategoriesTab categories={categories} museumId={museumId} onReload={reload} />
       )}
-      {tab === "themes" && <ThemesTab themes={themes} museumId={museumId} />}
-      {tab === "tag-groups" && <TagGroupsTab tagGroups={tagGroups} />}
-      {tab === "tags" && <TagsTab tags={tags} tagGroups={tagGroups} />}
+      {tab === "themes" && (
+        <ThemesTab themes={themes} museumId={museumId} onReload={reload} />
+      )}
+      {tab === "tag-groups" && <TagGroupsTab tagGroups={tagGroups} onReload={reload} />}
+      {tab === "tags" && <TagsTab tags={tags} tagGroups={tagGroups} onReload={reload} />}
     </div>
   );
 }
@@ -109,11 +155,12 @@ export function TaxonomyManagementPanel({
 function CategoriesTab({
   categories,
   museumId,
+  onReload,
 }: {
   categories: CategoryDto[];
   museumId: number | null;
+  onReload: () => Promise<void>;
 }) {
-  const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<CategoryDto | null>(null);
   const [nameVi, setNameVi] = useState("");
@@ -166,7 +213,6 @@ function CategoriesTab({
     try {
       const translations = [
         {
-          categoryId: editing?.id ?? 0,
           languageCode: "vi",
           categoryName: nameVi.trim(),
           description: descriptionVi.trim() || undefined,
@@ -174,7 +220,6 @@ function CategoriesTab({
       ];
       if (nameEn.trim()) {
         translations.push({
-          categoryId: editing?.id ?? 0,
           languageCode: "en",
           categoryName: nameEn.trim(),
           description: descriptionEn.trim() || undefined,
@@ -185,13 +230,28 @@ function CategoriesTab({
         parentId: parentId.trim() ? Number(parentId) : undefined,
         sortOrder: Number(sortOrder) || 0,
         status,
-        categoryTranslations: translations,
       };
-      if (editing) await updateCategoryEntry(editing.id, payload);
-      else await createCategoryEntry(payload);
+      const saved = editing
+        ? await updateCategoryEntry(editing.id, payload)
+        : await createCategoryEntry(payload);
+      let id = entityId(saved, editing?.id);
+      if (!id) {
+        const list = await getCategoryOptions();
+        id =
+          list.find((item) =>
+            item.categoryTranslations?.some(
+              (t) => t.languageCode === "vi" && t.categoryName === nameVi.trim(),
+            ),
+          )?.id ?? null;
+      }
+      if (id) {
+        for (const t of translations) {
+          await upsertCategoryTranslationEntry(id, t);
+        }
+      }
       setShowForm(false);
       showSuccess(editing ? "Category updated." : "Category created.");
-      router.refresh();
+      await onReload();
     } catch (err) {
       setError(getDisplayError(err, "Unable to save category."));
     } finally {
@@ -204,7 +264,7 @@ function CategoriesTab({
     try {
       await deleteCategoryEntry(id);
       showSuccess("Category deleted.");
-      router.refresh();
+      await onReload();
     } catch (err) {
       setError(getDisplayError(err, "Unable to delete category."));
     }
@@ -289,11 +349,12 @@ function CategoriesTab({
 function ThemesTab({
   themes,
   museumId,
+  onReload,
 }: {
   themes: ThemeDto[];
   museumId: number | null;
+  onReload: () => Promise<void>;
 }) {
-  const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<ThemeDto | null>(null);
   const [nameVi, setNameVi] = useState("");
@@ -337,7 +398,7 @@ function ThemesTab({
     try {
       const translations = [
         {
-          themeId: editing?.id ?? 0,
+          ...(editing ? { themeId: editing.id } : {}),
           languageCode: "vi",
           themeName: nameVi.trim(),
           description: descriptionVi.trim() || undefined,
@@ -345,7 +406,7 @@ function ThemesTab({
       ];
       if (nameEn.trim()) {
         translations.push({
-          themeId: editing?.id ?? 0,
+          ...(editing ? { themeId: editing.id } : {}),
           languageCode: "en",
           themeName: nameEn.trim(),
           description: descriptionEn.trim() || undefined,
@@ -361,7 +422,7 @@ function ThemesTab({
       else await createThemeEntry(payload);
       setShowForm(false);
       showSuccess(editing ? "Theme updated." : "Theme created.");
-      router.refresh();
+      await onReload();
     } catch (err) {
       setError(getDisplayError(err, "Unable to save theme."));
     } finally {
@@ -374,7 +435,7 @@ function ThemesTab({
     try {
       await deleteThemeEntry(id);
       showSuccess("Theme deleted.");
-      router.refresh();
+      await onReload();
     } catch (err) {
       setError(getDisplayError(err, "Unable to delete theme."));
     }
@@ -430,8 +491,13 @@ function ThemesTab({
   );
 }
 
-function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
-  const router = useRouter();
+function TagGroupsTab({
+  tagGroups,
+  onReload,
+}: {
+  tagGroups: TagGroupDto[];
+  onReload: () => Promise<void>;
+}) {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<TagGroupDto | null>(null);
   const [nameVi, setNameVi] = useState("");
@@ -472,14 +538,14 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
     try {
       const translations = [
         {
-          tagGroupId: editing?.id ?? 0,
+          ...(editing ? { tagGroupId: editing.id } : {}),
           languageCode: "vi",
           groupName: nameVi.trim(),
         },
       ];
       if (nameEn.trim()) {
         translations.push({
-          tagGroupId: editing?.id ?? 0,
+          ...(editing ? { tagGroupId: editing.id } : {}),
           languageCode: "en",
           groupName: nameEn.trim(),
         });
@@ -493,7 +559,7 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
       else await createTagGroupEntry(payload);
       setShowForm(false);
       showSuccess(editing ? "Tag group updated." : "Tag group created.");
-      router.refresh();
+      await onReload();
     } catch (err) {
       setError(getDisplayError(err, "Unable to save tag group."));
     } finally {
@@ -506,7 +572,7 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
     try {
       await deleteTagGroupEntry(id);
       showSuccess("Tag group deleted.");
-      router.refresh();
+      await onReload();
     } catch (err) {
       setError(getDisplayError(err, "Unable to delete tag group."));
     }
@@ -562,11 +628,12 @@ function TagGroupsTab({ tagGroups }: { tagGroups: TagGroupDto[] }) {
 function TagsTab({
   tags,
   tagGroups,
+  onReload,
 }: {
   tags: TagDto[];
   tagGroups: TagGroupDto[];
+  onReload: () => Promise<void>;
 }) {
-  const router = useRouter();
   const groupName = useMemo(() => {
     const map = new Map(tagGroups.map((g) => [g.id, tagGroupDisplayName(g)]));
     return (id: number) => map.get(id) ?? `#${id}`;
@@ -617,14 +684,14 @@ function TagsTab({
     try {
       const translations = [
         {
-          tagId: editing?.id ?? 0,
+          ...(editing ? { tagId: editing.id } : {}),
           languageCode: "vi",
           tagName: nameVi.trim(),
         },
       ];
       if (nameEn.trim()) {
         translations.push({
-          tagId: editing?.id ?? 0,
+          ...(editing ? { tagId: editing.id } : {}),
           languageCode: "en",
           tagName: nameEn.trim(),
         });
@@ -639,7 +706,7 @@ function TagsTab({
       else await createTagEntry(payload);
       setShowForm(false);
       showSuccess(editing ? "Tag updated." : "Tag created.");
-      router.refresh();
+      await onReload();
     } catch (err) {
       setError(getDisplayError(err, "Unable to save tag."));
     } finally {
@@ -652,7 +719,7 @@ function TagsTab({
     try {
       await deleteTagEntry(id);
       showSuccess("Tag deleted.");
-      router.refresh();
+      await onReload();
     } catch (err) {
       setError(getDisplayError(err, "Unable to delete tag."));
     }

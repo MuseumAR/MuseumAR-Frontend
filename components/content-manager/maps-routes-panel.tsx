@@ -1126,25 +1126,6 @@ export function MapsRoutesPanel({
     setShowRoomForm(true);
   }
 
-  function roomTranslations() {
-    return [
-      {
-        languageCode: "vi",
-        roomName: roomName.trim(),
-        description: roomDesc.trim() || undefined,
-      },
-      ...(roomNameEn.trim() || roomDescEn.trim()
-        ? [
-            {
-              languageCode: "en",
-              roomName: roomNameEn.trim() || undefined,
-              description: roomDescEn.trim() || undefined,
-            },
-          ]
-        : []),
-    ];
-  }
-
   async function handleSaveRoom(e: React.FormEvent) {
     e.preventDefault();
     if (!roomCode.trim() || !roomName.trim()) {
@@ -1163,7 +1144,6 @@ export function MapsRoutesPanel({
           roomNameEn: roomNameEn.trim() || undefined,
           description: roomDesc.trim() || undefined,
           descriptionEn: roomDescEn.trim() || undefined,
-          translations: roomTranslations(),
         });
         showSuccess("Room updated.");
       } else {
@@ -1175,7 +1155,6 @@ export function MapsRoutesPanel({
           roomNameEn: roomNameEn.trim() || undefined,
           description: roomDesc.trim() || undefined,
           descriptionEn: roomDescEn.trim() || undefined,
-          translations: roomTranslations(),
         });
         showSuccess("Room created.");
       }

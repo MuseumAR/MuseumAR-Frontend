@@ -62,6 +62,18 @@ function firstNonEmpty(
   return null;
 }
 
+function resolveApiMediaUrl(url: string | null | undefined): string | null {
+  if (url == null) return null;
+  const trimmed = String(url).trim();
+  if (!trimmed) return null;
+  if (/^(https?:)?\/\//i.test(trimmed) || trimmed.startsWith("data:") || trimmed.startsWith("blob:")) {
+    return trimmed;
+  }
+  const path = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  const base = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
+  return base ? `${base}${path}` : path;
+}
+
 export function normalizeExhibitArassetDto(
   raw: unknown,
 ): import("@/types/api").ExhibitArassetDto {
@@ -69,7 +81,7 @@ export function normalizeExhibitArassetDto(
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
     exhibitId: Number(pickField(o, "exhibitId", "ExhibitId") ?? 0),
-    assetUrl: pickStr(o, "assetUrl", "AssetUrl") ?? null,
+    assetUrl: resolveApiMediaUrl(pickStr(o, "assetUrl", "AssetUrl") ?? null),
     assetType: pickStr(o, "assetType", "AssetType") ?? null,
     description: pickStr(o, "description", "Description") ?? null,
     fileSizeBytes: pickNum(o, "fileSizeBytes", "FileSizeBytes") ?? null,
@@ -87,7 +99,7 @@ export function normalizeExhibitListItemDto(
     exhibitCode: pickStr(o, "exhibitCode", "ExhibitCode") ?? null,
     status: String(pickField(o, "status", "Status") ?? ""),
     title: pickStr(o, "title", "Title") ?? null,
-    thumbnailUrl: pickStr(o, "thumbnailUrl", "ThumbnailUrl") ?? null,
+    thumbnailUrl: resolveApiMediaUrl(pickStr(o, "thumbnailUrl", "ThumbnailUrl") ?? null),
     hasArModel: pickBool(o, "hasArModel", "HasArModel"),
     arModelCount: pickNum(o, "arModelCount", "ArModelCount") ?? 0,
     hasAudio: pickBool(o, "hasAudio", "HasAudio"),
@@ -111,6 +123,21 @@ export function normalizePagedResult<T>(
     pageSize: pickNum(o, "pageSize", "PageSize") ?? items.length,
     totalPages: pickNum(o, "totalPages", "TotalPages") ?? 1,
     items,
+  };
+}
+
+export function normalizeExhibitStatsDto(raw: unknown): import("@/types/api").ExhibitStatsDto {
+  const o = asRecord(raw);
+  const withArModel =
+    pickNum(o, "withArModel", "WithArModel") ??
+    pickNum(o, "withAr", "WithAr") ??
+    0;
+  return {
+    total: pickNum(o, "total", "Total") ?? 0,
+    published: pickNum(o, "published", "Published") ?? 0,
+    draft: pickNum(o, "draft", "Draft") ?? 0,
+    withArModel,
+    withQr: pickNum(o, "withQr", "WithQr") ?? 0,
   };
 }
 
@@ -141,7 +168,7 @@ export function normalizeExhibitDto(raw: unknown): import("@/types/api").Exhibit
     exhibitCode: pickStr(o, "exhibitCode", "ExhibitCode") ?? null,
     qrCodeData:
       pickStr(o, "qrCodeData", "QRCodeData", "qRCodeData", "QrcodeData") ?? null,
-    qrCodeImageUrl:
+    qrCodeImageUrl: resolveApiMediaUrl(
       pickStr(
         o,
         "qrCodeImageUrl",
@@ -149,8 +176,9 @@ export function normalizeExhibitDto(raw: unknown): import("@/types/api").Exhibit
         "qRCodeImageUrl",
         "QrcodeImageUrl",
       ) ?? null,
-    thumbnailUrl: pickStr(o, "thumbnailUrl", "ThumbnailUrl") ?? null,
-    arOverlayUrl:
+    ),
+    thumbnailUrl: resolveApiMediaUrl(pickStr(o, "thumbnailUrl", "ThumbnailUrl") ?? null),
+    arOverlayUrl: resolveApiMediaUrl(
       pickStr(
         o,
         "arOverlayUrl",
@@ -158,6 +186,7 @@ export function normalizeExhibitDto(raw: unknown): import("@/types/api").Exhibit
         "aROverlayUrl",
         "AroverlayUrl",
       ) ?? null,
+    ),
     arMarkerUrl:
       pickStr(o, "arMarkerUrl", "ARMarkerUrl", "aRMarkerUrl", "ArmarkerUrl") ??
       null,
@@ -453,7 +482,8 @@ export function normalizeRoomDto(raw: unknown): import("@/types/api").RoomDto {
       pickStr(o, "descriptionEn", "DescriptionEn"),
       en?.description,
     ),
-    waypointId: pickNum(o, "waypointId", "WaypointId") ?? null,
+    waypointId: pickStr(o, "waypointId", "WaypointId") ?? null,
+    doorWaypointId: pickStr(o, "doorWaypointId", "DoorWaypointId") ?? null,
     centerX: pickNum(o, "centerX", "CenterX") ?? null,
     centerY: pickNum(o, "centerY", "CenterY") ?? null,
     translations,
@@ -641,30 +671,32 @@ function langOf(raw: unknown): string {
   return String(pickField(o, "languageCode", "LanguageCode") ?? "");
 }
 
+function translationList(raw: unknown): unknown[] {
+  return unwrapArray(raw);
+}
+
 export function normalizeCategoryDto(
   raw: unknown,
 ): import("@/types/api").CategoryDto {
   const o = asRecord(raw);
   const transRaw =
-    pickField<unknown[]>(
+    pickField(
       o,
       "categoryTranslations",
       "CategoryTranslations",
       "translations",
       "Translations",
     ) ?? [];
-  const categoryTranslations = (Array.isArray(transRaw) ? transRaw : []).map(
-    (item) => {
-      const t = asRecord(item);
-      return {
-        id: pickNum(t, "id", "Id") ?? null,
-        categoryId: Number(pickField(t, "categoryId", "CategoryId") ?? 0),
-        languageCode: langOf(item),
-        categoryName: pickStr(t, "categoryName", "CategoryName") ?? "",
-        description: pickStr(t, "description", "Description") ?? null,
-      };
-    },
-  );
+  const categoryTranslations = translationList(transRaw).map((item) => {
+    const t = asRecord(item);
+    return {
+      id: pickNum(t, "id", "Id") ?? null,
+      categoryId: Number(pickField(t, "categoryId", "CategoryId") ?? 0),
+      languageCode: langOf(item),
+      categoryName: pickStr(t, "categoryName", "CategoryName") ?? "",
+      description: pickStr(t, "description", "Description") ?? null,
+    };
+  });
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
     museumId: pickNum(o, "museumId", "MuseumId") ?? null,
@@ -678,8 +710,8 @@ export function normalizeCategoryDto(
 
 export function normalizeThemeDto(raw: unknown): import("@/types/api").ThemeDto {
   const o = asRecord(raw);
-  const transRaw = pickField<unknown[]>(o, "translations", "Translations") ?? [];
-  const translations = (Array.isArray(transRaw) ? transRaw : []).map((item) => {
+  const transRaw = pickField(o, "translations", "Translations") ?? [];
+  const translations = translationList(transRaw).map((item) => {
     const t = asRecord(item);
     return {
       themeId: pickNum(t, "themeId", "ThemeId") ?? undefined,
@@ -703,8 +735,8 @@ export function normalizeTagGroupDto(
   raw: unknown,
 ): import("@/types/api").TagGroupDto {
   const o = asRecord(raw);
-  const transRaw = pickField<unknown[]>(o, "translations", "Translations") ?? [];
-  const translations = (Array.isArray(transRaw) ? transRaw : []).map((item) => {
+  const transRaw = pickField(o, "translations", "Translations") ?? [];
+  const translations = translationList(transRaw).map((item) => {
     const t = asRecord(item);
     return {
       tagGroupId: pickNum(t, "tagGroupId", "TagGroupId") ?? undefined,
@@ -723,8 +755,8 @@ export function normalizeTagGroupDto(
 
 export function normalizeTagDto(raw: unknown): import("@/types/api").TagDto {
   const o = asRecord(raw);
-  const transRaw = pickField<unknown[]>(o, "translations", "Translations") ?? [];
-  const translations = (Array.isArray(transRaw) ? transRaw : []).map((item) => {
+  const transRaw = pickField(o, "translations", "Translations") ?? [];
+  const translations = translationList(transRaw).map((item) => {
     const t = asRecord(item);
     return {
       tagId: pickNum(t, "tagId", "TagId") ?? undefined,

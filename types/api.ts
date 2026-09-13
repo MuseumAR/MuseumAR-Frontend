@@ -138,7 +138,8 @@ export type RoomDto = {
   floorNumber: number;
   description?: string | null;
   descriptionEn?: string | null;
-  waypointId?: number | null;
+  waypointId?: string | null;
+  doorWaypointId?: string | null;
   centerX?: number | null;
   centerY?: number | null;
   translations?: RoomTranslationDto[];
@@ -146,34 +147,35 @@ export type RoomDto = {
   updatedAt?: string;
 };
 
+/** POST /api/Content/rooms — matches Azure CreateRoomDto (no translations). */
 export type CreateRoomDto = {
   museumId: number;
   mapId?: number | null;
   roomCode: string;
   roomName: string;
   roomNameEn?: string | null;
+  /** BE non-nullable int; omit and it binds to 0. */
   floorNumber?: number;
   description?: string | null;
   descriptionEn?: string | null;
-  translations?: RoomTranslationDto[];
 };
 
+/** PUT /api/Content/rooms/{id} — translations go to PUT /rooms/{id}/translations. */
 export type UpdateRoomDto = {
   mapId?: number | null;
   roomCode?: string;
   roomName?: string;
   roomNameEn?: string | null;
-  floorNumber?: number;
+  floorNumber?: number | null;
   description?: string | null;
   descriptionEn?: string | null;
-  translations?: RoomTranslationDto[];
 };
 
 // ─── Exhibit ──────────────────────────────────────────────────────────────────
 
 export type ExhibitTranslationDto = {
   id?: number | null;
-  exhibitId: number;
+  exhibitId?: number;
   languageCode: string;
   title: string;
   description?: string | null;
@@ -223,6 +225,16 @@ export type ExhibitListItemDto = {
   floorNumber?: number | null;
 };
 
+export type ExhibitStatsDto = {
+  total: number;
+  published: number;
+  draft: number;
+  withArModel: number;
+  /** GitHub BE alias of withArModel */
+  withAr?: number;
+  withQr: number;
+};
+
 export type PagedResultDto<T> = {
   totalItems: number;
   page: number;
@@ -255,17 +267,27 @@ export type CreateExhibitDto = {
 
 // ─── Exhibition ───────────────────────────────────────────────────────────────
 
+export type ExhibitionTranslationDto = {
+  exhibitionId: number;
+  languageCode: string;
+  name: string;
+  description?: string | null;
+};
+
 export type ExhibitionDto = {
   id: number;
   museumId: number;
   themeId?: number | null;
   themeName?: string | null;
   name?: string | null;
+  nameEn?: string | null;
   description?: string | null;
+  descriptionEn?: string | null;
   thumbnailUrl?: string | null;
   startDate?: string | null;
   endDate?: string | null;
   status: string;
+  translations?: ExhibitionTranslationDto[];
 };
 
 export type CreateExhibitionDto = {
@@ -297,6 +319,7 @@ export type SignUploadRequestDto = {
   contentType?: string;
 };
 
+/** GitHub: POST .../ar-assets/sign-upload — not on current Azure OpenAPI. */
 export type SignUploadResponseDto = {
   cloudName: string;
   apiKey: string;
@@ -330,7 +353,7 @@ export type ContentVersionDto = {
 
 export type CreateOfflinePackageDto = {
   versionId: number;
-  museumId?: number;
+  museumId: number;
 };
 
 export type OfflinePackageDto = {
@@ -406,11 +429,14 @@ export type TourRouteStopDto = {
   roomName?: string | null;
 };
 
-export type TourRouteTranslationFE = {
+export type TourRouteTranslationDto = {
   languageCode: string;
   routeName: string;
   description?: string | null;
 };
+
+/** @deprecated Use TourRouteTranslationDto */
+export type TourRouteTranslationFE = TourRouteTranslationDto;
 
 export type TourRouteDto = {
   id: number;
@@ -430,7 +456,7 @@ export type TourRouteDto = {
   createdAt?: string | null;
   updatedAt?: string | null;
   stops: TourRouteStopDto[];
-  translations: TourRouteTranslationFE[];
+  translations: TourRouteTranslationDto[];
 };
 
 export type CreateTourRouteDto = {
@@ -442,7 +468,7 @@ export type CreateTourRouteDto = {
   isDefault?: boolean;
   thumbnailUrl?: string | null;
   stops?: CreateTourRouteStopDto[];
-  translations?: TourRouteTranslationFE[];
+  translations?: TourRouteTranslationDto[];
 };
 
 export type UpdateTourRouteDto = {
@@ -498,9 +524,12 @@ export type CreateTicketTypeDto = {
   museumId: number;
   exhibitionId?: number | null;
   name: string;
+  nameEn?: string | null;
   price: number;
   description?: string | null;
+  descriptionEn?: string | null;
   isActive?: boolean;
+  status?: string;
 };
 
 export type UpdateTicketTypeDto = {
@@ -735,7 +764,7 @@ export type PagedAuditLogsDto = {
 
 export type CategoryTranslationDto = {
   id?: number | null;
-  categoryId: number;
+  categoryId?: number;
   languageCode: string;
   categoryName: string;
   description?: string | null;
@@ -807,7 +836,7 @@ export type CreateCategoryDto = {
   sortOrder: number;
   iconUrl?: string | null;
   status: string;
-  categoryTranslations: Array<{
+  categoryTranslations?: Array<{
     id?: number | null;
     categoryId?: number;
     languageCode: string;
@@ -841,8 +870,7 @@ export type CreateTagDto = {
 export type WaypointDto = {
   id: string;
   museumId: number;
-  /** Present after BE AddMapIdToWaypoint; may be 0/null for legacy rows */
-  mapId?: number | null;
+  mapId: number;
   floorNumber: number;
   locationX: number;
   locationY: number;
@@ -857,7 +885,7 @@ export type WaypointDto = {
 export type CreateWaypointDto = {
   id?: string;
   mapId: number;
-  museumId?: number;
+  museumId: number;
   floorNumber: number;
   locationX: number;
   locationY: number;
@@ -886,10 +914,11 @@ export type WaypointEdgeDto = {
   edgeType: "WALK" | "STAIR" | "ELEVATOR" | string;
   isBidirectional: boolean;
   createdAt?: string;
+  updatedAt?: string;
 };
 
 export type CreateWaypointEdgeDto = {
-  museumId?: number;
+  museumId: number;
   fromWaypointId: string;
   toWaypointId: string;
   distance: number;
@@ -924,11 +953,10 @@ export type NavigationRouteResponseDto = {
 
 export type ArAssetScanDto = {
   assetId: number;
-  fileName: string;
-  fileUrl: string;
-  fileType: string;
-  fileSize: number;
-  fileSizeBytes?: number;
+  assetType: string;
+  assetUrl: string;
+  fileSizeBytes?: number | null;
+  description?: string | null;
 };
 
 export type ExhibitScanResultDto = {

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { StatCard } from "@/components/dashboard/stat-card";
 import { ExhibitTable } from "@/components/content-manager/exhibit-table";
+import { OverviewStats } from "@/components/content-manager/overview-stats";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 
 const QUICK_LINKS = [
@@ -23,13 +23,7 @@ export function ContentManagerOverview() {
             Content dashboard
           </h2>
         </div>
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
-          <StatCard label="Total artifacts" value={0} icon="layers" watermark="scroll" />
-          <StatCard label="Published" value={0} icon="box" watermark="column" />
-          <StatCard label="Drafts" value={0} icon="layers" watermark="vase" />
-          <StatCard label="With AR" value={0} icon="box" watermark="map" />
-          <StatCard label="With QR" value={0} icon="qrCode" watermark="scroll" />
-        </div>
+        <OverviewStats />
       </section>
 
       <section>
