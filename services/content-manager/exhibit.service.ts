@@ -6,8 +6,8 @@ import {
   deleteExhibit,
   getAllExhibitListItems,
   getExhibitById as fetchExhibitById,
-  getExhibitStatsApi,
   getExhibits,
+  getExhibitsCached,
   getExhibitsPaged,
   publishExhibit,
   unpublishExhibit,
@@ -133,16 +133,18 @@ export async function getExhibitRows(): Promise<ExhibitRow[]> {
 }
 
 export async function getExhibitStats() {
-  return safeFetch(async () => {
-    const stats = await getExhibitStatsApi();
+  try {
+    const exhibits = await getExhibitsCached();
     return {
-      total: stats.total,
-      published: stats.published,
-      draft: stats.draft,
-      withAr: stats.withArModel ?? stats.withAr ?? 0,
-      withQr: stats.withQr,
+      total: exhibits.length,
+      published: exhibits.filter((e) => e.status.toLowerCase() === "published").length,
+      draft: exhibits.filter((e) => e.status.toLowerCase() === "draft").length,
+      withAr: exhibits.filter((e) => exhibitHasArModel(e)).length,
+      withQr: exhibits.filter((e) => !!e.qrCodeData).length,
     };
-  }, { total: 0, published: 0, draft: 0, withAr: 0, withQr: 0 });
+  } catch {
+    return { total: 0, published: 0, draft: 0, withAr: 0, withQr: 0 };
+  }
 }
 
 export async function getExhibitDetail(id: number) {

@@ -31,6 +31,7 @@ import {
   updateTag,
   updateTagGroup,
   updateTheme,
+  upsertCategoryTranslation,
 } from "./content-api.service";
 
 function pickLang<T extends { languageCode: string }>(
@@ -117,6 +118,13 @@ export async function createCategoryEntry(payload: CreateCategoryDto) {
 
 export async function updateCategoryEntry(id: number, payload: CreateCategoryDto) {
   return updateCategory(id, payload);
+}
+
+export function upsertCategoryTranslationEntry(
+  id: number,
+  dto: { languageCode: string; categoryName: string; description?: string },
+) {
+  return upsertCategoryTranslation(id, dto);
 }
 
 export async function deleteCategoryEntry(id: number) {

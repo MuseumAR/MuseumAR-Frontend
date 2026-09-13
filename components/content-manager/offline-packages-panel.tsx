@@ -7,6 +7,7 @@ import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
 import { labelStatus } from "@/lib/status-labels";
 import { getApiUrl } from "@/services/api-client";
+import { getAuthUser } from "@/services/auth/auth.storage";
 import { generatePackageEntry } from "@/services/content-manager/offline-package.service";
 import type { ContentVersionDto, OfflinePackageDto } from "@/types/api";
 
@@ -67,10 +68,16 @@ export function OfflinePackagesPanel({
       return;
     }
 
+    const museumId = getAuthUser()?.museumId;
+    if (museumId == null || museumId <= 0) {
+      setError("Could not resolve museum for this account.");
+      return;
+    }
+
     setError(null);
     setIsSubmitting(true);
     try {
-      await generatePackageEntry({ versionId: vid });
+      await generatePackageEntry({ versionId: vid, museumId });
       setShowForm(false);
       setVersionId("");
       router.refresh();

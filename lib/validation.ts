@@ -259,6 +259,7 @@ export function validateCreateTicketType(
   return result(errors);
 }
 
+export const AR_MODEL_MAX_BYTES = 200 * 1024 * 1024;
 export const CLOUDINARY_DEFAULT_MAX_BYTES = 10 * 1024 * 1024;
 
 export function formatFileSize(bytes: number): string {
@@ -272,7 +273,7 @@ export function formatFileSize(bytes: number): string {
 
 export function validateArModelFile(
   file: File,
-  maxBytes = CLOUDINARY_DEFAULT_MAX_BYTES,
+  maxBytes = AR_MODEL_MAX_BYTES,
 ): ValidationResult {
   const errors: Record<string, string> = {};
   if (file.size > maxBytes) {

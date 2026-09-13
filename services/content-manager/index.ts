@@ -15,6 +15,7 @@ export {
   getArAssets,
   migrateOldOverlayAssets,
   getExhibitById,
+  getExhibitByCode,
   getExhibitTranslations,
   getExhibits,
   getExhibitsPaged,

@@ -101,7 +101,6 @@ export function CreateExhibitForm({
       const translationsPayload = [];
       if (titleVi.trim()) {
         translationsPayload.push({
-          exhibitId: 0,
           languageCode: "vi",
           title: titleVi.trim(),
           description: descriptionVi.trim() || undefined,
@@ -109,7 +108,6 @@ export function CreateExhibitForm({
       }
       if (titleEn.trim()) {
         translationsPayload.push({
-          exhibitId: 0,
           languageCode: "en",
           title: titleEn.trim(),
           description: descriptionEn.trim() || undefined,

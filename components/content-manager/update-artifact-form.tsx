@@ -255,7 +255,7 @@ export function UpdateArtifactForm({
             <UploadBox
               label={
                 arFile?.name ??
-                (artifact.arOverlayUrl
+                (is3dModelUrl(artifact.arOverlayUrl)
                   ? `✓ 3D: ${fileNameFromUrl(artifact.arOverlayUrl)}`
                   : artifact.arModelStatus === "Active"
                     ? "✓ 3D model active (Click to replace)"
@@ -562,6 +562,11 @@ function StatusBadge({ status }: { status: Artifact["status"] }) {
       {labelStatus(status)}
     </span>
   );
+}
+
+function is3dModelUrl(url: string | null | undefined) {
+  if (!url) return false;
+  return /\.(glb|gltf)(\?|#|$)/i.test(url);
 }
 
 function fileNameFromUrl(url: string | null | undefined) {
