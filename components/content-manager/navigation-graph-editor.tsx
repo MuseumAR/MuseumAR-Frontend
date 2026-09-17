@@ -27,8 +27,8 @@ import type {
   WaypointEdgeDto,
   NavigationRouteResponseDto,
 } from "@/types/api";
+import { findNavigationRoute, uniquePathFloors } from "@/lib/navigation-path";
 import {
-  getNavigationGraphByMap,
   getNavigationGraphByMuseum,
   createWaypoint,
   deleteWaypoint,
@@ -445,12 +445,19 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     }
   };
 
+  const pathFloors = useMemo(
+    () => uniquePathFloors(testResult?.pathWaypoints ?? []),
+    [testResult],
+  );
+
   const jumpToPathMap = (path: WaypointDto[]) => {
+    if (path.some((w) => w.mapId === selectedMapId)) return;
+
     const first = path[0];
     if (!first) return;
 
     if (first.mapId && first.mapId !== 0 && maps.some((m) => m.id === first.mapId)) {
-      if (first.mapId !== selectedMapId) setSelectedMapId(first.mapId);
+      setSelectedMapId(first.mapId);
       return;
     }
 
@@ -459,6 +466,16 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     const current = maps.find((m) => m.id === selectedMapId);
     if ((current?.floorNumber ?? 1) === floor) return;
     const mapForFloor = maps.find((m) => (m.floorNumber ?? 1) === floor);
+    if (mapForFloor) setSelectedMapId(mapForFloor.id);
+  };
+
+  const jumpToFloor = (floorNumber: number) => {
+    const bySelected = maps.find(
+      (m) =>
+        (m.floorNumber ?? 1) === floorNumber &&
+        (testResult?.pathWaypoints ?? []).some((w) => w.mapId === m.id),
+    );
+    const mapForFloor = bySelected ?? maps.find((m) => (m.floorNumber ?? 1) === floorNumber);
     if (mapForFloor) setSelectedMapId(mapForFloor.id);
   };
 
@@ -473,7 +490,16 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     setTestResult(null);
     setActiveStepIndex(null);
     try {
-      const res = await navigateRoute(Number(testFromRoomId), Number(testToRoomId));
+      const fromId = Number(testFromRoomId);
+      const toId = Number(testToRoomId);
+      const local = findNavigationRoute({
+        waypoints,
+        edges,
+        rooms,
+        fromRoomId: fromId,
+        toRoomId: toId,
+      });
+      const res = local ?? (await navigateRoute(fromId, toId));
       const path = res?.pathWaypoints ?? [];
       if (!res || path.length === 0) {
         setError(
@@ -496,8 +522,13 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
     setActiveStepIndex(null);
   };
 
-  const handleSelectStep = (stepIndex: number, floorNumber: number) => {
+  const handleSelectStep = (stepIndex: number, floorNumber: number, waypointId?: string) => {
     setActiveStepIndex(stepIndex);
+    const wp = waypointId ? resolveWaypoint(waypointId) : null;
+    if (wp?.mapId && maps.some((m) => m.id === wp.mapId)) {
+      if (wp.mapId !== selectedMapId) setSelectedMapId(wp.mapId);
+      return;
+    }
     const current = maps.find((m) => m.id === selectedMapId);
     if ((current?.floorNumber ?? 1) === floorNumber) return;
     const mapForFloor = maps.find((m) => (m.floorNumber ?? 1) === floorNumber);
@@ -768,8 +799,32 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                   <span>{testResult.instructions.length} steps</span>
                 </div>
                 <p className="text-[11px]" style={{ color: T.muted }}>
-                  Yellow line on the map = the route. Click a step to jump to that waypoint.
+                  Yellow line on the map = the route on this floor. Click a step to jump to that waypoint / floor.
                 </p>
+                {pathFloors.length > 1 && (
+                  <div className="rounded-xl p-2 space-y-1.5" style={{ background: "rgba(234,88,12,0.08)" }}>
+                    <p className="text-[11px] font-semibold text-orange-800">
+                      Đường đi qua {pathFloors.length} tầng: {pathFloors.map((f) => `T${f}`).join(" → ")}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {pathFloors.map((floor) => {
+                        const active = (currentMap?.floorNumber ?? 1) === floor;
+                        return (
+                          <button
+                            key={floor}
+                            type="button"
+                            onClick={() => jumpToFloor(floor)}
+                            className={`rounded-lg px-2 py-1 text-[11px] font-bold ${
+                              active ? "bg-orange-600 text-white" : "bg-white text-orange-800"
+                            }`}
+                          >
+                            Tầng {floor}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
                   {testResult.instructions.map((inst, idx) => {
                     const isActive = activeStepIndex === inst.stepIndex;
@@ -777,7 +832,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                       <button
                         key={idx}
                         type="button"
-                        onClick={() => handleSelectStep(inst.stepIndex, inst.floorNumber)}
+                        onClick={() => handleSelectStep(inst.stepIndex, inst.floorNumber, inst.waypointId)}
                         className={`flex w-full items-start gap-1.5 rounded-lg p-1.5 text-left transition ${
                           isActive
                             ? "bg-amber-100 ring-1 ring-amber-400"
@@ -940,6 +995,11 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                 wp.waypointType === "STAIR" ||
                 wp.waypointType === "STAIRS" ||
                 wp.waypointType === "ELEVATOR";
+              const path = testResult?.pathWaypoints ?? [];
+              const pathIndex = path.findIndex((item) => String(item.id) === String(wp.id));
+              const nextOnPath = pathIndex >= 0 ? path[pathIndex + 1] : undefined;
+              const continuesOnOtherFloor =
+                nextOnPath != null && nextOnPath.floorNumber !== wp.floorNumber;
 
               return (
                 <div
@@ -971,6 +1031,11 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                   {isTransitPoint && (
                     <span className="mb-1 max-w-[110px] truncate rounded-md bg-orange-950/80 px-1 py-0.2 text-[9px] font-semibold text-white shadow-sm ring-1 ring-orange-400">
                       {wp.waypointType === "ELEVATOR" ? "🛗 Thang máy" : "🪜 Cầu thang"}
+                    </span>
+                  )}
+                  {continuesOnOtherFloor && nextOnPath && (
+                    <span className="mb-1 rounded-md bg-amber-500 px-1.5 py-0.5 text-[9px] font-bold text-white shadow">
+                      {nextOnPath.floorNumber > wp.floorNumber ? "↑" : "↓"} Tầng {nextOnPath.floorNumber}
                     </span>
                   )}
                   <span
@@ -1009,7 +1074,7 @@ export function NavigationGraphEditor({ museumId, maps, rooms }: NavigationGraph
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleSelectStep(inst.stepIndex, inst.floorNumber);
+                    handleSelectStep(inst.stepIndex, inst.floorNumber, inst.waypointId);
                   }}
                   style={{
                     left: `${wp.locationX}%`,
