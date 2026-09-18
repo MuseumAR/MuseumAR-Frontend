@@ -89,6 +89,9 @@ function GoogleButtonFace({
   );
 }
 
+let isGsiInitialized = false;
+let activeGoogleCallback: ((credential: string) => void) | null = null;
+
 export function GoogleSignInButton({
   onCredential,
   disabled,
@@ -108,24 +111,32 @@ export function GoogleSignInButton({
 
   useEffect(() => {
     callbackRef.current = onCredential;
+    activeGoogleCallback = onCredential;
   }, [onCredential]);
 
   useEffect(() => {
     if (!clientId || !overlayRef.current) return;
 
-    function init() {
+    activeGoogleCallback = (cred) => callbackRef.current(cred);
+
+    function renderGoogleButton() {
       const overlay = overlayRef.current;
       const wrapper = wrapperRef.current;
       if (!overlay || !wrapper || !window.google?.accounts?.id) return;
 
-      overlay.innerHTML = "";
-      window.google.accounts.id.initialize({
-        client_id: clientId!,
-        callback: (response) => {
-          if (response.credential) callbackRef.current(response.credential);
-        },
-      });
+      if (!isGsiInitialized) {
+        window.google.accounts.id.initialize({
+          client_id: clientId!,
+          callback: (response) => {
+            if (response.credential && activeGoogleCallback) {
+              activeGoogleCallback(response.credential);
+            }
+          },
+        });
+        isGsiInitialized = true;
+      }
 
+      overlay.innerHTML = "";
       window.google.accounts.id.renderButton(overlay, {
         type: "standard",
         theme: "outline",
@@ -138,16 +149,22 @@ export function GoogleSignInButton({
     }
 
     const existing = document.querySelector(`script[src="${GSI_SCRIPT}"]`);
-    if (existing) {
-      init();
+    if (existing && window.google?.accounts?.id) {
+      renderGoogleButton();
       return;
     }
 
-    const script = document.createElement("script");
-    script.src = GSI_SCRIPT;
-    script.async = true;
-    script.onload = init;
-    document.body.appendChild(script);
+    const script = existing || document.createElement("script");
+    if (!existing) {
+      script.setAttribute("src", GSI_SCRIPT);
+      (script as HTMLScriptElement).async = true;
+      (script as HTMLScriptElement).onload = () => {
+        renderGoogleButton();
+      };
+      document.body.appendChild(script);
+    } else {
+      (script as HTMLScriptElement).addEventListener("load", renderGoogleButton);
+    }
   }, [clientId]);
 
   return (
