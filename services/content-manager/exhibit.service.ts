@@ -103,15 +103,21 @@ export async function getExhibitPage(params: {
     };
   } catch {
     const exhibits = await getExhibits();
+    let filtered = exhibits;
+    if (params.status && params.status !== "All") {
+      filtered = filtered.filter(
+        (item) => (item.status ?? "").toLowerCase() === params.status?.toLowerCase()
+      );
+    }
     const q = search?.toLowerCase() ?? "";
-    const filtered = q
-      ? exhibits.filter((item) => {
-          const title = (item.translations[0]?.title ?? "").toLowerCase();
-          const code = (item.exhibitCode ?? "").toLowerCase();
-          const status = (item.status ?? "").toLowerCase();
-          return title.includes(q) || code.includes(q) || status.includes(q);
-        })
-      : exhibits;
+    if (q) {
+      filtered = filtered.filter((item) => {
+        const title = (item.translations[0]?.title ?? "").toLowerCase();
+        const code = (item.exhibitCode ?? "").toLowerCase();
+        const status = (item.status ?? "").toLowerCase();
+        return title.includes(q) || code.includes(q) || status.includes(q);
+      });
+    }
     const totalItems = filtered.length;
     const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
     const current = Math.min(page, totalPages);

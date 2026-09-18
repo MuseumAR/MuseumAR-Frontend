@@ -21,6 +21,7 @@ function getPrimaryTranslation(exhibit: ExhibitDto) {
 function mapExhibitStatus(status: string): Artifact["status"] {
   if (status === "Published") return "Published";
   if (status === "Draft") return "Draft";
+  if (status === "Archived") return "Archived";
   return "Pending";
 }
 

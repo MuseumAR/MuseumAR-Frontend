@@ -20,6 +20,7 @@ import {
 const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   Published: { bg: "rgba(79,125,74,0.12)", color: T.success },
   Draft: { bg: "rgba(200,155,69,0.15)", color: T.primaryDark },
+  Archived: { bg: "rgba(180,40,40,0.12)", color: T.danger },
 };
 
 export function ExhibitTable({
@@ -39,6 +40,7 @@ export function ExhibitTable({
   const router = useRouter();
   const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("All");
   const [page, setPage] = useState(1);
   const [rows, setRows] = useState<ExhibitRow[]>([]);
   const [totalItems, setTotalItems] = useState(0);
@@ -63,7 +65,7 @@ export function ExhibitTable({
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    getExhibitPage({ page, pageSize: EXHIBIT_PAGE_SIZE, search })
+    getExhibitPage({ page, pageSize: EXHIBIT_PAGE_SIZE, search, status: statusFilter })
       .then((result) => {
         if (cancelled) return;
         if (result.rows.length === 0 && page > 1 && result.totalItems > 0) {
@@ -88,7 +90,7 @@ export function ExhibitTable({
     return () => {
       cancelled = true;
     };
-  }, [page, search, reloadKey]);
+  }, [page, search, statusFilter, reloadKey]);
 
   async function handlePublish(id: number, published: boolean) {
     setActingId(id);
@@ -130,7 +132,25 @@ export function ExhibitTable({
         <h3 className={dashboardTitleClass} style={{ fontFamily: cinzel, color: T.text }}>
           Hiện vật
         </h3>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <select
+            value={statusFilter}
+            onChange={(e) => {
+              setStatusFilter(e.target.value);
+              setPage(1);
+            }}
+            className="rounded-2xl py-2.5 px-3.5 text-sm outline-none cursor-pointer"
+            style={{
+              background: T.surface,
+              border: `1px solid ${T.border}`,
+              color: T.text,
+            }}
+          >
+            <option value="All">Tất cả trạng thái</option>
+            <option value="Published">Đã xuất bản</option>
+            <option value="Draft">Bản nháp</option>
+            <option value="Archived">Đã xóa (Lưu trữ)</option>
+          </select>
           <div className="relative w-64 min-w-[200px]">
             <Search
               className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2"
@@ -287,7 +307,7 @@ export function ExhibitTable({
                           >
                             <Eye className="h-4 w-4" />
                           </Link>
-                          {canEdit && (
+                          {canEdit && row.status !== "Archived" && (
                             <Link
                               href={`${basePath}/artifact/${row.id}/edit`}
                               prefetch={false}
@@ -298,7 +318,7 @@ export function ExhibitTable({
                               <Pencil className="h-4 w-4" />
                             </Link>
                           )}
-                          {canPublish && (
+                          {canPublish && row.status !== "Archived" && (
                             <button
                               type="button"
                               disabled={busy}
@@ -310,7 +330,7 @@ export function ExhibitTable({
                               <Send className="h-4 w-4" />
                             </button>
                           )}
-                          {canDelete && (
+                          {canDelete && row.status !== "Archived" && (
                             <button
                               type="button"
                               disabled={busy}

@@ -111,7 +111,13 @@ function matchesExhibitSearch(
   search?: string,
   status?: string,
 ) {
-  if (status && item.status.toLowerCase() !== status.toLowerCase()) return false;
+  if (
+    status &&
+    status.toLowerCase() !== "all" &&
+    item.status.toLowerCase() !== status.toLowerCase()
+  ) {
+    return false;
+  }
   const q = search?.trim().toLowerCase();
   if (!q) return true;
   const title = (item.title ?? "").toLowerCase();
