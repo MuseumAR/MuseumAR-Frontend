@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Edit2, Trash2, Tag, Eye, X, Plus, Power, PowerOff } from "lucide-react";
+import { ArrowLeft, Edit2, Trash2, Tag, Eye, X, Plus, Power, PowerOff, Calendar, Clock } from "lucide-react";
 import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
 import type { Ticket } from "@/types";
 import type { ExhibitionDto, TicketPromotionDto } from "@/types/api";
@@ -23,6 +23,13 @@ import {
 } from "@/services/museum-manager/ticket-api.service";
 import { getDisplayError } from "@/lib/validation";
 import { SuccessBanner, useSuccessToast } from "@/components/shared/success-banner";
+
+function formatDate(value?: string | null) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return value.slice(0, 10);
+  return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
 
 function formFromTicket(ticket: Ticket) {
   return {
@@ -242,6 +249,39 @@ export function TicketDetailPanel({
     if (Number.isNaN(numericTicketId)) return;
 
     setPromoError(null);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const sDate = new Date(promoStartDate);
+    sDate.setHours(0, 0, 0, 0);
+
+    if (editingPromoId == null) {
+      if (sDate < today) {
+        setPromoError("Ngày bắt đầu không được ở trong quá khứ (Start date cannot be in the past).");
+        return;
+      }
+    } else {
+      const currentPromo = promotions.find((p) => p.id === editingPromoId);
+      const initialStart = currentPromo?.startDate ? currentPromo.startDate.slice(0, 10) : "";
+      if (promoStartDate && promoStartDate !== initialStart && sDate < today) {
+        setPromoError("Ngày bắt đầu không được ở trong quá khứ (Start date cannot be in the past).");
+        return;
+      }
+    }
+
+    const eDate = new Date(promoEndDate);
+    eDate.setHours(0, 0, 0, 0);
+    if (eDate < today) {
+      setPromoError("Ngày kết thúc không được ở trong quá khứ (End date cannot be in the past).");
+      return;
+    }
+
+    if (sDate >= eDate) {
+      setPromoError("Ngày kết thúc phải diễn ra sau ngày bắt đầu.");
+      return;
+    }
+
     setPromoSubmitting(true);
 
     const payload = {
@@ -432,6 +472,33 @@ export function TicketDetailPanel({
                         <option key={ex.id} value={ex.id}>{ex.name || `Exhibition #${ex.id}`}</option>
                       ))}
                     </select>
+                    {(() => {
+                      const selectedEx = exhibitions.find((e) => String(e.id) === String(exhibitionId));
+                      if (selectedEx) {
+                        return (
+                          <div className="mt-1.5 rounded-xl p-2.5 text-xs border border-dashed" style={{ background: "rgba(200,155,69,0.08)", borderColor: T.border, color: T.primaryDark }}>
+                            <p className="font-semibold flex items-center gap-1.5">
+                              <Calendar className="h-3.5 w-3.5 text-amber-700" />
+                              Thời hạn vé: {formatDate(selectedEx.startDate)} → {formatDate(selectedEx.endDate)}
+                            </p>
+                            <p className="text-[11px] mt-1" style={{ color: T.muted }}>
+                              * Vé tự động hết hạn vào 23:59:59 ngày bế mạc triển lãm và tự động ngừng bán khi triển lãm kết thúc.
+                            </p>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="mt-1.5 rounded-xl p-2.5 text-xs border border-dashed" style={{ background: "rgba(16,185,129,0.06)", borderColor: "rgba(16,185,129,0.25)", color: "#047857" }}>
+                          <p className="font-semibold flex items-center gap-1.5">
+                            <Clock className="h-3.5 w-3.5" />
+                            Thời hạn vé: Không thời hạn (Vô thời hạn)
+                          </p>
+                          <p className="text-[11px] mt-1" style={{ color: T.muted }}>
+                            * Vé tham quan cố định toàn bảo tàng không bị giới hạn ngày sử dụng.
+                          </p>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
 
@@ -516,11 +583,45 @@ export function TicketDetailPanel({
                   </div>
                 </div>
 
-                <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Scope / Exhibition</span>
-                  <span className="text-base" style={{ color: T.text }}>
-                    {exhibition ? exhibition.name : "Whole museum (All exhibitions)"}
-                  </span>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Scope / Exhibition</span>
+                    <span className="text-base font-semibold block mt-0.5" style={{ color: T.text }}>
+                      {exhibition ? exhibition.name : "Whole museum (All exhibitions)"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Ticket Validity (Thời hạn vé)</span>
+                    <div className="mt-1">
+                      {exhibition ? (
+                        <div className="space-y-1">
+                          <span
+                            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold"
+                            style={{ background: "rgba(200,155,69,0.18)", color: "#8C6214", border: `1px solid ${T.border}` }}
+                          >
+                            <Calendar className="h-3.5 w-3.5 text-amber-700" />
+                            Theo triển lãm: {formatDate(exhibition.startDate)} → {formatDate(exhibition.endDate)}
+                          </span>
+                          <p className="text-xs leading-relaxed" style={{ color: T.muted }}>
+                            * Vé hết hạn vào 23:59:59 của ngày bế mạc triển lãm và tự động ngừng bán khi triển lãm kết thúc.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-1">
+                          <span
+                            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold"
+                            style={{ background: "rgba(16,185,129,0.12)", color: "#047857", border: "1px solid rgba(16,185,129,0.3)" }}
+                          >
+                            <Clock className="h-3.5 w-3.5" />
+                            Không thời hạn (Vô thời hạn)
+                          </span>
+                          <p className="text-xs leading-relaxed" style={{ color: T.muted }}>
+                            * Vé tham quan cố định không giới hạn thời gian sử dụng, du khách có thể check-in vào bất kỳ ngày nào.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
@@ -637,6 +738,7 @@ export function TicketDetailPanel({
                       <input
                         type="date"
                         value={promoStartDate}
+                        min={editingPromoId != null ? undefined : new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10)}
                         onChange={(e) => setPromoStartDate(e.target.value)}
                         required
                         className="w-full rounded-lg px-2 py-2 outline-none"
@@ -649,6 +751,7 @@ export function TicketDetailPanel({
                       <input
                         type="date"
                         value={promoEndDate}
+                        min={promoStartDate || new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10)}
                         onChange={(e) => setPromoEndDate(e.target.value)}
                         required
                         className="w-full rounded-lg px-2 py-2 outline-none"

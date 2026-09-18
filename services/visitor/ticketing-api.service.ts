@@ -13,6 +13,7 @@ import type {
   TicketDto,
   TicketTypeDto,
   ValidateTicketResponseDto,
+  CreateTicketRefundRequestDto,
 } from "@/types/api";
 
 export function getPublicTicketTypes(lang?: string): Promise<TicketTypeDto[]> {
@@ -63,5 +64,9 @@ export function validateTicket(ticketCode: string): Promise<ValidateTicketRespon
 
 export function checkInTicket(ticketCode: string): Promise<ValidateTicketResponseDto> {
   return apiPostAuth<ValidateTicketResponseDto>("/api/ticketing/check-in", { ticketCode });
+}
+
+export function requestTicketRefund(ticketId: number, payload: CreateTicketRefundRequestDto): Promise<unknown> {
+  return apiPostAuth<unknown>(`/api/ticketing/my-tickets/${ticketId}/refund-request`, payload);
 }
 

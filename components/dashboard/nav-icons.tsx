@@ -12,6 +12,7 @@ import {
   Tags,
   Ticket,
   Users,
+  RotateCcw,
 } from "lucide-react";
 import type { NavIcon } from "@/lib/roles";
 import { dashboardTheme as T } from "@/lib/dashboard-theme";
@@ -42,6 +43,8 @@ export function NavIcon({ icon, active }: { icon: NavIcon; active?: boolean }) {
     case "ticket_application":
     case "ticket_types":
       return <Ticket {...props} />;
+    case "refunds":
+      return <RotateCcw {...props} />;
     case "museum_management":
       return <Building2 {...props} />;
     case "users":

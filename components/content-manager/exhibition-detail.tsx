@@ -25,6 +25,7 @@ import type { ExhibitionDto, ExhibitDto, ThemeDto } from "@/types/api";
 function StatusBadge({ status }: { status: string }) {
   const active = status === "Active";
   const inactive = status === "Inactive";
+  const ended = status === "Ended";
   return (
     <span
       className="rounded-full px-2.5 py-0.5 text-xs font-medium"
@@ -33,8 +34,8 @@ function StatusBadge({ status }: { status: string }) {
           ? "rgba(79,125,74,0.12)"
           : inactive
             ? "rgba(200,155,69,0.15)"
-            : "rgba(109,90,69,0.12)",
-        color: active ? T.success : inactive ? T.primaryDark : T.muted,
+            : "rgba(180,50,50,0.12)",
+        color: active ? T.success : inactive ? T.primaryDark : "#9E2A2B",
       }}
     >
       {labelStatus(status)}
@@ -162,8 +163,32 @@ export function ExhibitionDetail({
       return;
     }
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const initialStart = exhibition.startDate ? exhibition.startDate.slice(0, 10) : "";
+    if (startDate && startDate !== initialStart) {
+      const s = new Date(startDate);
+      s.setHours(0, 0, 0, 0);
+      if (s < today) {
+        setError("Ngày bắt đầu không được ở trong quá khứ (Start date cannot be in the past).");
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    if (endDate) {
+      const eDate = new Date(endDate);
+      eDate.setHours(0, 0, 0, 0);
+      if (eDate < today) {
+        setError("Ngày kết thúc không được ở trong quá khứ (End date cannot be in the past).");
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-      setError("End date must be on or after the start date.");
+      setError("Ngày kết thúc phải diễn ra sau hoặc cùng ngày với ngày bắt đầu.");
       setIsSubmitting(false);
       return;
     }
@@ -227,6 +252,8 @@ export function ExhibitionDetail({
     return title.includes(q) || code.includes(q);
   });
 
+  const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+
   return (
     <div className="px-8 pb-10">
       <Link
@@ -278,11 +305,25 @@ export function ExhibitionDetail({
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>Start date</label>
-                  <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }} />
+                  <input
+                    type="date"
+                    min={exhibition.startDate && exhibition.startDate.slice(0, 10) < todayStr ? exhibition.startDate.slice(0, 10) : todayStr}
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>End date</label>
-                  <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }} />
+                  <input
+                    type="date"
+                    min={startDate || todayStr}
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>Status</label>

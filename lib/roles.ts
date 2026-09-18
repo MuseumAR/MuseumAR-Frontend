@@ -23,6 +23,7 @@ export type NavIcon =
   | "offline_packages"
   | "maps_routes"
   | "ticket_application"
+  | "refunds"
   | "museum_management"
   | "users"
   | "ticket_types"
@@ -122,6 +123,10 @@ const NAV_CONFIG: Record<NavIcon, { label: string; segment: string }> = {
     label: "Ticket Management",
     segment: "ticket-application",
   },
+  refunds: {
+    label: "Ticket Refunds",
+    segment: "refunds",
+  },
   museum_management: {
     label: "Museum Profile",
     segment: "museum-management",
@@ -155,6 +160,7 @@ export const ROLE_NAV: Record<DashboardRole, NavIcon[]> = {
     "museum_profile",
     "artifact",
     "ticket_application",
+    "refunds",
   ],
   ContentManager: [
     "overview",

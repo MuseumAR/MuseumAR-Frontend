@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { CheckCircle2, ArrowLeft, Loader2, QrCode, ShieldCheck } from "lucide-react";
+import { CheckCircle2, ArrowLeft, Loader2, QrCode, ShieldCheck, RotateCcw, Clock, X } from "lucide-react";
 import { Navbar } from "@/components/shared/navbar";
 import { useAuth } from "@/context/auth-context";
 import { formatDateTimeVi, formatVnd } from "@/lib/format";
 import { labelStatus } from "@/lib/status-labels";
 import { getDisplayError } from "@/lib/validation";
-import { checkInTicket, getTicketDetail } from "@/services/visitor/ticketing.service";
+import { checkInTicket, getTicketDetail, requestTicketRefund } from "@/services/visitor/ticketing.service";
 import type { TicketDetailDto } from "@/types/api";
 import { useLanguage } from "@/context/language-context";
 
@@ -50,6 +50,16 @@ export function TicketDetailPanel() {
   const [checkInLoading, setCheckInLoading] = useState(false);
   const [checkInSuccess, setCheckInSuccess] = useState(false);
   const [checkInError, setCheckInError] = useState<string | null>(null);
+
+  // Refund request state
+  const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
+  const [bankName, setBankName] = useState("Vietcombank");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [accountHolderName, setAccountHolderName] = useState("");
+  const [refundReason, setRefundReason] = useState("");
+  const [refundLoading, setRefundLoading] = useState(false);
+  const [refundError, setRefundError] = useState<string | null>(null);
+  const [refundSuccess, setRefundSuccess] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -104,8 +114,37 @@ export function TicketDetailPanel() {
     }
   };
 
+  const handleRequestRefund = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!detail) return;
+    if (!bankName.trim() || !accountNumber.trim() || !accountHolderName.trim() || !refundReason.trim()) {
+      setRefundError("Vui lòng điền đầy đủ các thông tin yêu cầu.");
+      return;
+    }
+
+    setRefundLoading(true);
+    setRefundError(null);
+    try {
+      await requestTicketRefund(detail.id, {
+        bankName: bankName.trim(),
+        accountNumber: accountNumber.trim(),
+        accountHolderName: accountHolderName.trim(),
+        reason: refundReason.trim(),
+      });
+      setDetail((prev) => (prev ? { ...prev, status: "Refund_Pending" } : null));
+      setRefundSuccess(true);
+      setIsRefundModalOpen(false);
+    } catch (err: unknown) {
+      setRefundError(getDisplayError(err, "Gửi yêu cầu hoàn vé thất bại. Vui lòng thử lại."));
+    } finally {
+      setRefundLoading(false);
+    }
+  };
+
   const isPaidOrActive = detail?.status === "Paid" || detail?.status === "Active";
   const isUsed = detail?.status === "Used";
+  const isRefundPending = detail?.status === "Refund_Pending";
+  const isRefunded = detail?.status === "Refunded";
 
   return (
     <div className="min-h-screen" style={{ background: C.bg }}>
@@ -214,17 +253,29 @@ export function TicketDetailPanel() {
                 style={{
                   background: isUsed
                     ? "rgba(200,140,40,0.15)"
+                    : isRefundPending
+                    ? "rgba(234,179,8,0.15)"
+                    : isRefunded
+                    ? "rgba(239,68,68,0.15)"
                     : isPaidOrActive
                     ? "rgba(60,120,80,0.15)"
                     : "rgba(180,60,60,0.15)",
                   color: isUsed
                     ? "#A67C2D"
+                    : isRefundPending
+                    ? "#B45309"
+                    : isRefunded
+                    ? "#DC2626"
                     : isPaidOrActive
                     ? "#2F5D3A"
                     : "#8B2626",
                 }}
               >
-                    {labelStatus(detail.status)}
+                {isRefundPending
+                  ? "Chờ duyệt hoàn tiền"
+                  : isRefunded
+                  ? "Đã hoàn tiền"
+                  : labelStatus(detail.status)}
               </span>
             </header>
 
@@ -241,6 +292,54 @@ export function TicketDetailPanel() {
                 <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
                 <div>
                   <strong>Check-in thành công!</strong> Vé của bạn đã chuyển sang trạng thái <em>{labelStatus(detail.status)}</em>. Vui lòng xuất trình màn hình này cho nhân viên bảo tàng để vào cổng.
+                </div>
+              </div>
+            )}
+
+            {isRefundPending && (
+              <div
+                className="flex items-start gap-3 rounded-2xl p-4 text-sm font-medium"
+                style={{
+                  background: "rgba(234,179,8,0.12)",
+                  border: "1px solid rgba(234,179,8,0.3)",
+                  color: "#B45309",
+                }}
+              >
+                <Clock className="h-5 w-5 shrink-0 mt-0.5" />
+                <div>
+                  <strong>Yêu cầu hoàn vé đang được xử lý:</strong> Ban quản lý bảo tàng đang kiểm tra thông tin tài khoản ngân hàng của bạn để hoàn tiền. Mã vé tạm thời bị tạm khóa.
+                </div>
+              </div>
+            )}
+
+            {isRefunded && (
+              <div
+                className="flex items-start gap-3 rounded-2xl p-4 text-sm font-medium"
+                style={{
+                  background: "rgba(239,68,68,0.10)",
+                  border: "1px solid rgba(239,68,68,0.25)",
+                  color: "#DC2626",
+                }}
+              >
+                <RotateCcw className="h-5 w-5 shrink-0 mt-0.5" />
+                <div>
+                  <strong>Vé đã được hoàn tiền:</strong> Ban quản lý bảo tàng đã xác nhận hoàn tiền cho vé này. Mã QR check-in đã bị vô hiệu hóa và không còn giá trị vào cổng.
+                </div>
+              </div>
+            )}
+
+            {refundSuccess && (
+              <div
+                className="flex items-start gap-3 rounded-2xl p-4 text-sm font-medium"
+                style={{
+                  background: "rgba(60,120,80,0.12)",
+                  border: "1px solid rgba(60,120,80,0.3)",
+                  color: "#2F5D3A",
+                }}
+              >
+                <CheckCircle2 className="h-5 w-5 shrink-0 mt-0.5" />
+                <div>
+                  <strong>Yêu cầu hoàn tiền đã được gửi!</strong> Ban quản lý bảo tàng sẽ liên hệ và hoàn tiền vào tài khoản ngân hàng của bạn sớm nhất có thể.
                 </div>
               </div>
             )}
@@ -292,6 +391,21 @@ export function TicketDetailPanel() {
                     </>
                   )}
                 </button>
+
+                <div className="mt-4 pt-3 border-t flex items-center justify-center gap-2" style={{ borderColor: C.border }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRefundError(null);
+                      setIsRefundModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-xl transition-colors hover:bg-black/5"
+                    style={{ color: "#B45309" }}
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Yêu cầu hoàn tiền vé
+                  </button>
+                </div>
               </div>
             )}
 
@@ -324,7 +438,7 @@ export function TicketDetailPanel() {
                   value={
                     detail.validDate
                       ? formatDateTimeVi(detail.validDate)
-                      : "Chưa gán"
+                      : "Không thời hạn (Vô thời hạn)"
                   }
                 />
               </dl>
@@ -420,7 +534,25 @@ export function TicketDetailPanel() {
                   border: `1px solid ${C.border}`,
                 }}
               >
-                {detail.qrCodeData &&
+                {isRefunded ? (
+                  <div className="py-6">
+                    <div
+                      className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl"
+                      style={{
+                        background: "rgba(239,68,68,0.08)",
+                        border: "1px dashed rgba(239,68,68,0.3)",
+                      }}
+                    >
+                      <RotateCcw className="h-10 w-10 text-red-500 opacity-60" />
+                    </div>
+                    <p className="mt-3 text-sm font-bold text-red-600">
+                      MÃ QR ĐÃ BỊ VÔ HIỆU HÓA
+                    </p>
+                    <p className="mt-1 text-xs" style={{ color: C.muted }}>
+                      Vé này đã được hoàn tiền thành công, không thể sử dụng để quét check-in vào bảo tàng.
+                    </p>
+                  </div>
+                ) : detail.qrCodeData &&
                 (detail.qrCodeData.startsWith("http") ||
                   detail.qrCodeData.startsWith("data:image")) ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -441,20 +573,184 @@ export function TicketDetailPanel() {
                     <QrCode className="h-14 w-14" style={{ color: C.primary }} />
                   </div>
                 )}
-                <p className="mt-4 text-sm font-medium" style={{ color: C.text }}>
-                  Đưa mã này cho cổng khi check-in
-                </p>
-                <p
-                  className="mt-2 break-all font-mono text-lg font-semibold tracking-wide"
-                  style={{ color: C.text }}
-                >
-                  {detail.qrCodeData || detail.ticketCode || "—"}
-                </p>
+                {!isRefunded && (
+                  <>
+                    <p className="mt-4 text-sm font-medium" style={{ color: C.text }}>
+                      Đưa mã này cho cổng khi check-in
+                    </p>
+                    <p
+                      className="mt-2 break-all font-mono text-lg font-semibold tracking-wide"
+                      style={{ color: C.text }}
+                    >
+                      {detail.qrCodeData || detail.ticketCode || "—"}
+                    </p>
+                  </>
+                )}
               </div>
             </section>
           </article>
         )}
       </main>
+
+      {/* Refund Request Modal */}
+      {isRefundModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div
+            className="relative w-full max-w-lg rounded-3xl p-6 shadow-2xl animate-in fade-in zoom-in duration-200"
+            style={{
+              background: C.surface,
+              border: `1px solid ${C.border}`,
+            }}
+          >
+            <button
+              onClick={() => setIsRefundModalOpen(false)}
+              className="absolute right-4 top-4 rounded-full p-2 text-stone-400 transition-colors hover:bg-black/5 hover:text-stone-700"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-2xl"
+                style={{ background: "rgba(200,155,60,0.15)", color: C.primary }}
+              >
+                <RotateCcw className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold" style={{ color: C.text }}>
+                  Yêu cầu hoàn tiền vé
+                </h3>
+                <p className="text-xs" style={{ color: C.muted }}>
+                  Số tiền hoàn: <strong className="text-amber-700 text-sm font-semibold">{formatVnd(detail?.price != null ? detail.price : (detail?.ticketType.price ?? 0))}</strong>
+                </p>
+              </div>
+            </div>
+
+            {refundError && (
+              <div className="mb-4 rounded-2xl bg-red-50 p-3 text-xs font-medium text-red-700 border border-red-200">
+                {refundError}
+              </div>
+            )}
+
+            <form onSubmit={handleRequestRefund} className="space-y-3.5">
+              <div>
+                <label className="block text-xs font-semibold mb-1" style={{ color: C.muted }}>
+                  Ngân hàng nhận tiền *
+                </label>
+                <select
+                  value={bankName}
+                  onChange={(e) => setBankName(e.target.value)}
+                  required
+                  className="w-full rounded-xl px-3.5 py-2.5 text-sm outline-none transition-all"
+                  style={{
+                    background: C.bg,
+                    border: `1px solid ${C.border}`,
+                    color: C.text,
+                  }}
+                >
+                  <option value="Vietcombank">Vietcombank (VCB)</option>
+                  <option value="MBBank">MB Bank (Quân Đội)</option>
+                  <option value="Techcombank">Techcombank (TCB)</option>
+                  <option value="BIDV">BIDV</option>
+                  <option value="VietinBank">VietinBank</option>
+                  <option value="ACB">ACB (Á Châu)</option>
+                  <option value="VPBank">VPBank</option>
+                  <option value="TPBank">TPBank</option>
+                  <option value="Agribank">Agribank</option>
+                  <option value="MoMo">Ví điện tử MoMo</option>
+                  <option value="Khác">Ngân hàng khác</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold mb-1" style={{ color: C.muted }}>
+                  Số tài khoản *
+                </label>
+                <input
+                  type="text"
+                  value={accountNumber}
+                  onChange={(e) => setAccountNumber(e.target.value)}
+                  placeholder="VD: 1029384756"
+                  required
+                  className="w-full rounded-xl px-3.5 py-2.5 text-sm outline-none transition-all font-mono"
+                  style={{
+                    background: C.bg,
+                    border: `1px solid ${C.border}`,
+                    color: C.text,
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold mb-1" style={{ color: C.muted }}>
+                  Tên chủ tài khoản (viết hoa không dấu) *
+                </label>
+                <input
+                  type="text"
+                  value={accountHolderName}
+                  onChange={(e) => setAccountHolderName(e.target.value.toUpperCase())}
+                  placeholder="VD: NGUYEN VAN A"
+                  required
+                  className="w-full rounded-xl px-3.5 py-2.5 text-sm outline-none transition-all font-mono"
+                  style={{
+                    background: C.bg,
+                    border: `1px solid ${C.border}`,
+                    color: C.text,
+                  }}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold mb-1" style={{ color: C.muted }}>
+                  Lý do hoàn vé *
+                </label>
+                <textarea
+                  rows={2}
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                  placeholder="VD: Bận việc đột xuất không thể tham quan..."
+                  required
+                  className="w-full rounded-xl px-3.5 py-2.5 text-sm outline-none transition-all resize-none"
+                  style={{
+                    background: C.bg,
+                    border: `1px solid ${C.border}`,
+                    color: C.text,
+                  }}
+                />
+              </div>
+
+              <div className="mt-5 flex items-center justify-end gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsRefundModalOpen(false)}
+                  className="rounded-xl px-4 py-2.5 text-sm font-medium transition-colors hover:bg-black/5"
+                  style={{ color: C.muted }}
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  disabled={refundLoading}
+                  className="inline-flex items-center gap-2 rounded-xl px-6 py-2.5 text-sm font-bold text-white transition-transform active:scale-[0.98] disabled:opacity-50"
+                  style={{
+                    background: "linear-gradient(135deg, #C89B3C 0%, #A67C2D 100%)",
+                    boxShadow: "0 4px 12px rgba(200,155,60,0.3)",
+                  }}
+                >
+                  {refundLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Đang gửi...
+                    </>
+                  ) : (
+                    "Gửi yêu cầu hoàn vé"
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
