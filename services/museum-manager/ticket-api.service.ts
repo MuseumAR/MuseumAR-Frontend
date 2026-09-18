@@ -1,6 +1,17 @@
 import { apiGetAuth, apiPostAuth, apiPutAuth, apiDeleteAuth } from "@/services/api-client";
 import { normalizeTicketTypeDto } from "@/lib/normalize-dto";
-import type { CreateTicketTypeDto, UpdateTicketTypeDto, CreateTicketPromotionDto, UpdateTicketPromotionDto, TicketTypeDto, TicketPromotionDto } from "@/types/api";
+import type {
+  CreateTicketTypeDto,
+  UpdateTicketTypeDto,
+  CreateTicketPromotionDto,
+  UpdateTicketPromotionDto,
+  TicketTypeDto,
+  TicketPromotionDto,
+  TicketRefundRequestDto,
+  ProcessTicketRefundRequestDto,
+  RevenueAnalyticsDto,
+  VisitorTrafficDto,
+} from "@/types/api";
 
 export function getManagerTicketTypes(accessToken?: string | null) {
   return apiGetAuth<unknown[]>("/api/MuseumManager/ticket-types", accessToken).then((data) =>
@@ -102,3 +113,58 @@ export function toggleManagerTicketPromotion(
     accessToken,
   );
 }
+
+// ═══ REFUND REQUESTS API ═══
+
+export function getManagerRefundRequests(status?: string, accessToken?: string | null) {
+  const query = status && status !== "All" ? `?status=${encodeURIComponent(status)}` : "";
+  return apiGetAuth<TicketRefundRequestDto[]>(
+    `/api/MuseumManager/refund-requests${query}`,
+    accessToken,
+  ).then((data) => (Array.isArray(data) ? data : []));
+}
+
+export function processManagerRefundRequest(
+  id: number,
+  payload: ProcessTicketRefundRequestDto,
+  accessToken?: string | null,
+) {
+  return apiPutAuth<unknown>(
+    `/api/MuseumManager/refund-requests/${id}/process`,
+    payload,
+    accessToken,
+  );
+}
+
+// ═══ REVENUE & TRAFFIC ANALYTICS API ═══
+
+export function getManagerRevenueAnalytics(
+  fromDate?: string,
+  toDate?: string,
+  accessToken?: string | null,
+) {
+  const params = new URLSearchParams();
+  if (fromDate) params.append("fromDate", fromDate);
+  if (toDate) params.append("toDate", toDate);
+  const query = params.toString() ? `?${params.toString()}` : "";
+  return apiGetAuth<RevenueAnalyticsDto>(
+    `/api/MuseumManager/analytics/revenue${query}`,
+    accessToken,
+  );
+}
+
+export function getManagerVisitorTrafficAnalytics(
+  fromDate?: string,
+  toDate?: string,
+  accessToken?: string | null,
+) {
+  const params = new URLSearchParams();
+  if (fromDate) params.append("fromDate", fromDate);
+  if (toDate) params.append("toDate", toDate);
+  const query = params.toString() ? `?${params.toString()}` : "";
+  return apiGetAuth<VisitorTrafficDto>(
+    `/api/MuseumManager/analytics/traffic${query}`,
+    accessToken,
+  );
+}
+

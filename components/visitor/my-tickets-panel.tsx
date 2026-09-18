@@ -208,19 +208,44 @@ export function MyTicketsPanel() {
                         {formatDateTimeVi(ticket.purchaseDate)}
                       </td>
                       <td className="px-5 py-4" style={{ color: C.muted }}>
-                        {ticket.validDate
-                          ? formatDateTimeVi(ticket.validDate)
-                          : "—"}
+                        {ticket.validDate ? (
+                          formatDateTimeVi(ticket.validDate)
+                        ) : (
+                          <span
+                            className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                            style={{ background: "rgba(16,185,129,0.12)", color: "#047857" }}
+                          >
+                            Không thời hạn
+                          </span>
+                        )}
                       </td>
                       <td className="px-5 py-4">
                         <span
                           className="rounded-full px-2.5 py-1 text-xs font-medium"
                           style={{
-                            background: ticket.status === "Used" ? "rgba(125,90,60,0.10)" : "rgba(60,120,80,0.12)",
-                            color: ticket.status === "Used" ? C.muted : "#2F5D3A",
+                            background:
+                              ticket.status === "Used"
+                                ? "rgba(125,90,60,0.10)"
+                                : ticket.status === "Refund_Pending"
+                                ? "rgba(234,179,8,0.15)"
+                                : ticket.status === "Refunded"
+                                ? "rgba(239,68,68,0.12)"
+                                : "rgba(60,120,80,0.12)",
+                            color:
+                              ticket.status === "Used"
+                                ? C.muted
+                                : ticket.status === "Refund_Pending"
+                                ? "#B45309"
+                                : ticket.status === "Refunded"
+                                ? "#DC2626"
+                                : "#2F5D3A",
                           }}
                         >
-                          {labelStatus(ticket.status)}
+                          {ticket.status === "Refund_Pending"
+                            ? "Chờ hoàn tiền"
+                            : ticket.status === "Refunded"
+                            ? "Đã hoàn tiền"
+                            : labelStatus(ticket.status)}
                         </span>
                       </td>
                       <td className="px-5 py-4 text-right">

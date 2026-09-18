@@ -14,6 +14,7 @@ import type { ExhibitionDto, ThemeDto } from "@/types/api";
 function StatusBadge({ status }: { status: string }) {
   const active = status === "Active";
   const inactive = status === "Inactive";
+  const ended = status === "Ended";
   return (
     <span
       className="rounded-full px-2.5 py-0.5 text-xs font-medium"
@@ -22,8 +23,8 @@ function StatusBadge({ status }: { status: string }) {
           ? "rgba(79,125,74,0.12)"
           : inactive
             ? "rgba(200,155,69,0.15)"
-            : "rgba(109,90,69,0.12)",
-        color: active ? T.success : inactive ? T.primaryDark : T.muted,
+            : "rgba(180,50,50,0.12)",
+        color: active ? T.success : inactive ? T.primaryDark : "#9E2A2B",
       }}
     >
       {labelStatus(status)}
@@ -46,7 +47,6 @@ export function ExhibitionPanel({
   const [description, setDescription] = useState("");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [status, setStatus] = useState("Active");
   const [themeInput, setThemeInput] = useState("");
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,8 +63,31 @@ export function ExhibitionPanel({
       return;
     }
 
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (startDate) {
+      const s = new Date(startDate);
+      s.setHours(0, 0, 0, 0);
+      if (s < today) {
+        setError("Ngày bắt đầu không được ở trong quá khứ (Start date cannot be in the past).");
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    if (endDate) {
+      const eDate = new Date(endDate);
+      eDate.setHours(0, 0, 0, 0);
+      if (eDate < today) {
+        setError("Ngày kết thúc không được ở trong quá khứ (End date cannot be in the past).");
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-      setError("End date must be on or after the start date.");
+      setError("Ngày kết thúc phải diễn ra sau hoặc cùng ngày với ngày bắt đầu.");
       setIsSubmitting(false);
       return;
     }
@@ -99,7 +122,7 @@ export function ExhibitionPanel({
         description: description.trim() || undefined,
         startDate: startDate || undefined,
         endDate: endDate || undefined,
-        status,
+        status: "Inactive",
       });
 
       if (thumbnailFile) {
@@ -120,6 +143,8 @@ export function ExhibitionPanel({
       setIsSubmitting(false);
     }
   }
+
+  const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
 
   return (
     <div className="space-y-6 px-8 pb-10">
@@ -175,14 +200,28 @@ export function ExhibitionPanel({
             />
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-1.5">
               <label className="block text-sm" style={{ color: T.muted }}>Start date</label>
-              <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }} />
+              <input
+                type="date"
+                min={todayStr}
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+              />
             </div>
             <div className="space-y-1.5">
               <label className="block text-sm" style={{ color: T.muted }}>End date</label>
-              <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }} />
+              <input
+                type="date"
+                min={startDate || todayStr}
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+              />
             </div>
             <div className="space-y-1.5 relative">
               <label className="block text-sm" style={{ color: T.muted }}>Theme</label>
@@ -201,15 +240,7 @@ export function ExhibitionPanel({
                 ))}
               </datalist>
             </div>
-            <div className="space-y-1.5">
-              <label className="block text-sm" style={{ color: T.muted }}>Status</label>
-              <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}>
-                <option value="Active">{labelStatus("Active")}</option>
-                <option value="Inactive">{labelStatus("Inactive")}</option>
-                <option value="Ended">{labelStatus("Ended")}</option>
-              </select>
-            </div>
-            <div className="space-y-1.5 sm:col-span-2 lg:col-span-4">
+            <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
               <label className="block text-sm" style={{ color: T.muted }}>Thumbnail</label>
               <input
                 type="file"
@@ -218,6 +249,11 @@ export function ExhibitionPanel({
                 className="w-full rounded-xl px-4 py-2.5 text-sm outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-[rgba(200,155,69,0.15)] file:px-3 file:py-1 file:text-xs file:font-semibold file:text-[#A67C1E]"
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
               />
+            </div>
+            <div className="sm:col-span-2 lg:col-span-3 rounded-xl p-3 text-xs leading-relaxed" style={{ background: "rgba(200,155,69,0.08)", border: `1px dashed ${T.border}` }}>
+              <p style={{ color: T.text }}>
+                <strong style={{ color: T.primaryDark }}>* Lưu ý trạng thái:</strong> Triển lãm mới tạo sẽ mặc định ở trạng thái <span className="font-semibold" style={{ color: T.primaryDark }}>Inactive (Chờ kích hoạt)</span>. Hệ thống sẽ tự động kích hoạt sang <span className="font-semibold" style={{ color: T.success }}>Active</span> khi đến ngày bắt đầu và đổi sang <span className="font-semibold" style={{ color: "#9E2A2B" }}>Ended</span> khi hết hạn. Content Manager có thể kích hoạt thủ công bất kỳ lúc nào trong trang chi tiết triển lãm.
+              </p>
             </div>
           </div>
           {error && <p className="mt-4 text-sm" style={{ color: "#8B2E2E" }}>{error}</p>}

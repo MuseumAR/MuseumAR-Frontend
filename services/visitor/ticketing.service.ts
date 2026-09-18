@@ -15,6 +15,7 @@ import {
   getPublicTicketTypes as getPublicTicketTypesApi,
   getTicketDetail as getTicketDetailApi,
   validateTicket as validateTicketApi,
+  requestTicketRefund as requestTicketRefundApi,
 } from "./ticketing-api.service";
 
 export async function listPublicTicketTypes(lang?: string): Promise<TicketTypeDto[]> {
@@ -58,4 +59,5 @@ export {
   getPendingOrder,
   validateTicketApi as validateTicket,
   checkInTicketApi as checkInTicket,
+  requestTicketRefundApi as requestTicketRefund,
 };

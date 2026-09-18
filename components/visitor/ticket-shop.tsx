@@ -14,6 +14,8 @@ import {
   ShieldCheck,
   X,
   Tag,
+  Calendar,
+  Sparkles,
 } from "lucide-react";
 import { Navbar } from "@/components/shared/navbar";
 import { StableLabel } from "@/components/shared/stable-label";
@@ -60,6 +62,13 @@ function formatTimer(secs: number) {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
+function formatDateStr(dateStr?: string | null) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr.slice(0, 10);
+  return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
 export function TicketShop() {
   const router = useRouter();
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
@@ -84,6 +93,7 @@ export function TicketShop() {
   const [remainingSeconds, setRemainingSeconds] = useState<number>(0);
   const [cancelling, setCancelling] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+  const [checkingPayment, setCheckingPayment] = useState(false);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -146,9 +156,37 @@ export function TicketShop() {
     };
   }, [pendingOrder, remainingSeconds]);
 
-  // Auto-polling payment status every 3 seconds while payment modal is open
+  // Manual and reusable payment verification function
+  async function handleCheckPayment(manual = false) {
+    if (!pendingOrder) return;
+    if (manual) setCheckingPayment(true);
+    setModalError(null);
+    try {
+      const res = await checkPaymentStatus(pendingOrder.orderCode);
+      if (res?.isPaid) {
+        setSuccess(`Thanh toán thành công đơn hàng #${pendingOrder.orderCode}!`);
+        setPendingOrder(null);
+        setIsModalOpen(false);
+        router.push("/tickets/mine?purchased=1");
+      } else if (res?.isCancelled) {
+        setError(`Đơn hàng #${pendingOrder.orderCode} đã bị hủy.`);
+        setPendingOrder(null);
+        setIsModalOpen(false);
+      } else if (manual) {
+        setModalError("Hệ thống chưa ghi nhận thanh toán cho đơn hàng này. Nếu bạn vừa chuyển khoản thành công, vui lòng chờ 5-10 giây rồi bấm kiểm tra lại.");
+      }
+    } catch (err) {
+      if (manual) {
+        setModalError(getDisplayError(err, "Không kiểm tra được thanh toán lúc này. Vui lòng thử lại sau."));
+      }
+    } finally {
+      if (manual) setCheckingPayment(false);
+    }
+  }
+
+  // Auto-polling payment status every 3 seconds while pendingOrder exists (even if modal is closed)
   useEffect(() => {
-    if (!pendingOrder || !isModalOpen) return;
+    if (!pendingOrder) return;
 
     let failCount = 0;
     const intervalId = setInterval(async () => {
@@ -170,16 +208,36 @@ export function TicketShop() {
       } catch {
         failCount += 1;
         if (failCount >= 3) {
-          setModalError(
-            "Không kiểm tra được thanh toán. Vui lòng mở trang thanh toán PayOS hoặc kiểm tra kết nối mạng.",
-          );
           failCount = 0;
         }
       }
     }, 3000);
 
     return () => clearInterval(intervalId);
-  }, [pendingOrder, isModalOpen, router, t]);
+  }, [pendingOrder, router]);
+
+  // Immediate check when user switches back to the tab from PayOS or banking app
+  useEffect(() => {
+    if (!pendingOrder) return;
+
+    const handleFocus = () => {
+      handleCheckPayment(false);
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        handleCheckPayment(false);
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [pendingOrder]);
 
   useEffect(() => {
     let cancelled = false;
@@ -339,14 +397,31 @@ export function TicketShop() {
                 </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(true)}
-              className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-xs font-bold text-white transition-opacity hover:opacity-90 shadow-sm shrink-0"
-              style={{ background: "#D97706" }}
-            >
-              Tiếp tục thanh toán
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => handleCheckPayment(true)}
+                disabled={checkingPayment}
+                className="inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-xs font-bold text-amber-900 bg-amber-200/80 hover:bg-amber-200 transition-colors shadow-sm disabled:opacity-50"
+              >
+                {checkingPayment ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    Đang kiểm tra...
+                  </>
+                ) : (
+                  "Tôi đã thanh toán"
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-xs font-bold text-white transition-opacity hover:opacity-90 shadow-sm shrink-0"
+                style={{ background: "#D97706" }}
+              >
+                Tiếp tục thanh toán
+              </button>
+            </div>
           </div>
         )}
 
@@ -410,6 +485,22 @@ export function TicketShop() {
               const busy = buyingId === ticket.id;
               const hasPromos = ticket.activePromotions && ticket.activePromotions.length > 0;
 
+              const isExhibitionTicket = Boolean(ticket.exhibitionName || ticket.exhibitionId);
+              let isPresale = false;
+              let isOngoing = false;
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+
+              if (ticket.exhibitionStartDate) {
+                const sDate = new Date(ticket.exhibitionStartDate);
+                sDate.setHours(0, 0, 0, 0);
+                if (sDate > today) {
+                  isPresale = true;
+                } else {
+                  isOngoing = true;
+                }
+              }
+
               return (
                 <li
                   key={ticket.id}
@@ -421,6 +512,49 @@ export function TicketShop() {
                   }}
                 >
                   <div className="min-w-0 flex-1">
+                    {/* Exhibition Badge & Presale Tag */}
+                    {isExhibitionTicket && (
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <span
+                          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
+                          style={{
+                            background: "rgba(200,155,60,0.18)",
+                            color: "#8C6214",
+                            border: `1px solid ${C.border}`,
+                          }}
+                        >
+                          <Sparkles className="h-3.5 w-3.5 text-amber-700" />
+                          Triển lãm: {ticket.exhibitionName || `Mã #${ticket.exhibitionId}`}
+                        </span>
+
+                        {isPresale ? (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold"
+                            style={{
+                              background: "rgba(59,130,246,0.12)",
+                              color: "#1D4ED8",
+                              border: "1px solid rgba(59,130,246,0.3)",
+                            }}
+                          >
+                            <Calendar className="h-3 w-3" />
+                            Vé đặt trước (Presale)
+                          </span>
+                        ) : isOngoing ? (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold"
+                            style={{
+                              background: "rgba(16,185,129,0.12)",
+                              color: "#047857",
+                              border: "1px solid rgba(16,185,129,0.3)",
+                            }}
+                          >
+                            <Sparkles className="h-3 w-3" />
+                            Đang diễn ra
+                          </span>
+                        ) : null}
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-2 flex-wrap">
                       <h2 className="text-lg font-semibold" style={{ color: C.text }}>
                         {ticket.name}
@@ -443,6 +577,21 @@ export function TicketShop() {
                         {ticket.description}
                       </p>
                     ) : null}
+
+                    {/* Exhibition Duration & Presale Note */}
+                    {isExhibitionTicket && (ticket.exhibitionStartDate || ticket.exhibitionEndDate) && (
+                      <div className="mt-2 flex items-center gap-1.5 text-xs font-medium" style={{ color: C.muted }}>
+                        <Calendar className="h-3.5 w-3.5 shrink-0 text-amber-700" />
+                        <span>
+                          Thời gian diễn ra: {formatDateStr(ticket.exhibitionStartDate)} - {formatDateStr(ticket.exhibitionEndDate)}
+                        </span>
+                      </div>
+                    )}
+                    {isPresale && (
+                      <p className="mt-1 text-[11px] font-medium" style={{ color: "#1D4ED8" }}>
+                        * Triển lãm mở cửa từ ngày {formatDateStr(ticket.exhibitionStartDate)}. Bạn có thể đặt vé trước ngay hôm nay để giữ chỗ!
+                      </p>
+                    )}
 
                     <p className="mt-4 text-xl font-semibold tabular-nums" style={{ color: C.secondary }}>
                       {formatVnd(ticket.price)}
@@ -562,6 +711,12 @@ export function TicketShop() {
               <div>
                 <span className="text-xs font-semibold uppercase tracking-wider block" style={{ color: C.mutedLight }}>Loại vé</span>
                 <span className="text-base font-semibold block mt-0.5" style={{ color: C.text }}>{checkoutTarget.name}</span>
+                {checkoutTarget.exhibitionName && (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold" style={{ color: "#8C6214" }}>
+                    <Sparkles className="h-3.5 w-3.5 shrink-0 text-amber-700" />
+                    <span>Thuộc triển lãm: {checkoutTarget.exhibitionName}</span>
+                  </div>
+                )}
                 {checkoutTarget.description && (
                   <p className="text-xs mt-1" style={{ color: C.muted }}>{checkoutTarget.description}</p>
                 )}
@@ -879,33 +1034,52 @@ export function TicketShop() {
             )}
 
             {/* Modal Actions */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <div className="flex flex-col gap-2.5 pt-2">
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
-                disabled={cancelling}
-                className="flex-1 rounded-full border py-3 text-sm font-semibold transition-colors hover:bg-stone-100 disabled:opacity-50"
-                style={{ borderColor: C.border, color: C.text }}
+                onClick={() => handleCheckPayment(true)}
+                disabled={checkingPayment || cancelling}
+                className="w-full rounded-full py-3 text-sm font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2 shadow-sm"
+                style={{ background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)` }}
               >
-                Đóng
-              </button>
-
-              <button
-                type="button"
-                onClick={handleCancelOrder}
-                disabled={cancelling}
-                className="flex-1 rounded-full border py-3 text-sm font-semibold transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
-                style={{ borderColor: C.border, color: C.muted }}
-              >
-                {cancelling ? (
-                  <span className="flex items-center justify-center gap-2">
+                {checkingPayment ? (
+                  <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Đang hủy...
-                  </span>
+                    Đang kiểm tra thanh toán...
+                  </>
                 ) : (
-                  "Hủy đơn hàng này"
+                  "Tôi đã thanh toán xong"
                 )}
               </button>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  disabled={cancelling}
+                  className="flex-1 rounded-full border py-2.5 text-xs font-semibold transition-colors hover:bg-stone-100 disabled:opacity-50"
+                  style={{ borderColor: C.border, color: C.text }}
+                >
+                  Đóng cửa sổ
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleCancelOrder}
+                  disabled={cancelling}
+                  className="flex-1 rounded-full border py-2.5 text-xs font-semibold transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-50"
+                  style={{ borderColor: C.border, color: C.muted }}
+                >
+                  {cancelling ? (
+                    <span className="flex items-center justify-center gap-1.5">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Đang hủy...
+                    </span>
+                  ) : (
+                    "Hủy đơn hàng này"
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

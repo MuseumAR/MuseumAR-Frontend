@@ -205,6 +205,41 @@ export function TicketApplicationTable({
     if (Number.isNaN(numericId)) return;
 
     setPromoError(null);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const sDate = new Date(promoStartDate);
+    sDate.setHours(0, 0, 0, 0);
+
+    if (editingPromoId == null) {
+      if (sDate < today) {
+        setPromoError("Ngày bắt đầu không được ở trong quá khứ (Start date cannot be in the past).");
+        return;
+      }
+    } else {
+      const currentPromo = Object.values(promotionsByTicket)
+        .flat()
+        .find((p) => p.id === editingPromoId);
+      const initialStart = currentPromo?.startDate ? currentPromo.startDate.slice(0, 10) : "";
+      if (promoStartDate && promoStartDate !== initialStart && sDate < today) {
+        setPromoError("Ngày bắt đầu không được ở trong quá khứ (Start date cannot be in the past).");
+        return;
+      }
+    }
+
+    const eDate = new Date(promoEndDate);
+    eDate.setHours(0, 0, 0, 0);
+    if (eDate < today) {
+      setPromoError("Ngày kết thúc không được ở trong quá khứ (End date cannot be in the past).");
+      return;
+    }
+
+    if (sDate >= eDate) {
+      setPromoError("Ngày kết thúc phải diễn ra sau ngày bắt đầu.");
+      return;
+    }
+
     setPromoSubmitting(true);
 
     const payload = {
@@ -416,7 +451,20 @@ export function TicketApplicationTable({
                 {tickets.map((ticket) => (
                   <tr key={ticket.id} style={{ borderBottom: `1px solid ${T.border}` }} className="hover:bg-[rgba(200,155,69,0.05)]">
                     <td className="px-5 py-4" style={{ color: T.text }}>{ticket.id}</td>
-                    <td className="px-5 py-4" style={{ color: T.text }}>{ticket.type}</td>
+                    <td className="px-5 py-4" style={{ color: T.text }}>
+                      <div>
+                        <span className="font-semibold">{ticket.type}</span>
+                        {ticket.exhibitionId ? (
+                          <span className="block text-xs font-medium" style={{ color: T.primaryDark }}>
+                            🏛️ Triển lãm #{ticket.exhibitionId}
+                          </span>
+                        ) : (
+                          <span className="block text-xs font-normal" style={{ color: T.mutedLight }}>
+                            Toàn bảo tàng (Không thời hạn)
+                          </span>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-5 py-4" style={{ color: T.muted }}>{ticket.price}</td>
                     <td className="px-5 py-4">
                       <span
@@ -683,7 +731,9 @@ export function TicketApplicationTable({
                       <div className="space-y-1">
                         <label className="block text-xs" style={{ color: T.muted }}>Start date *</label>
                         <input
-                          type="date" value={promoStartDate}
+                          type="date"
+                          value={promoStartDate}
+                          min={editingPromoId != null ? undefined : new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10)}
                           onChange={(e) => setPromoStartDate(e.target.value)}
                           required
                           className="w-full rounded-lg px-3 py-2 text-xs outline-none"
@@ -693,7 +743,9 @@ export function TicketApplicationTable({
                       <div className="space-y-1">
                         <label className="block text-xs" style={{ color: T.muted }}>End date *</label>
                         <input
-                          type="date" value={promoEndDate}
+                          type="date"
+                          value={promoEndDate}
+                          min={promoStartDate || new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10)}
                           onChange={(e) => setPromoEndDate(e.target.value)}
                           required
                           className="w-full rounded-lg px-3 py-2 text-xs outline-none"

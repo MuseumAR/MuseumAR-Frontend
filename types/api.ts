@@ -515,6 +515,12 @@ export type TicketTypeDto = {
   /** Create-only on BE today — not returned on list DTO */
   isActive?: boolean;
 
+  // Exhibition fields
+  exhibitionName?: string | null;
+  exhibitionStartDate?: string | null;
+  exhibitionEndDate?: string | null;
+  exhibitionStatus?: string | null;
+
   // Promotion fields
   activePromotions?: TicketPromotionDto[] | null;
   originalPrice?: number | null;
@@ -975,5 +981,86 @@ export type ExhibitScanResultDto = {
   hasArModel?: boolean;
   images: string[];
   arAssets: ArAssetScanDto[];
+};
+
+// ─── Ticket Refunds ──────────────────────────────────────────────────────────
+
+export type CreateTicketRefundRequestDto = {
+  bankName: string;
+  accountNumber: string;
+  accountHolderName: string;
+  reason: string;
+};
+
+export type ProcessTicketRefundRequestDto = {
+  isApproved: boolean;
+  rejectReason?: string | null;
+};
+
+export type TicketRefundRequestDto = {
+  id: number;
+  ticketId: number;
+  ticketCode: string;
+  ticketTypeName: string;
+  visitorId: number;
+  visitorName: string;
+  visitorEmail?: string | null;
+  visitorPhone?: string | null;
+  amount: number;
+  reason: string;
+  bankName: string;
+  accountNumber: string;
+  accountHolderName: string;
+  status: 'Pending' | 'Approved' | 'Rejected' | string;
+  rejectReason?: string | null;
+  createdAt: string;
+  processedAt?: string | null;
+};
+
+// ─── Financial & Visitor Analytics ──────────────────────────────────────────
+
+export type DailySalesDto = {
+  date: string; // "yyyy-MM-dd"
+  grossRevenue: number;
+  refundedAmount: number;
+  netRevenue: number;
+  ticketsSold: number;
+};
+
+export type RevenueByTicketTypeDto = {
+  ticketTypeId: number;
+  ticketTypeName: string;
+  ticketsSold: number;
+  revenue: number;
+};
+
+export type RevenueAnalyticsDto = {
+  totalGrossRevenue: number;
+  totalRefundedAmount: number;
+  netRevenue: number;
+  totalTicketsSold: number;
+  totalUsedTickets: number;
+  totalRefundedTickets: number;
+  dailySales: DailySalesDto[];
+  revenueByTicketType: RevenueByTicketTypeDto[];
+};
+
+export type DailyFootfallDto = {
+  date: string; // "yyyy-MM-dd"
+  visitorCount: number;
+};
+
+export type PeakHourTrafficDto = {
+  hour: number;
+  hourLabel: string;
+  visitorCount: number;
+};
+
+export type VisitorTrafficDto = {
+  totalAdmittedVisitors: number;
+  totalTicketsSold: number;
+  attendanceRate: number;
+  dailyFootfall: DailyFootfallDto[];
+  peakHoursTraffic: PeakHourTrafficDto[];
 };
 
