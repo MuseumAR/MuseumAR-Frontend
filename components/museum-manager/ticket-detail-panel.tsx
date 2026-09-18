@@ -4,10 +4,9 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ArrowLeft, Edit2, Trash2, Tag, Eye, X, Plus, Power, PowerOff, Calendar, Clock } from "lucide-react";
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, dashboardTitleClass } from "@/lib/dashboard-theme";
 import type { Ticket } from "@/types";
 import type { ExhibitionDto, TicketPromotionDto } from "@/types/api";
-import { labelStatus } from "@/lib/status-labels";
 import {
   updateTicketTypeEntryForManager,
   deleteTicketTypeEntryForManager,
@@ -135,10 +134,10 @@ export function TicketDetailPanel({
     try {
       await publishTicketTypeEntryForManager(numericTicketId);
       setTicket((prev) => ({ ...prev, status: "Active" }));
-      showSuccess("Ticket type published.");
+      showSuccess("Đã xuất bản loại vé.");
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Could not publish ticket type."));
+      setError(getDisplayError(err, "Không thể xuất bản loại vé."));
     } finally {
       setIsSubmitting(false);
     }
@@ -147,11 +146,11 @@ export function TicketDetailPanel({
   async function handleUpdate(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
-      setError("Name is required.");
+      setError("Tên là bắt buộc.");
       return;
     }
     if (!price || Number(price) < 0) {
-      setError("Valid price is required.");
+      setError("Vui lòng nhập giá hợp lệ.");
       return;
     }
 
@@ -187,17 +186,17 @@ export function TicketDetailPanel({
       });
 
       setIsEditing(false);
-      showSuccess("Ticket type updated.");
+      showSuccess("Đã cập nhật loại vé.");
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Could not update ticket type."));
+      setError(getDisplayError(err, "Không thể cập nhật loại vé."));
     } finally {
       setIsSubmitting(false);
     }
   }
 
   async function handleDelete() {
-    if (!confirm("Are you sure you want to delete/deactivate this ticket type?")) {
+    if (!confirm("Bạn có chắc muốn xóa/ngừng loại vé này?")) {
       return;
     }
 
@@ -209,7 +208,7 @@ export function TicketDetailPanel({
       router.push("/museum-manager/ticket-application");
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Could not delete ticket type."));
+      setError(getDisplayError(err, "Không thể xóa loại vé."));
       setIsSubmitting(false);
     }
   }
@@ -258,14 +257,14 @@ export function TicketDetailPanel({
 
     if (editingPromoId == null) {
       if (sDate < today) {
-        setPromoError("Ngày bắt đầu không được ở trong quá khứ (Start date cannot be in the past).");
+        setPromoError("Ngày bắt đầu không được ở trong quá khứ.");
         return;
       }
     } else {
       const currentPromo = promotions.find((p) => p.id === editingPromoId);
       const initialStart = currentPromo?.startDate ? currentPromo.startDate.slice(0, 10) : "";
       if (promoStartDate && promoStartDate !== initialStart && sDate < today) {
-        setPromoError("Ngày bắt đầu không được ở trong quá khứ (Start date cannot be in the past).");
+        setPromoError("Ngày bắt đầu không được ở trong quá khứ.");
         return;
       }
     }
@@ -273,7 +272,7 @@ export function TicketDetailPanel({
     const eDate = new Date(promoEndDate);
     eDate.setHours(0, 0, 0, 0);
     if (eDate < today) {
-      setPromoError("Ngày kết thúc không được ở trong quá khứ (End date cannot be in the past).");
+      setPromoError("Ngày kết thúc không được ở trong quá khứ.");
       return;
     }
 
@@ -301,17 +300,17 @@ export function TicketDetailPanel({
         await createManagerTicketPromotion(numericTicketId, payload);
       }
       cancelEditPromotion();
-      showSuccess(editingPromoId != null ? "Promotion updated." : "Promotion created.");
+      showSuccess(editingPromoId != null ? "Đã cập nhật khuyến mãi." : "Đã tạo khuyến mãi.");
       await loadPromotions();
     } catch (err) {
-      setPromoError(getDisplayError(err, editingPromoId != null ? "Could not update promotion." : "Could not create promotion."));
+      setPromoError(getDisplayError(err, editingPromoId != null ? "Không thể cập nhật khuyến mãi." : "Không thể tạo khuyến mãi."));
     } finally {
       setPromoSubmitting(false);
     }
   }
 
   async function handleDeletePromotion(promotionId: number, promotionName: string) {
-    if (!confirm(`Are you sure you want to delete the promotion "${promotionName}"?`)) {
+    if (!confirm(`Bạn có chắc muốn xóa khuyến mãi "${promotionName}"?`)) {
       return;
     }
 
@@ -320,20 +319,20 @@ export function TicketDetailPanel({
       if (editingPromoId === promotionId) {
         cancelEditPromotion();
       }
-      showSuccess("Promotion deleted.");
+      showSuccess("Đã xóa khuyến mãi.");
       await loadPromotions();
     } catch (err) {
-      setError(getDisplayError(err, "Could not delete promotion."));
+      setError(getDisplayError(err, "Không thể xóa khuyến mãi."));
     }
   }
 
   async function handleTogglePromotion(promotionId: number, currentActive: boolean) {
     try {
       await toggleManagerTicketPromotion(promotionId, !currentActive);
-      showSuccess(currentActive ? "Promotion deactivated." : "Promotion activated.");
+      showSuccess(currentActive ? "Đã tắt khuyến mãi." : "Đã bật khuyến mãi.");
       await loadPromotions();
     } catch (err) {
-      setError(getDisplayError(err, "Could not change promotion status."));
+      setError(getDisplayError(err, "Không thể thay đổi trạng thái khuyến mãi."));
     }
   }
 
@@ -343,7 +342,7 @@ export function TicketDetailPanel({
       const detail = await getManagerTicketPromotionDetail(promotionId);
       setViewingPromo(detail);
     } catch (err) {
-      setError(getDisplayError(err, "Could not load promotion details."));
+      setError(getDisplayError(err, "Không thể tải chi tiết khuyến mãi."));
     } finally {
       setLoadingDetailPromoId(null);
     }
@@ -359,11 +358,11 @@ export function TicketDetailPanel({
         className="inline-flex items-center gap-2 text-sm transition-colors hover:text-stone-800"
         style={{ color: T.muted }}
       >
-        <ArrowLeft className="h-4 w-4" /> Back to ticket types
+        <ArrowLeft className="h-4 w-4" /> Quay lại loại vé
       </Link>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-3xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
+        <h1 className={dashboardTitleClass} style={{ fontFamily: cinzel, color: T.text }}>
           {ticket.type}
         </h1>
         <div className="flex items-center gap-3">
@@ -374,7 +373,13 @@ export function TicketDetailPanel({
               color: ticket.status === "Active" ? T.success : T.primaryDark,
             }}
           >
-            {labelStatus(ticket.status)}
+            {ticket.status === "Active"
+              ? "Đang hoạt động"
+              : ticket.status === "Pending"
+                ? "Chờ duyệt"
+                : ticket.status === "Inactive"
+                  ? "Ngừng hoạt động"
+                  : ticket.status}
           </span>
           {ticket.status === "Pending" && (
             <button
@@ -386,7 +391,7 @@ export function TicketDetailPanel({
                 color: T.surface,
               }}
             >
-              Publish Ticket
+              Xuất bản vé
             </button>
           )}
         </div>
@@ -407,8 +412,8 @@ export function TicketDetailPanel({
             style={{ background: T.surface, border: `1px solid ${T.border}` }}
           >
             <div className="flex justify-between items-center border-b pb-4 mb-4" style={{ borderColor: T.border }}>
-              <h2 className="text-lg font-bold" style={{ fontFamily: cinzel, color: T.text }}>
-                {isEditing ? "Edit Ticket Type" : "Ticket Information"}
+              <h2 className={dashboardTitleClass} style={{ fontFamily: cinzel, color: T.text }}>
+                {isEditing ? "Sửa loại vé" : "Thông tin vé"}
               </h2>
               {!isEditing && ticket.status !== "Inactive" && (
                 <button
@@ -416,7 +421,7 @@ export function TicketDetailPanel({
                   className="inline-flex items-center gap-1 text-xs font-medium px-3 py-1.5 rounded-xl transition-opacity hover:opacity-85"
                   style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                 >
-                  <Edit2 className="h-3 w-3" /> Edit
+                  <Edit2 className="h-3 w-3" /> Sửa
                 </button>
               )}
             </div>
@@ -425,7 +430,7 @@ export function TicketDetailPanel({
               <form onSubmit={handleUpdate} className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label className="block text-sm" style={{ color: T.muted }}>Name (Vietnamese) *</label>
+                    <label className="block text-sm" style={{ color: T.muted }}>Tên (tiếng Việt) *</label>
                     <input
                       value={name}
                       onChange={(e) => setName(e.target.value)}
@@ -436,7 +441,7 @@ export function TicketDetailPanel({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-sm" style={{ color: T.muted }}>Name (English)</label>
+                    <label className="block text-sm" style={{ color: T.muted }}>Tên (tiếng Anh)</label>
                     <input
                       value={nameEn}
                       onChange={(e) => setNameEn(e.target.value)}
@@ -446,7 +451,7 @@ export function TicketDetailPanel({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-sm" style={{ color: T.muted }}>Price (VND) *</label>
+                    <label className="block text-sm" style={{ color: T.muted }}>Giá (VND) *</label>
                     <input
                       type="number"
                       min="0"
@@ -460,16 +465,16 @@ export function TicketDetailPanel({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-sm" style={{ color: T.muted }}>Scope / Exhibition</label>
+                    <label className="block text-sm" style={{ color: T.muted }}>Phạm vi / Triển lãm</label>
                     <select
                       value={exhibitionId}
                       onChange={(e) => setExhibitionId(e.target.value)}
                       className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                       style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                     >
-                      <option value="">Whole museum (All exhibitions)</option>
+                      <option value="">Toàn bảo tàng (Tất cả triển lãm)</option>
                       {exhibitions.map((ex) => (
-                        <option key={ex.id} value={ex.id}>{ex.name || `Exhibition #${ex.id}`}</option>
+                        <option key={ex.id} value={ex.id}>{ex.name || `Triển lãm #${ex.id}`}</option>
                       ))}
                     </select>
                     {(() => {
@@ -491,7 +496,7 @@ export function TicketDetailPanel({
                         <div className="mt-1.5 rounded-xl p-2.5 text-xs border border-dashed" style={{ background: "rgba(16,185,129,0.06)", borderColor: "rgba(16,185,129,0.25)", color: "#047857" }}>
                           <p className="font-semibold flex items-center gap-1.5">
                             <Clock className="h-3.5 w-3.5" />
-                            Thời hạn vé: Không thời hạn (Vô thời hạn)
+                            Thời hạn vé: Không thời hạn
                           </p>
                           <p className="text-[11px] mt-1" style={{ color: T.muted }}>
                             * Vé tham quan cố định toàn bảo tàng không bị giới hạn ngày sử dụng.
@@ -504,7 +509,7 @@ export function TicketDetailPanel({
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label className="block text-sm" style={{ color: T.muted }}>Description (Vietnamese)</label>
+                    <label className="block text-sm" style={{ color: T.muted }}>Mô tả (tiếng Việt)</label>
                     <textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
@@ -515,7 +520,7 @@ export function TicketDetailPanel({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-sm" style={{ color: T.muted }}>Description (English)</label>
+                    <label className="block text-sm" style={{ color: T.muted }}>Mô tả (tiếng Anh)</label>
                     <textarea
                       value={descriptionEn}
                       onChange={(e) => setDescriptionEn(e.target.value)}
@@ -533,7 +538,7 @@ export function TicketDetailPanel({
                     disabled={isSubmitting}
                     className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm text-red-600 bg-red-50 hover:bg-red-100 disabled:opacity-50"
                   >
-                    <Trash2 className="h-4 w-4" /> Delete Ticket Type
+                    <Trash2 className="h-4 w-4" /> Xóa loại vé
                   </button>
 
                   <div className="flex gap-2">
@@ -543,7 +548,7 @@ export function TicketDetailPanel({
                       className="rounded-xl px-4 py-2 text-sm"
                       style={{ border: `1px solid ${T.border}`, color: T.muted }}
                     >
-                      Cancel
+                      Hủy
                     </button>
                     <button
                       type="submit"
@@ -554,7 +559,7 @@ export function TicketDetailPanel({
                         color: T.surface,
                       }}
                     >
-                      {isSubmitting ? "Saving…" : "Save Changes"}
+                      {isSubmitting ? "Đang lưu…" : "Lưu thay đổi"}
                     </button>
                   </div>
                 </div>
@@ -567,31 +572,31 @@ export function TicketDetailPanel({
                     <span className="text-base font-semibold" style={{ color: T.text }}>{ticket.id}</span>
                   </div>
                   <div>
-                    <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Price</span>
+                    <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Giá</span>
                     <span className="text-base font-bold" style={{ color: T.text }}>{ticket.price}</span>
                   </div>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Name (Vietnamese)</span>
+                    <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Tên (tiếng Việt)</span>
                     <span className="text-base font-semibold" style={{ color: T.text }}>{ticket.type}</span>
                   </div>
                   <div>
-                    <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Name (English)</span>
+                    <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Tên (tiếng Anh)</span>
                     <span className="text-base" style={{ color: T.text }}>{ticket.nameEn || <span className="italic" style={{ color: T.mutedLight }}>—</span>}</span>
                   </div>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Scope / Exhibition</span>
+                    <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Phạm vi / Triển lãm</span>
                     <span className="text-base font-semibold block mt-0.5" style={{ color: T.text }}>
-                      {exhibition ? exhibition.name : "Whole museum (All exhibitions)"}
+                      {exhibition ? exhibition.name : "Toàn bảo tàng (Tất cả triển lãm)"}
                     </span>
                   </div>
                   <div>
-                    <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Ticket Validity (Thời hạn vé)</span>
+                    <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Thời hạn vé</span>
                     <div className="mt-1">
                       {exhibition ? (
                         <div className="space-y-1">
@@ -613,7 +618,7 @@ export function TicketDetailPanel({
                             style={{ background: "rgba(16,185,129,0.12)", color: "#047857", border: "1px solid rgba(16,185,129,0.3)" }}
                           >
                             <Clock className="h-3.5 w-3.5" />
-                            Không thời hạn (Vô thời hạn)
+                            Không thời hạn
                           </span>
                           <p className="text-xs leading-relaxed" style={{ color: T.muted }}>
                             * Vé tham quan cố định không giới hạn thời gian sử dụng, du khách có thể check-in vào bất kỳ ngày nào.
@@ -626,15 +631,15 @@ export function TicketDetailPanel({
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Description (Vietnamese)</span>
+                    <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Mô tả (tiếng Việt)</span>
                     <p className="mt-1 leading-relaxed" style={{ color: T.text }}>
-                      {ticket.description || <span className="italic" style={{ color: T.mutedLight }}>No description</span>}
+                      {ticket.description || <span className="italic" style={{ color: T.mutedLight }}>Không có mô tả</span>}
                     </p>
                   </div>
                   <div>
-                    <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Description (English)</span>
+                    <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Mô tả (tiếng Anh)</span>
                     <p className="mt-1 leading-relaxed" style={{ color: T.text }}>
-                      {ticket.descriptionEn || <span className="italic" style={{ color: T.mutedLight }}>No English description</span>}
+                      {ticket.descriptionEn || <span className="italic" style={{ color: T.mutedLight }}>Chưa có mô tả tiếng Anh</span>}
                     </p>
                   </div>
                 </div>
@@ -645,7 +650,7 @@ export function TicketDetailPanel({
                       onClick={handleDelete}
                       className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                     >
-                      <Trash2 className="h-4 w-4" /> Delete Ticket Type
+                      <Trash2 className="h-4 w-4" /> Xóa loại vé
                     </button>
                   </div>
                 )}
@@ -661,15 +666,15 @@ export function TicketDetailPanel({
             style={{ background: T.surface, border: `1px solid ${T.border}` }}
           >
             <div className="flex justify-between items-center border-b pb-3 mb-2" style={{ borderColor: T.border }}>
-              <h3 className="text-base font-bold flex items-center gap-1.5" style={{ color: T.text }}>
-                <Tag className="h-4 w-4 text-red-600" /> Promotions
+              <h3 className={`${dashboardTitleClass} flex items-center gap-1.5`} style={{ color: T.text }}>
+                <Tag className="h-4 w-4 text-red-600" /> Khuyến mãi
               </h3>
               {!showPromoForm && ticket.status !== "Inactive" && (
                 <button
                   onClick={() => setShowPromoForm(true)}
                   className="inline-flex items-center gap-1 text-[11px] font-bold bg-red-50 text-red-600 border border-red-200/50 rounded-xl px-2.5 py-1 transition-opacity hover:opacity-85"
                 >
-                  <Plus className="h-3.5 w-3.5" /> Add
+                  <Plus className="h-3.5 w-3.5" /> Thêm
                 </button>
               )}
             </div>
@@ -678,7 +683,7 @@ export function TicketDetailPanel({
               <form onSubmit={handleCreateOrUpdatePromotion} className="space-y-3 p-4 rounded-2xl bg-stone-50 border" style={{ borderColor: T.border }}>
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-red-600">
-                    {editingPromoId != null ? "Edit Promotion" : "New Promotion"}
+                    {editingPromoId != null ? "Sửa khuyến mãi" : "Khuyến mãi mới"}
                   </h4>
                   <button
                     type="button"
@@ -691,11 +696,11 @@ export function TicketDetailPanel({
 
                 <div className="space-y-2 text-xs">
                   <div className="space-y-1">
-                    <label className="block font-semibold" style={{ color: T.muted }}>Name *</label>
+                    <label className="block font-semibold" style={{ color: T.muted }}>Tên *</label>
                     <input
                       value={promoName}
                       onChange={(e) => setPromoName(e.target.value)}
-                      placeholder="Special Day discount"
+                      placeholder="Giảm giá ngày lễ"
                       required
                       className="w-full rounded-lg px-3 py-2 outline-none"
                       style={{ border: `1px solid ${T.border}`, background: T.surface, color: T.text }}
@@ -704,21 +709,21 @@ export function TicketDetailPanel({
 
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <label className="block font-semibold" style={{ color: T.muted }}>Type *</label>
+                      <label className="block font-semibold" style={{ color: T.muted }}>Loại *</label>
                       <select
                         value={promoDiscountType}
                         onChange={(e) => setPromoDiscountType(e.target.value as "Percentage" | "FixedAmount")}
                         className="w-full rounded-lg px-2.5 py-2 outline-none"
                         style={{ border: `1px solid ${T.border}`, background: T.surface, color: T.text }}
                       >
-                        <option value="Percentage">Percentage</option>
-                        <option value="FixedAmount">Fixed Amount</option>
+                        <option value="Percentage">Phần trăm</option>
+                        <option value="FixedAmount">Số tiền cố định</option>
                       </select>
                     </div>
 
                     <div className="space-y-1">
                       <label className="block font-semibold" style={{ color: T.muted }}>
-                        Val * {promoDiscountType === "Percentage" ? "(%)" : "(VND)"}
+                        Giá trị * {promoDiscountType === "Percentage" ? "(%)" : "(VND)"}
                       </label>
                       <input
                         type="number"
@@ -734,7 +739,7 @@ export function TicketDetailPanel({
 
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <label className="block font-semibold" style={{ color: T.muted }}>Start Date *</label>
+                      <label className="block font-semibold" style={{ color: T.muted }}>Ngày bắt đầu *</label>
                       <input
                         type="date"
                         value={promoStartDate}
@@ -747,7 +752,7 @@ export function TicketDetailPanel({
                     </div>
 
                     <div className="space-y-1">
-                      <label className="block font-semibold" style={{ color: T.muted }}>End Date *</label>
+                      <label className="block font-semibold" style={{ color: T.muted }}>Ngày kết thúc *</label>
                       <input
                         type="date"
                         value={promoEndDate}
@@ -761,11 +766,11 @@ export function TicketDetailPanel({
                   </div>
 
                   <div className="space-y-1">
-                    <label className="block font-semibold" style={{ color: T.muted }}>Description</label>
+                    <label className="block font-semibold" style={{ color: T.muted }}>Mô tả</label>
                     <input
                       value={promoDescription}
                       onChange={(e) => setPromoDescription(e.target.value)}
-                      placeholder="Optional details"
+                      placeholder="Chi tiết (không bắt buộc)"
                       className="w-full rounded-lg px-3 py-2 outline-none"
                       style={{ border: `1px solid ${T.border}`, background: T.surface, color: T.text }}
                     />
@@ -783,7 +788,7 @@ export function TicketDetailPanel({
                     className="rounded-lg px-3 py-1.5 text-xs border bg-stone-100"
                     style={{ borderColor: T.border, color: T.muted }}
                   >
-                    Cancel
+                    Hủy
                   </button>
                   <button
                     type="submit"
@@ -791,16 +796,16 @@ export function TicketDetailPanel({
                     className="rounded-lg px-4 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
                     style={{ background: "linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)" }}
                   >
-                    {promoSubmitting ? "Saving…" : "Save"}
+                    {promoSubmitting ? "Đang lưu…" : "Lưu"}
                   </button>
                 </div>
               </form>
             )}
 
             {loadingPromos ? (
-              <p className="text-xs" style={{ color: T.muted }}>Loading promotions...</p>
+              <p className="text-xs" style={{ color: T.muted }}>Đang tải khuyến mãi...</p>
             ) : promotions.length === 0 ? (
-              <p className="text-xs italic" style={{ color: T.mutedLight }}>No promotions yet.</p>
+              <p className="text-xs italic" style={{ color: T.mutedLight }}>Chưa có khuyến mãi.</p>
             ) : (
               <div className="space-y-2.5">
                 {promotions.map((promo) => {
@@ -829,14 +834,14 @@ export function TicketDetailPanel({
                               color: isCurrentlyActive ? T.success : isExpired ? "#8B3A3A" : T.primaryDark,
                             }}
                           >
-                            {isCurrentlyActive ? "🟢 Active" : isExpired ? "⏰ Expired" : promo.isActive ? "⏳ Scheduled" : "⏸ Paused"}
+                            {isCurrentlyActive ? "🟢 Đang diễn ra" : isExpired ? "⏰ Hết hạn" : promo.isActive ? "⏳ Đã lên lịch" : "⏸ Tạm dừng"}
                           </span>
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
                           <button
                             onClick={() => handleViewPromoDetail(promo.id)}
                             className="p-1 hover:bg-stone-100 rounded text-indigo-600"
-                            title="View"
+                            title="Xem"
                             disabled={loadingDetailPromoId === promo.id}
                           >
                             <Eye className="h-3.5 w-3.5" />
@@ -844,21 +849,21 @@ export function TicketDetailPanel({
                           <button
                             onClick={() => startEditPromotion(promo)}
                             className="p-1 hover:bg-stone-100 rounded text-blue-600"
-                            title="Edit"
+                            title="Sửa"
                           >
                             <Edit2 className="h-3.5 w-3.5" />
                           </button>
                           <button
                             onClick={() => handleDeletePromotion(promo.id, promo.name)}
                             className="p-1 hover:bg-stone-100 rounded text-red-600"
-                            title="Delete"
+                            title="Xóa"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
                           <button
                             onClick={() => handleTogglePromotion(promo.id, promo.isActive)}
                             className="p-1 hover:bg-stone-100 rounded"
-                            title={promo.isActive ? "Pause" : "Resume"}
+                            title={promo.isActive ? "Tạm dừng" : "Tiếp tục"}
                             style={{ color: promo.isActive ? T.success : T.muted }}
                           >
                             {promo.isActive ? <Power className="h-3.5 w-3.5" /> : <PowerOff className="h-3.5 w-3.5" />}
@@ -869,10 +874,10 @@ export function TicketDetailPanel({
                       <div className="border-t pt-2 mt-1" style={{ borderColor: T.border }}>
                         <p style={{ color: T.muted }}>
                           <span className="font-semibold text-red-600">
-                            {promo.discountType === "Percentage" ? `${promo.discountValue}% off` : `${promo.discountValue.toLocaleString()} VND off`}
+                            {promo.discountType === "Percentage" ? `Giảm ${promo.discountValue}%` : `Giảm ${promo.discountValue.toLocaleString("vi-VN")} VND`}
                           </span>
                           {` · `}
-                          {start.toLocaleDateString("en-US")} → {end.toLocaleDateString("en-US")}
+                          {start.toLocaleDateString("vi-VN")} → {end.toLocaleDateString("vi-VN")}
                         </p>
                       </div>
                     </div>
@@ -892,8 +897,8 @@ export function TicketDetailPanel({
             style={{ background: T.surface, border: `1px solid ${T.border}` }}
           >
             <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: T.border }}>
-              <h3 className="text-lg font-bold flex items-center gap-2" style={{ fontFamily: cinzel, color: T.text }}>
-                <Tag className="h-5 w-5 text-red-600" /> Promotion details
+              <h3 className={`${dashboardTitleClass} flex items-center gap-2`} style={{ fontFamily: cinzel, color: T.text }}>
+                <Tag className="h-5 w-5 text-red-600" /> Chi tiết khuyến mãi
               </h3>
               <button
                 type="button"
@@ -907,20 +912,20 @@ export function TicketDetailPanel({
 
             <div className="space-y-3.5 text-sm">
               <div>
-                <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Name</span>
+                <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Tên</span>
                 <span className="text-base font-semibold" style={{ color: T.text }}>{viewingPromo.name}</span>
               </div>
 
               {viewingPromo.nameEn && (
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>English Name</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Tên tiếng Anh</span>
                   <span className="text-base" style={{ color: T.text }}>{viewingPromo.nameEn}</span>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Discount Value</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Giá trị giảm</span>
                   <span className="text-base font-bold text-red-600">
                     {viewingPromo.discountType === "Percentage"
                       ? `${viewingPromo.discountValue}%`
@@ -928,30 +933,36 @@ export function TicketDetailPanel({
                   </span>
                 </div>
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Type</span>
-                  <span className="text-base" style={{ color: T.text }}>{viewingPromo.discountType}</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Loại</span>
+                  <span className="text-base" style={{ color: T.text }}>
+                    {viewingPromo.discountType === "Percentage"
+                      ? "Phần trăm"
+                      : viewingPromo.discountType === "FixedAmount"
+                        ? "Số tiền cố định"
+                        : viewingPromo.discountType}
+                  </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Start Date</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Ngày bắt đầu</span>
                   <span className="text-base" style={{ color: T.text }}>
-                    {new Date(viewingPromo.startDate).toLocaleDateString("en-US")}
+                    {new Date(viewingPromo.startDate).toLocaleDateString("vi-VN")}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>End Date</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Ngày kết thúc</span>
                   <span className="text-base" style={{ color: T.text }}>
-                    {new Date(viewingPromo.endDate).toLocaleDateString("en-US")}
+                    {new Date(viewingPromo.endDate).toLocaleDateString("vi-VN")}
                   </span>
                 </div>
               </div>
 
               <div>
-                <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Description</span>
+                <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Mô tả</span>
                 <p className="mt-0.5 leading-relaxed font-sans" style={{ color: T.text }}>
-                  {viewingPromo.description || <span className="italic" style={{ color: T.mutedLight }}>No description</span>}
+                  {viewingPromo.description || <span className="italic" style={{ color: T.mutedLight }}>Không có mô tả</span>}
                 </p>
               </div>
 
@@ -965,7 +976,7 @@ export function TicketDetailPanel({
                     color: T.surface,
                   }}
                 >
-                  Close
+                  Đóng
                 </button>
               </div>
             </div>

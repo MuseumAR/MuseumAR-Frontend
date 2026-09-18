@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, dashboardTitleClass } from "@/lib/dashboard-theme";
 import type { MuseumDashboardDto, VisitorTrafficDto, RevenueAnalyticsDto } from "@/types/api";
 import { formatVnd } from "@/lib/format";
 
@@ -34,7 +34,7 @@ function ChartCard({
         boxShadow: "0 6px 20px rgba(43,29,14,0.05)",
       }}
     >
-      <h3 className="text-base font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
+      <h3 className={dashboardTitleClass} style={{ fontFamily: cinzel, color: T.text }}>
         {title}
       </h3>
       {subtitle && (
@@ -216,20 +216,20 @@ export function AnalyticsCharts({ dashboard }: { dashboard?: MuseumDashboardDto 
 
   return (
     <div className="grid gap-5 lg:grid-cols-2">
-      <ChartCard title="Popular exhibits" subtitle="Interactions from the dashboard API">
+      <ChartCard title="Hiện vật phổ biến" subtitle="Lượt tương tác từ dữ liệu thống kê">
         <LineChart points={popularInteractions} labels={popularLabels} />
       </ChartCard>
 
-      <ChartCard title="QR scans by exhibit" subtitle="Most scanned exhibits">
+      <ChartCard title="Lượt quét QR theo hiện vật" subtitle="Hiện vật được quét nhiều nhất">
         <BarChart data={qrByExhibit} />
       </ChartCard>
 
-      <ChartCard title="Language statistics" subtitle="Language usage (%)">
+      <ChartCard title="Thống kê ngôn ngữ" subtitle="Tỷ lệ sử dụng ngôn ngữ (%)">
         <BarChart data={languageUsage} color="#9A6F1F" suffix="%" />
       </ChartCard>
 
-      <ChartCard title="Average listening time (min)" subtitle="By popular exhibits">
-        <BarChart data={listeningTime} color="#5C4033" suffix=" min" />
+      <ChartCard title="Thời lượng nghe trung bình (phút)" subtitle="Theo hiện vật phổ biến">
+        <BarChart data={listeningTime} color="#5C4033" suffix=" phút" />
       </ChartCard>
     </div>
   );
@@ -251,7 +251,7 @@ export function VisitorTrafficCharts({ traffic }: { traffic?: VisitorTrafficDto 
   return (
     <div className="grid gap-5 lg:grid-cols-2">
       <ChartCard
-        title="Lưu lượng khách theo ngày (Daily Footfall)"
+        title="Lưu lượng khách theo ngày"
         subtitle="Số lượt khách check-in qua cổng bảo tàng các ngày gần đây"
       >
         {dailyFootfall.length === 0 ? (
@@ -264,7 +264,7 @@ export function VisitorTrafficCharts({ traffic }: { traffic?: VisitorTrafficDto 
       </ChartCard>
 
       <ChartCard
-        title="Khung giờ cao điểm (Peak Hours 08:00 - 18:00)"
+        title="Khung giờ cao điểm (08:00 - 18:00)"
         subtitle="Phân bố lượt khách vào cổng theo từng giờ trong ngày"
       >
         <div className="flex h-44 items-end justify-between gap-1 pt-4">
@@ -321,7 +321,7 @@ export function RevenueAnalyticsCharts({ revenue }: { revenue?: RevenueAnalytics
     <div className="space-y-5">
       <div className="grid gap-5 lg:grid-cols-2">
         <ChartCard
-          title="Doanh thu thực nhận theo ngày (Net Revenue)"
+          title="Doanh thu thực nhận theo ngày"
           subtitle="Doanh thu sau khi trừ tiền hoàn trả (Đơn vị: nghìn VND)"
         >
           {dailySales.length === 0 ? (

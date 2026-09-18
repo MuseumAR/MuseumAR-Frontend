@@ -17,7 +17,7 @@ import {
   AlertCircle,
   X,
 } from "lucide-react";
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, dashboardTitleClass } from "@/lib/dashboard-theme";
 import { formatDateTimeVi, formatVnd } from "@/lib/format";
 import {
   getManagerRefundRequests,
@@ -126,17 +126,17 @@ export function RefundsPanel() {
   }, [requests, activeTab, searchQuery]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-8 pb-10">
       {success && <SuccessBanner message={success} />}
 
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1
-            className="text-2xl font-bold tracking-wide"
+            className={dashboardTitleClass}
             style={{ fontFamily: cinzel, color: T.text }}
           >
-            Quản lý Hoàn tiền vé (Refunds)
+            Quản lý hoàn tiền vé
           </h1>
           <p className="text-xs sm:text-sm" style={{ color: T.muted }}>
             Kiểm tra thông tin tài khoản, duyệt hoàn tiền sau khi chuyển khoản hoặc từ chối yêu cầu từ du khách.
@@ -497,7 +497,7 @@ export function RefundsPanel() {
                 <CheckCircle2 className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold" style={{ color: T.text }}>
+                <h3 className={dashboardTitleClass} style={{ color: T.text }}>
                   Xác nhận hoàn tiền vé
                 </h3>
                 <p className="text-xs" style={{ color: T.muted }}>
@@ -598,7 +598,7 @@ export function RefundsPanel() {
                 <XCircle className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold" style={{ color: T.text }}>
+                <h3 className={dashboardTitleClass} style={{ color: T.text }}>
                   Từ chối hoàn tiền vé
                 </h3>
                 <p className="text-xs" style={{ color: T.muted }}>
@@ -628,7 +628,7 @@ export function RefundsPanel() {
               </div>
 
               <p className="text-[11px]" style={{ color: T.mutedLight }}>
-                Vé sẽ được khôi phục về trạng thái <strong>Đã thanh toán (Paid)</strong> để du khách có thể tiếp tục sử dụng để vào cổng.
+                Vé sẽ được khôi phục về trạng thái <strong>Đã thanh toán</strong> để du khách có thể tiếp tục sử dụng để vào cổng.
               </p>
 
               {processError && (

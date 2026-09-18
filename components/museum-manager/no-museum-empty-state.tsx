@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Landmark, Plus } from "lucide-react";
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, dashboardTitleClass } from "@/lib/dashboard-theme";
 
 export function NoMuseumEmptyState({
-  title = "Museum not registered",
-  description = "Create a museum profile to start managing exhibitions, analytics, and tickets.",
+  title = "Chưa đăng ký bảo tàng",
+  description = "Tạo hồ sơ bảo tàng để bắt đầu quản lý triển lãm, thống kê và vé.",
 }: {
   title?: string;
   description?: string;
@@ -17,7 +17,7 @@ export function NoMuseumEmptyState({
       >
         <Landmark className="h-8 w-8" />
       </div>
-      <h2 className="text-xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
+      <h2 className={dashboardTitleClass} style={{ fontFamily: cinzel, color: T.text }}>
         {title}
       </h2>
       <p className="mt-2 max-w-md text-sm" style={{ color: T.muted }}>
@@ -33,7 +33,7 @@ export function NoMuseumEmptyState({
         }}
       >
         <Plus className="h-4 w-4" />
-        Register museum
+        Đăng ký bảo tàng
       </Link>
     </div>
   );

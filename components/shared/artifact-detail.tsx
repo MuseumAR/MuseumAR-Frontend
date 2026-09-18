@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, dashboardTitleClass } from "@/lib/dashboard-theme";
 import { ARTIFACT_LABELS } from "@/lib/field-labels";
 import { getDisplayError, formatFileSize } from "@/lib/validation";
 import { labelStatus } from "@/lib/status-labels";
@@ -58,10 +58,10 @@ export function ArtifactDetail({
 
   async function handleDelete() {
     if (!exhibitId || Number.isNaN(exhibitId)) {
-      setError("Could not find this artifact.");
+      setError("Không tìm thấy hiện vật này.");
       return;
     }
-    if (!confirm("Delete this artifact?")) return;
+    if (!confirm("Xóa hiện vật này?")) return;
 
     setIsDeleting(true);
     setError(null);
@@ -70,7 +70,7 @@ export function ArtifactDetail({
       router.push(backPath);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Could not delete artifact."));
+      setError(getDisplayError(err, "Không thể xóa hiện vật."));
     } finally {
       setIsDeleting(false);
     }
@@ -84,7 +84,7 @@ export function ArtifactDetail({
         className="mb-6 inline-flex items-center gap-2 text-sm"
         style={{ color: T.muted }}
       >
-        <span>←</span> Back to artifacts
+        <span>←</span> Quay lại hiện vật
       </Link>
 
       <div
@@ -112,7 +112,7 @@ export function ArtifactDetail({
                   color: activeTab === "vi" ? T.primaryDark : T.muted,
                 }}
               >
-                Vietnamese 🇻🇳
+                Tiếng Việt 🇻🇳
               </button>
               <button
                 type="button"
@@ -123,15 +123,15 @@ export function ArtifactDetail({
                   color: activeTab === "en" ? T.primaryDark : T.muted,
                 }}
               >
-                English 🇬🇧
+                Tiếng Anh 🇬🇧
               </button>
             </div>
 
             {(() => {
               const translationVi = translations?.find((t) => t.languageCode === "vi");
               const translationEn = translations?.find((t) => t.languageCode === "en");
-              const currentTitle = activeTab === "vi" ? (translationVi?.title || artifact.name) : (translationEn?.title || "— (Not translated to English)");
-              const currentDesc = activeTab === "vi" ? (translationVi?.description || artifact.description || "No description yet.") : (translationEn?.description || "No description available.");
+              const currentTitle = activeTab === "vi" ? (translationVi?.title || artifact.name) : (translationEn?.title || "— (Chưa dịch sang tiếng Anh)");
+              const currentDesc = activeTab === "vi" ? (translationVi?.description || artifact.description || "Chưa có mô tả.") : (translationEn?.description || "Chưa có mô tả.");
               const currentAudioUrl = activeTab === "vi" ? (translationVi?.audioUrl || artifact.audioUrl) : translationEn?.audioUrl;
               const currentEra =
                 activeTab === "en" && artifact.eraEn
@@ -146,11 +146,11 @@ export function ArtifactDetail({
                 <>
                   <div className="flex justify-between items-start">
                     <div>
-                      <h2 className="text-2xl font-bold" style={{ fontFamily: cinzel, color: T.primaryDark }}>
+                      <h2 className={dashboardTitleClass} style={{ fontFamily: cinzel, color: T.primaryDark }}>
                         {currentTitle}
                       </h2>
                       <p className="text-xs font-mono mt-1" style={{ color: T.mutedLight }}>
-                        Code: {artifact.id} {exhibitId ? `(DB ID: #${exhibitId})` : ""}
+                        Mã: {artifact.id} {exhibitId ? `(ID CSDL: #${exhibitId})` : ""}
                       </p>
                     </div>
                     <StatusBadge status={artifact.status} />
@@ -160,7 +160,7 @@ export function ArtifactDetail({
                     <InfoRow label={ARTIFACT_LABELS.category!} value={artifact.category} />
                     <InfoRow label={ARTIFACT_LABELS.era!} value={currentEra} />
                     {currentEvent ? (
-                      <InfoRow label="Historical event" value={currentEvent} />
+                      <InfoRow label="Sự kiện lịch sử" value={currentEvent} />
                     ) : null}
                     <InfoRow label={ARTIFACT_LABELS.location!} value={artifact.location} />
                     <ActiveRow label={ARTIFACT_LABELS.qrLinked!} value={artifact.qrLinked} />
@@ -194,7 +194,7 @@ export function ArtifactDetail({
                   {currentAudioUrl && (
                     <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(200,155,69,0.04)", border: `1px solid ${T.border}` }}>
                       <p className="mb-2 text-sm font-semibold flex items-center gap-2" style={{ color: T.primaryDark }}>
-                        <span>🔊</span> Preview audio guide ({activeTab === "vi" ? "Vietnamese" : "English"})
+                        <span>🔊</span> Nghe thử thuyết minh ({activeTab === "vi" ? "tiếng Việt" : "tiếng Anh"})
                       </p>
                       <audio key={currentAudioUrl} controls src={currentAudioUrl} className="w-full max-w-md" />
                     </div>
@@ -206,13 +206,13 @@ export function ArtifactDetail({
             {(arAssets.length > 0 || artifact.arOverlayUrl || artifact.arMarkerUrl) && (
               <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(79,125,74,0.04)", border: `1px solid ${T.border}` }}>
                 <p className="mb-3 text-sm font-semibold flex items-center gap-2" style={{ color: T.success }}>
-                  <span>🕶️</span> AR asset details ({arAssets.length > 0 ? arAssets.length : (artifact.arOverlayUrl ? 1 : 0)})
+                  <span>🕶️</span> Chi tiết tài sản AR ({arAssets.length > 0 ? arAssets.length : (artifact.arOverlayUrl ? 1 : 0)})
                 </p>
                 <div className="flex flex-wrap gap-4 text-xs">
                   {arAssets.length > 0 ? (
                     arAssets.map((asset) => {
                       const url = asset.assetUrl || "";
-                      const typeName = asset.assetType || "Asset";
+                      const typeName = asset.assetType || "Tài sản";
                       return (
                         <div key={asset.id} className="flex flex-col gap-1.5 rounded-xl p-3 border min-w-[140px]" style={{ background: T.bg, borderColor: T.border }}>
                           <div className="flex items-center justify-between gap-2">
@@ -225,7 +225,7 @@ export function ArtifactDetail({
                             </a>
                           ) : (
                             <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-emerald-700 hover:underline my-1.5">
-                              📎 {asset.fileName || `Download file (${typeName})`}
+                              📎 {asset.fileName || `Tải tệp (${typeName})`}
                             </a>
                           )}
                           {asset.fileSizeBytes != null && asset.fileSizeBytes > 0 && (
@@ -243,23 +243,23 @@ export function ArtifactDetail({
                     <>
                       {artifact.arOverlayUrl && (
                         <div className="flex flex-col gap-1.5 rounded-xl p-3 border" style={{ background: T.bg, borderColor: T.border }}>
-                          <span className="font-semibold" style={{ color: T.muted }}>Model / Overlay image</span>
+                          <span className="font-semibold" style={{ color: T.muted }}>Mô hình / Ảnh overlay</span>
                           {artifact.arOverlayUrl.match(/\.(png|jpg|jpeg|webp)$/i) ? (
                             <a href={artifact.arOverlayUrl} target="_blank" rel="noreferrer" className="block h-20 w-20 overflow-hidden rounded-lg border">
-                              <img src={artifact.arOverlayUrl} alt="AR overlay preview" className="h-full w-full object-cover" />
+                              <img src={artifact.arOverlayUrl} alt="Xem trước overlay AR" className="h-full w-full object-cover" />
                             </a>
                           ) : (
                             <a href={artifact.arOverlayUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-emerald-700 hover:underline">
-                              📎 Download 3D model (.glb)
+                              📎 Tải mô hình 3D (.glb)
                             </a>
                           )}
                         </div>
                       )}
                       {artifact.arMarkerUrl && (
                         <div className="flex flex-col gap-1.5 rounded-xl p-3 border" style={{ background: T.bg, borderColor: T.border }}>
-                          <span className="font-semibold" style={{ color: T.muted }}>Target marker image</span>
+                          <span className="font-semibold" style={{ color: T.muted }}>Ảnh marker</span>
                           <a href={artifact.arMarkerUrl} target="_blank" rel="noreferrer" className="block h-20 w-20 overflow-hidden rounded-lg border">
-                            <img src={artifact.arMarkerUrl} alt="AR marker image" className="h-full w-full object-cover" />
+                            <img src={artifact.arMarkerUrl} alt="Ảnh marker AR" className="h-full w-full object-cover" />
                           </a>
                         </div>
                       )}
@@ -273,20 +273,20 @@ export function ArtifactDetail({
             {artifact.qrCodeData && (
               <div className="mt-4 rounded-2xl p-4" style={{ background: "rgba(200,155,69,0.06)", border: `1px solid ${T.border}` }}>
                 <p className="mb-3 text-sm font-semibold flex items-center gap-2" style={{ color: T.primaryDark }}>
-                  <span>📷</span> Artifact QR code (for visitors to scan)
+                  <span>📷</span> Mã QR hiện vật (khách quét)
                 </p>
                 <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 text-xs">
                   {artifact.qrCodeImageUrl && (
                     <a href={artifact.qrCodeImageUrl} target="_blank" rel="noreferrer" className="block h-28 w-28 shrink-0 overflow-hidden rounded-xl border p-1" style={{ background: "#FFFFFF", borderColor: T.border }}>
-                      <img src={artifact.qrCodeImageUrl} alt="Artifact QR code" className="h-full w-full object-contain" />
+                      <img src={artifact.qrCodeImageUrl} alt="Mã QR hiện vật" className="h-full w-full object-contain" />
                     </a>
                   )}
                   <div className="space-y-1.5">
                     <p className="text-xs font-mono font-semibold" style={{ color: T.text }}>
-                      QR data: <span className="bg-amber-100/60 px-2 py-0.5 rounded text-amber-900">{artifact.qrCodeData}</span>
+                      Dữ liệu QR: <span className="bg-amber-100/60 px-2 py-0.5 rounded text-amber-900">{artifact.qrCodeData}</span>
                     </p>
                     <p className="text-xs" style={{ color: T.muted }}>
-                      Visitors use the mobile app to scan this code for audio commentary and 3D AR.
+                      Khách dùng ứng dụng di động quét mã này để nghe thuyết minh và xem AR 3D.
                     </p>
                     {artifact.qrCodeImageUrl && (
                       <a
@@ -295,7 +295,7 @@ export function ArtifactDetail({
                         rel="noreferrer"
                         className="inline-flex items-center gap-1 font-semibold hover:underline text-amber-800"
                       >
-                        ⬇ Open / Download QR image (300x300)
+                        ⬇ Mở / Tải ảnh QR (300x300)
                       </a>
                     )}
                   </div>
@@ -323,7 +323,7 @@ export function ArtifactDetail({
               className="rounded-xl border px-5 py-1.5 text-sm disabled:opacity-50"
               style={{ borderColor: "rgba(180,83,9,0.35)", color: T.danger }}
             >
-              {isDeleting ? "Deleting…" : "Delete"}
+              {isDeleting ? "Đang xóa…" : "Xóa"}
             </button>
             <Link
               href={`/content-manager/artifact/${artifact.exhibitId ?? artifact.id}/edit`}
@@ -331,7 +331,7 @@ export function ArtifactDetail({
               className="rounded-xl border px-5 py-1.5 text-sm"
               style={{ borderColor: "rgba(79,125,74,0.35)", color: T.success }}
             >
-              Update
+              Cập nhật
             </Link>
           </div>
         )}

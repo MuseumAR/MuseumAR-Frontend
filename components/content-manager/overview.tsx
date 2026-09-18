@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { ExhibitTable } from "@/components/content-manager/exhibit-table";
 import { OverviewStats } from "@/components/content-manager/overview-stats";
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, dashboardTitleClass } from "@/lib/dashboard-theme";
 
 const QUICK_LINKS = [
-  { href: "/content-manager/artifact", label: "Artifacts" },
-  { href: "/content-manager/exhibition", label: "Exhibitions" },
-  { href: "/content-manager/content-versions", label: "Content Versions" },
-  { href: "/content-manager/offline-packages", label: "Offline Packages" },
-  { href: "/content-manager/maps-routes", label: "Maps & Routes" },
+  { href: "/content-manager/artifact", label: "Hiện vật" },
+  { href: "/content-manager/exhibition", label: "Triển lãm" },
+  { href: "/content-manager/content-versions", label: "Phiên bản nội dung" },
+  { href: "/content-manager/offline-packages", label: "Gói offline" },
+  { href: "/content-manager/maps-routes", label: "Bản đồ & Lộ trình" },
 ];
 
 export function ContentManagerOverview() {
@@ -17,10 +17,10 @@ export function ContentManagerOverview() {
       <section>
         <div className="mb-5">
           <p className="text-xs font-medium uppercase tracking-[0.22em]" style={{ color: T.mutedLight }}>
-            Content Manager
+            Quản lý nội dung
           </p>
-          <h2 className="mt-1 text-xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-            Content dashboard
+          <h2 className={`mt-1 ${dashboardTitleClass}`} style={{ fontFamily: cinzel, color: T.text }}>
+            Bảng điều khiển nội dung
           </h2>
         </div>
         <OverviewStats />
@@ -28,7 +28,7 @@ export function ContentManagerOverview() {
 
       <section>
         <p className="mb-3 text-xs font-medium uppercase tracking-[0.22em]" style={{ color: T.mutedLight }}>
-          Quick access
+          Truy cập nhanh
         </p>
         <div className="flex flex-wrap gap-2">
           {QUICK_LINKS.map((link) => (

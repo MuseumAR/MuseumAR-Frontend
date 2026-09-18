@@ -1,6 +1,6 @@
 "use client";
 
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, dashboardTitleClass } from "@/lib/dashboard-theme";
 import type { MuseumProfile } from "@/types";
 import type { MuseumTranslationDto } from "@/types/api";
 import Link from "next/link";
@@ -47,7 +47,7 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
-      setError("Please enter the museum name.");
+      setError("Vui lòng nhập tên bảo tàng.");
       return;
     }
 
@@ -102,7 +102,7 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
       router.push("/museum-manager/museum-profile");
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Could not update museum."));
+      setError(getDisplayError(err, "Không thể cập nhật bảo tàng."));
     } finally {
       setIsSubmitting(false);
     }
@@ -116,10 +116,10 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
         className="mb-6 inline-flex items-center gap-2 text-sm"
         style={{ color: T.muted }}
       >
-        <span>←</span> Back to profile
+        <span>←</span> Quay lại hồ sơ
       </Link>
-      <h1 className="mb-8 text-3xl font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-        Update museum
+      <h1 className={`mb-8 ${dashboardTitleClass}`} style={{ fontFamily: cinzel, color: T.text }}>
+        Cập nhật bảo tàng
       </h1>
 
       <form
@@ -135,11 +135,11 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
             style={{ borderColor: T.border, background: "rgba(200,155,69,0.08)", color: T.muted }}
           >
             {imagePreview ? (
-              <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" />
+              <img src={imagePreview} alt="Xem trước" className="h-full w-full object-cover" />
             ) : (
               <>
-                <p className="text-sm">Choose museum image</p>
-                <p className="text-xs" style={{ color: T.mutedLight }}>under 20MB</p>
+                <p className="text-sm">Chọn ảnh bảo tàng</p>
+                <p className="text-xs" style={{ color: T.mutedLight }}>dưới 20MB</p>
               </>
             )}
           </button>
@@ -147,28 +147,28 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
 
           <div className="flex-1 space-y-5">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Museum name (Vietnamese) *" value={name} onChange={setName} />
-              <Field label="Museum name (English)" value={nameEn} onChange={setNameEn} />
-              <Field label="Address (Vietnamese)" value={address} onChange={setAddress} />
-              <Field label="Address (English)" value={addressEn} onChange={setAddressEn} />
-              <Field label="Contact email" value={email} onChange={setEmail} type="email" />
-              <Field label="Phone number" value={phone} onChange={setPhone} type="tel" />
-              <SelectField label="Opening hours" value={openingHours} onChange={setOpeningHours} />
-              <SelectField label="Closing hours" value={closingHours} onChange={setClosingHours} />
+              <Field label="Tên bảo tàng (tiếng Việt) *" value={name} onChange={setName} />
+              <Field label="Tên bảo tàng (tiếng Anh)" value={nameEn} onChange={setNameEn} />
+              <Field label="Địa chỉ (tiếng Việt)" value={address} onChange={setAddress} />
+              <Field label="Địa chỉ (tiếng Anh)" value={addressEn} onChange={setAddressEn} />
+              <Field label="Email liên hệ" value={email} onChange={setEmail} type="email" />
+              <Field label="Số điện thoại" value={phone} onChange={setPhone} type="tel" />
+              <SelectField label="Giờ mở cửa" value={openingHours} onChange={setOpeningHours} />
+              <SelectField label="Giờ đóng cửa" value={closingHours} onChange={setClosingHours} />
               <Field
-                label="Opening hours (English)"
+                label="Giờ mở cửa (tiếng Anh)"
                 value={openingHoursEn}
                 onChange={setOpeningHoursEn}
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <TextArea
-                label="Description (Vietnamese)"
+                label="Mô tả (tiếng Việt)"
                 value={description}
                 onChange={setDescription}
               />
               <TextArea
-                label="Description (English)"
+                label="Mô tả (tiếng Anh)"
                 value={descriptionEn}
                 onChange={setDescriptionEn}
               />
@@ -191,7 +191,7 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
             className="rounded-xl px-5 py-2 text-sm"
             style={{ border: `1px solid ${T.border}`, color: T.muted }}
           >
-            Cancel
+            Hủy
           </Link>
           <button
             type="submit"
@@ -202,7 +202,7 @@ export function UpdateMuseumForm({ profile }: { profile: MuseumProfile }) {
               color: T.surface,
             }}
           >
-            {isSubmitting ? "Saving…" : "Save changes"}
+            {isSubmitting ? "Đang lưu…" : "Lưu thay đổi"}
           </button>
         </div>
       </form>
@@ -276,7 +276,7 @@ function SelectField({
         className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
         style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
       >
-        <option value="">Select time</option>
+        <option value="">Chọn giờ</option>
         {HOURS.map((h) => (
           <option key={h} value={h}>{h}</option>
         ))}

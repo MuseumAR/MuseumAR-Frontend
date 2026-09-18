@@ -1,5 +1,5 @@
 import type { LanguageUsage } from "@/types";
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, dashboardTitleClass } from "@/lib/dashboard-theme";
 
 const CHART_COLORS = ["#C89B45", "#9A6F1F", "#5C4033", "#A08060"];
 
@@ -27,8 +27,8 @@ export function LanguageUsageChart({ data }: { data: LanguageUsage[] }) {
         boxShadow: "0 6px 20px rgba(43,29,14,0.05)",
       }}
     >
-      <h2 className="text-base font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-        Language usage
+      <h2 className={dashboardTitleClass} style={{ fontFamily: cinzel, color: T.text }}>
+        Thống kê ngôn ngữ
       </h2>
       <div className="mt-6 flex flex-col items-center gap-6 sm:flex-row sm:justify-center">
         <div

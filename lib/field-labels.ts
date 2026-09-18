@@ -17,124 +17,124 @@ import type {
 type Labels<T> = Partial<Record<keyof T, string>>;
 
 export const USER_LABELS: Labels<User> = {
-  id: "Id",
-  fullName: "Full Name",
+  id: "Mã",
+  fullName: "Họ tên",
   email: "Email",
-  phone: "Phone",
-  role: "Role",
-  loginAt: "Login At",
-  createdAt: "Created At",
-  updatedAt: "Updated At",
-  status: "Status",
+  phone: "Điện thoại",
+  role: "Vai trò",
+  loginAt: "Đăng nhập lúc",
+  createdAt: "Ngày tạo",
+  updatedAt: "Ngày cập nhật",
+  status: "Trạng thái",
 };
 
 export const ACTIVITY_LOG_LABELS: Labels<ActivityLog> = {
   id: "#",
-  user: "User",
-  action: "Action",
-  time: "Time",
+  user: "Người dùng",
+  action: "Hành động",
+  time: "Thời gian",
 };
 
 export const MUSEUM_APPLICATION_LABELS: Labels<MuseumApplication> = {
-  id: "ID",
-  museum: "Museum",
-  submitted: "Submitted",
-  status: "Status",
+  id: "Mã",
+  museum: "Bảo tàng",
+  submitted: "Ngày gửi",
+  status: "Trạng thái",
 };
 
 export const MUSEUM_LABELS: Labels<Museum> = {
-  id: "ID",
-  name: "Museum Name",
-  location: "Location",
-  manager: "Manager",
-  status: "Status",
+  id: "Mã",
+  name: "Tên bảo tàng",
+  location: "Địa điểm",
+  manager: "Quản lý",
+  status: "Trạng thái",
 };
 
 export const ARTIFACT_LABELS: Labels<Artifact> = {
-  id: "ID",
-  name: "Artifact Name",
-  arModel: "AR Model File",
-  status: "Status",
-  category: "Category",
-  era: "Era",
-  location: "Location",
-  qrLinked: "QR Linked",
-  arModelStatus: "AR Model",
-  audio: "Audio",
-  description: "Description",
+  id: "Mã",
+  name: "Tên hiện vật",
+  arModel: "Tệp mô hình AR",
+  status: "Trạng thái",
+  category: "Danh mục",
+  era: "Thời kỳ",
+  location: "Vị trí",
+  qrLinked: "Mã QR",
+  arModelStatus: "Mô hình AR",
+  audio: "Âm thanh",
+  description: "Mô tả",
 };
 
 export const ARTIFACT_ROW_LABELS: Labels<ArtifactRow> = {
-  id: "Id",
-  name: "Artifact",
-  category: "Category",
-  era: "Historical Period",
-  status: "Status",
-  view: "Views",
-  audioPlay: "Audio Plays",
-  qrScan: "QR Scans",
-  arUsage: "AR Usage",
+  id: "Mã",
+  name: "Hiện vật",
+  category: "Danh mục",
+  era: "Thời kỳ lịch sử",
+  status: "Trạng thái",
+  view: "Lượt xem",
+  audioPlay: "Lượt nghe",
+  qrScan: "Lượt quét QR",
+  arUsage: "Lượt dùng AR",
 };
 
 export const ARTIFACT_STATS_LABELS: Labels<ArtifactStats> = {
-  arModelsAvailable: "AR Models Available",
-  totalArtifact: "Total Artifact",
-  visitorsScannedToday: "Visitors Scanned Today",
+  arModelsAvailable: "Mô hình AR có sẵn",
+  totalArtifact: "Tổng hiện vật",
+  visitorsScannedToday: "Khách quét hôm nay",
 };
 
 export const EXHIBITION_LABELS: Labels<Exhibition> = {
-  id: "ID",
-  name: "Name",
-  artifacts: "Artifacts",
-  visitors: "Visitors",
-  status: "Status",
+  id: "Mã",
+  name: "Tên",
+  artifacts: "Hiện vật",
+  visitors: "Khách tham quan",
+  status: "Trạng thái",
 };
 
 export const EXHIBITION_APPLICATION_LABELS: Labels<ExhibitionApplication> = {
-  id: "ID",
-  title: "Name",
-  exhibitionType: "Exhibition Type",
-  dateStart: "Date Start",
-  dateEnd: "Date End",
-  openingHours: "Opening Hours",
-  closingHours: "Closing Hours",
-  contactEmail: "Contact Email",
-  description: "Description",
-  submitted: "Submitted",
-  status: "Status",
+  id: "Mã",
+  title: "Tên",
+  exhibitionType: "Loại triển lãm",
+  dateStart: "Ngày bắt đầu",
+  dateEnd: "Ngày kết thúc",
+  openingHours: "Giờ mở cửa",
+  closingHours: "Giờ đóng cửa",
+  contactEmail: "Email liên hệ",
+  description: "Mô tả",
+  submitted: "Ngày gửi",
+  status: "Trạng thái",
 };
 
 export const TICKET_LABELS: Labels<Ticket> = {
-  id: "ID",
-  type: "Type",
-  price: "Price",
-  status: "Status",
+  id: "Mã",
+  type: "Loại",
+  price: "Giá",
+  status: "Trạng thái",
 };
 
 export const STAFF_LABELS: Labels<StaffMember> = {
-  name: "Name",
+  name: "Tên",
   email: "Email",
-  roleLabel: "Role",
-  status: "Status",
+  roleLabel: "Vai trò",
+  status: "Trạng thái",
 };
 
 export const MUSEUM_PROFILE_LABELS: Labels<MuseumProfile> = {
-  name: "Museum Name",
-  nameEn: "Name (English)",
-  address: "Address",
-  addressEn: "Address (English)",
-  email: "Contact Email",
-  phone: "Phone Number",
-  openingHours: "Opening Hours",
-  closingHours: "Closing Hours",
-  openingHoursEn: "Opening Hours (English)",
-  description: "Description",
-  descriptionEn: "Description (English)",
+  name: "Tên bảo tàng",
+  nameEn: "Tên (tiếng Anh)",
+  address: "Địa chỉ",
+  addressEn: "Địa chỉ (tiếng Anh)",
+  email: "Email liên hệ",
+  phone: "Số điện thoại",
+  openingHours: "Giờ mở cửa",
+  closingHours: "Giờ đóng cửa",
+  openingHoursEn: "Giờ mở cửa (tiếng Anh)",
+  description: "Mô tả",
+  descriptionEn: "Mô tả (tiếng Anh)",
 };
 
 export const MUSEUM_MANAGER_STATS_LABELS: Labels<MuseumManagerStats> = {
-  totalVisitor: "Total Visitor",
-  qrScansToday: "QR Scans Today",
-  offlineDownloads: "Offline Downloads",
-  averageListeningTime: "Average Listening Time",
+  totalVisitor: "Tổng tương tác",
+  qrScansToday: "Lượt quét QR",
+  offlineDownloads: "Lượt tải offline",
+  averageListeningTime: "Thời lượng nghe TB",
 };

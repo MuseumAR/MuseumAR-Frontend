@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Plus, Tag, Power, PowerOff, Edit2, Trash2, X, Eye } from "lucide-react";
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, dashboardTitleClass } from "@/lib/dashboard-theme";
 import type { Ticket } from "@/types";
 import { getExhibitionList } from "@/services/content-manager/exhibition.service";
 import type { ExhibitionDto, TicketPromotionDto } from "@/types/api";
@@ -25,7 +25,6 @@ import {
   getFirstValidationError,
   validateCreateTicketType,
 } from "@/lib/validation";
-import { labelStatus } from "@/lib/status-labels";
 import { SuccessBanner, useSuccessToast } from "@/components/shared/success-banner";
 
 export function TicketApplicationTable({
@@ -100,7 +99,7 @@ export function TicketApplicationTable({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (museumId == null) {
-      setError("Museum profile is not available.");
+      setError("Hồ sơ bảo tàng chưa có sẵn.");
       return;
     }
 
@@ -127,10 +126,10 @@ export function TicketApplicationTable({
       setPrice("");
       setDescription("");
       setExhibitionId("");
-      showSuccess("Ticket type created.");
+      showSuccess("Đã tạo loại vé.");
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Could not create ticket type. Please try again."));
+      setError(getDisplayError(err, "Không thể tạo loại vé. Vui lòng thử lại."));
     } finally {
       setIsSubmitting(false);
     }
@@ -145,17 +144,17 @@ export function TicketApplicationTable({
 
     try {
       await publishTicketTypeEntryForManager(numericId);
-      showSuccess("Ticket type published.");
+      showSuccess("Đã xuất bản loại vé.");
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Could not publish ticket type. Please try again."));
+      setError(getDisplayError(err, "Không thể xuất bản loại vé. Vui lòng thử lại."));
     } finally {
       setIsPublishing((prev) => ({ ...prev, [ticketId]: false }));
     }
   }
 
   async function handleDeleteTicket(ticketId: string) {
-    if (!confirm("Are you sure you want to delete/deactivate this ticket type?")) {
+    if (!confirm("Bạn có chắc muốn xóa/ngừng loại vé này?")) {
       return;
     }
     const numericId = getTicketTypeNumericId(ticketId);
@@ -164,10 +163,10 @@ export function TicketApplicationTable({
     setError(null);
     try {
       await deleteTicketTypeEntryForManager(numericId);
-      showSuccess("Ticket type deleted.");
+      showSuccess("Đã xóa loại vé.");
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Could not delete ticket type."));
+      setError(getDisplayError(err, "Không thể xóa loại vé."));
     }
   }
 
@@ -214,7 +213,7 @@ export function TicketApplicationTable({
 
     if (editingPromoId == null) {
       if (sDate < today) {
-        setPromoError("Ngày bắt đầu không được ở trong quá khứ (Start date cannot be in the past).");
+        setPromoError("Ngày bắt đầu không được ở trong quá khứ.");
         return;
       }
     } else {
@@ -223,7 +222,7 @@ export function TicketApplicationTable({
         .find((p) => p.id === editingPromoId);
       const initialStart = currentPromo?.startDate ? currentPromo.startDate.slice(0, 10) : "";
       if (promoStartDate && promoStartDate !== initialStart && sDate < today) {
-        setPromoError("Ngày bắt đầu không được ở trong quá khứ (Start date cannot be in the past).");
+        setPromoError("Ngày bắt đầu không được ở trong quá khứ.");
         return;
       }
     }
@@ -231,7 +230,7 @@ export function TicketApplicationTable({
     const eDate = new Date(promoEndDate);
     eDate.setHours(0, 0, 0, 0);
     if (eDate < today) {
-      setPromoError("Ngày kết thúc không được ở trong quá khứ (End date cannot be in the past).");
+      setPromoError("Ngày kết thúc không được ở trong quá khứ.");
       return;
     }
 
@@ -259,17 +258,17 @@ export function TicketApplicationTable({
         await createManagerTicketPromotion(numericId, payload);
       }
       cancelEditPromotion();
-      showSuccess(editingPromoId != null ? "Promotion updated." : "Promotion created.");
+      showSuccess(editingPromoId != null ? "Đã cập nhật khuyến mãi." : "Đã tạo khuyến mãi.");
       await loadPromotions(ticketId);
     } catch (err) {
-      setPromoError(getDisplayError(err, editingPromoId != null ? "Could not update promotion." : "Could not create promotion."));
+      setPromoError(getDisplayError(err, editingPromoId != null ? "Không thể cập nhật khuyến mãi." : "Không thể tạo khuyến mãi."));
     } finally {
       setPromoSubmitting(false);
     }
   }
 
   async function handleDeletePromotion(ticketId: string, promotionId: number, promotionName: string) {
-    if (!confirm(`Are you sure you want to delete the promotion "${promotionName}"?`)) {
+    if (!confirm(`Bạn có chắc muốn xóa khuyến mãi "${promotionName}"?`)) {
       return;
     }
 
@@ -279,20 +278,20 @@ export function TicketApplicationTable({
       if (editingPromoId === promotionId) {
         cancelEditPromotion();
       }
-      showSuccess("Promotion deleted.");
+      showSuccess("Đã xóa khuyến mãi.");
       await loadPromotions(ticketId);
     } catch (err) {
-      setError(getDisplayError(err, "Could not delete promotion."));
+      setError(getDisplayError(err, "Không thể xóa khuyến mãi."));
     }
   }
 
   async function handleTogglePromotion(ticketId: string, promotionId: number, currentActive: boolean) {
     try {
       await toggleManagerTicketPromotion(promotionId, !currentActive);
-      showSuccess(currentActive ? "Promotion deactivated." : "Promotion activated.");
+      showSuccess(currentActive ? "Đã tắt khuyến mãi." : "Đã bật khuyến mãi.");
       await loadPromotions(ticketId);
     } catch (err) {
-      setError(getDisplayError(err, "Could not change promotion status."));
+      setError(getDisplayError(err, "Không thể thay đổi trạng thái khuyến mãi."));
     }
   }
 
@@ -302,7 +301,7 @@ export function TicketApplicationTable({
       const detail = await getManagerTicketPromotionDetail(promotionId);
       setViewingPromo(detail);
     } catch (err) {
-      setError(getDisplayError(err, "Could not load promotion details."));
+      setError(getDisplayError(err, "Không thể tải chi tiết khuyến mãi."));
     } finally {
       setLoadingDetailPromoId(null);
     }
@@ -315,7 +314,7 @@ export function TicketApplicationTable({
           <span className="font-semibold" style={{ color: T.text }}>
             {tickets.length}
           </span>
-          {` ticket types`}
+          {` loại vé`}
           {museumName ? (
             <span style={{ color: T.mutedLight }}>{` · ${museumName}`}</span>
           ) : null}
@@ -331,7 +330,7 @@ export function TicketApplicationTable({
           }}
         >
           <Plus className="h-4 w-4" />
-          {showForm ? "Close form" : "Create ticket type"}
+          {showForm ? "Đóng biểu mẫu" : "Tạo loại vé"}
         </button>
       </div>
 
@@ -340,7 +339,7 @@ export function TicketApplicationTable({
           className="rounded-2xl px-4 py-3 text-sm"
           style={{ background: "rgba(200,155,69,0.10)", color: T.muted }}
         >
-          A museum profile is required before adding ticket types.
+          Cần có hồ sơ bảo tàng trước khi thêm loại vé.
         </p>
       )}
 
@@ -350,22 +349,22 @@ export function TicketApplicationTable({
           className="rounded-3xl p-6"
           style={{ background: T.surface, border: `1px solid ${T.border}` }}
         >
-          <h2 className="mb-4 text-lg font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-            New ticket type
+          <h2 className={`mb-4 ${dashboardTitleClass}`} style={{ fontFamily: cinzel, color: T.text }}>
+            Loại vé mới
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <label className="block text-sm" style={{ color: T.muted }}>Name *</label>
+              <label className="block text-sm" style={{ color: T.muted }}>Tên *</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Adult ticket"
+                placeholder="Vé người lớn"
                 className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
               />
             </div>
             <div className="space-y-1.5">
-              <label className="block text-sm" style={{ color: T.muted }}>Price (VND) *</label>
+              <label className="block text-sm" style={{ color: T.muted }}>Giá (VND) *</label>
               <input
                 type="number" min="0" step="1000"
                 value={price}
@@ -376,25 +375,25 @@ export function TicketApplicationTable({
               />
             </div>
             <div className="space-y-1.5">
-              <label className="block text-sm" style={{ color: T.muted }}>Exhibition (optional)</label>
+              <label className="block text-sm" style={{ color: T.muted }}>Triển lãm (không bắt buộc)</label>
               <select
                 value={exhibitionId}
                 onChange={(e) => setExhibitionId(e.target.value)}
                 className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
               >
-                <option value="">Whole museum (All exhibitions)</option>
+                <option value="">Toàn bảo tàng (Tất cả triển lãm)</option>
                 {exhibitions.map((ex) => (
-                  <option key={ex.id} value={ex.id}>{ex.name || `Exhibition #${ex.id}`}</option>
+                  <option key={ex.id} value={ex.id}>{ex.name || `Triển lãm #${ex.id}`}</option>
                 ))}
               </select>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
-              <label className="block text-sm" style={{ color: T.muted }}>Description</label>
+              <label className="block text-sm" style={{ color: T.muted }}>Mô tả</label>
               <input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Description (optional)"
+                placeholder="Mô tả (không bắt buộc)"
                 className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
               />
@@ -414,7 +413,7 @@ export function TicketApplicationTable({
               className="rounded-xl px-6 py-2 text-sm font-medium disabled:opacity-50"
               style={{ background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`, color: T.surface }}
             >
-              {isSubmitting ? "Saving…" : "Create ticket type"}
+              {isSubmitting ? "Đang lưu…" : "Tạo loại vé"}
             </button>
           </div>
         </form>
@@ -433,7 +432,7 @@ export function TicketApplicationTable({
       >
         {tickets.length === 0 ? (
           <div className="px-8 py-16 text-center">
-            <p className="text-sm" style={{ color: T.muted }}>No ticket types yet.</p>
+            <p className="text-sm" style={{ color: T.muted }}>Chưa có loại vé.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -441,10 +440,10 @@ export function TicketApplicationTable({
               <thead>
                 <tr style={{ borderBottom: `1px solid ${T.border}`, background: "rgba(245,230,200,0.35)" }}>
                   <th className="px-5 py-4 font-medium" style={{ color: T.mutedLight }}>ID</th>
-                  <th className="px-5 py-4 font-medium" style={{ color: T.mutedLight }}>Type</th>
-                  <th className="px-5 py-4 font-medium" style={{ color: T.mutedLight }}>Price</th>
-                  <th className="px-5 py-4 font-medium" style={{ color: T.mutedLight }}>Status</th>
-                  <th className="px-5 py-4 font-medium" style={{ color: T.mutedLight }}>Actions</th>
+                  <th className="px-5 py-4 font-medium" style={{ color: T.mutedLight }}>Loại vé</th>
+                  <th className="px-5 py-4 font-medium" style={{ color: T.mutedLight }}>Giá</th>
+                  <th className="px-5 py-4 font-medium" style={{ color: T.mutedLight }}>Trạng thái</th>
+                  <th className="px-5 py-4 font-medium" style={{ color: T.mutedLight }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -474,7 +473,13 @@ export function TicketApplicationTable({
                           color: ticket.status === "Active" ? T.success : T.primaryDark,
                         }}
                       >
-                        {labelStatus(ticket.status)}
+                        {ticket.status === "Active"
+                          ? "Đang hoạt động"
+                          : ticket.status === "Pending"
+                            ? "Chờ duyệt"
+                            : ticket.status === "Inactive"
+                              ? "Ngừng hoạt động"
+                              : ticket.status}
                       </span>
                     </td>
                     <td className="px-5 py-4">
@@ -487,7 +492,7 @@ export function TicketApplicationTable({
                             className="rounded-xl px-3 py-1 text-xs font-medium transition-opacity hover:opacity-90 disabled:opacity-50"
                             style={{ background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`, color: T.surface }}
                           >
-                            {isPublishing[ticket.id] ? "Publishing…" : "Publish"}
+                            {isPublishing[ticket.id] ? "Đang xuất bản…" : "Xuất bản"}
                           </button>
                         )}
                         <button
@@ -501,7 +506,7 @@ export function TicketApplicationTable({
                           }}
                         >
                           <Eye className="h-3 w-3" />
-                          Detail
+                          Chi tiết
                         </button>
                         {ticket.status !== "Inactive" && (
                           <>
@@ -516,7 +521,7 @@ export function TicketApplicationTable({
                               }}
                             >
                               <Edit2 className="h-3 w-3" />
-                              Edit
+                              Sửa
                             </button>
                             <button
                               type="button"
@@ -528,7 +533,7 @@ export function TicketApplicationTable({
                               }}
                             >
                               <Trash2 className="h-3 w-3" />
-                              Delete
+                              Xóa
                             </button>
                             <button
                               type="button"
@@ -550,7 +555,7 @@ export function TicketApplicationTable({
                               }}
                             >
                               <Tag className="h-3 w-3" />
-                              {promoFormTarget === ticket.id ? "Close" : "Promotions"}
+                              {promoFormTarget === ticket.id ? "Đóng" : "Khuyến mãi"}
                             </button>
                           </>
                         )}
@@ -570,15 +575,15 @@ export function TicketApplicationTable({
 
               return (
                 <div className="mx-5 mb-5 rounded-2xl p-5 space-y-4" style={{ background: "rgba(220,38,38,0.03)", border: "1px solid rgba(220,38,38,0.15)" }}>
-                  <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: T.text }}>
+                  <h3 className={`${dashboardTitleClass} flex items-center gap-2`} style={{ color: T.text }}>
                     <Tag className="h-4 w-4" style={{ color: "#B91C1C" }} />
-                    Promotions for &quot;{ticket.type}&quot;
+                    Khuyến mãi cho &quot;{ticket.type}&quot;
                   </h3>
 
                   {isLoading ? (
-                    <p className="text-xs" style={{ color: T.muted }}>Loading promotions...</p>
+                    <p className="text-xs" style={{ color: T.muted }}>Đang tải khuyến mãi...</p>
                   ) : promos.length === 0 ? (
-                    <p className="text-xs" style={{ color: T.muted }}>No promotions yet.</p>
+                    <p className="text-xs" style={{ color: T.muted }}>Chưa có khuyến mãi.</p>
                   ) : (
                     <div className="space-y-2">
                       {promos.map((promo) => {
@@ -607,13 +612,13 @@ export function TicketApplicationTable({
                                     color: isCurrentlyActive ? T.success : isExpired ? "#8B3A3A" : T.primaryDark,
                                   }}
                                 >
-                                  {isCurrentlyActive ? `🟢 ${labelStatus("Active")}` : isExpired ? `⏰ ${labelStatus("Expired")}` : promo.isActive ? `⏳ ${labelStatus("Scheduled")}` : `⏸ ${labelStatus("Paused")}`}
+                                  {isCurrentlyActive ? "🟢 Đang diễn ra" : isExpired ? "⏰ Hết hạn" : promo.isActive ? "⏳ Đã lên lịch" : "⏸ Tạm dừng"}
                                 </span>
                               </div>
                               <p className="mt-0.5" style={{ color: T.muted }}>
-                                {promo.discountType === "Percentage" ? `${promo.discountValue}% off` : `${promo.discountValue.toLocaleString()} VND off`}
+                                {promo.discountType === "Percentage" ? `Giảm ${promo.discountValue}%` : `Giảm ${promo.discountValue.toLocaleString("vi-VN")} VND`}
                                 {" · "}
-                                {start.toLocaleDateString("en-US")} → {end.toLocaleDateString("en-US")}
+                                {start.toLocaleDateString("vi-VN")} → {end.toLocaleDateString("vi-VN")}
                               </p>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
@@ -621,7 +626,7 @@ export function TicketApplicationTable({
                                 type="button"
                                 onClick={() => handleViewDetail(promo.id)}
                                 className="rounded-lg p-1.5 transition-opacity hover:opacity-70 text-indigo-600 hover:bg-indigo-50"
-                                title="View details"
+                                title="Xem chi tiết"
                                 disabled={loadingDetailPromoId === promo.id}
                               >
                                 {loadingDetailPromoId === promo.id ? (
@@ -634,7 +639,7 @@ export function TicketApplicationTable({
                                 type="button"
                                 onClick={() => startEditPromotion(promo)}
                                 className="rounded-lg p-1.5 transition-opacity hover:opacity-70 text-blue-600 hover:bg-blue-50"
-                                title="Edit"
+                                title="Sửa"
                               >
                                 <Edit2 className="h-4 w-4" />
                               </button>
@@ -642,7 +647,7 @@ export function TicketApplicationTable({
                                 type="button"
                                 onClick={() => handleDeletePromotion(ticket.id, promo.id, promo.name)}
                                 className="rounded-lg p-1.5 transition-opacity hover:opacity-70 text-red-600 hover:bg-red-50"
-                                title="Delete"
+                                title="Xóa"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </button>
@@ -650,7 +655,7 @@ export function TicketApplicationTable({
                                 type="button"
                                 onClick={() => handleTogglePromotion(ticket.id, promo.id, promo.isActive)}
                                 className="rounded-lg p-1.5 transition-opacity hover:opacity-70"
-                                title={promo.isActive ? "Turn off" : "Turn on"}
+                                title={promo.isActive ? "Tắt" : "Bật"}
                                 style={{ color: promo.isActive ? T.success : T.muted }}
                               >
                                 {promo.isActive ? <Power className="h-4 w-4" /> : <PowerOff className="h-4 w-4" />}
@@ -666,7 +671,7 @@ export function TicketApplicationTable({
                   <form onSubmit={(e) => handleCreateOrUpdatePromotion(e, ticket.id)} className="space-y-3 pt-2 border-t" style={{ borderColor: T.border }}>
                     <div className="flex items-center justify-between">
                       <h4 className="text-xs font-bold uppercase tracking-wider" style={{ color: "#B91C1C" }}>
-                        {editingPromoId != null ? "Edit promotion" : "Add new promotion"}
+                        {editingPromoId != null ? "Sửa khuyến mãi" : "Thêm khuyến mãi mới"}
                       </h4>
                       {editingPromoId != null && (
                         <button
@@ -674,37 +679,37 @@ export function TicketApplicationTable({
                           onClick={cancelEditPromotion}
                           className="inline-flex items-center gap-1 text-[10px] font-bold text-stone-500 hover:text-stone-700 bg-stone-100 rounded-md px-1.5 py-0.5"
                         >
-                          <X className="h-3 w-3" /> Cancel edit
+                          <X className="h-3 w-3" /> Hủy sửa
                         </button>
                       )}
                     </div>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-1">
-                        <label className="block text-xs" style={{ color: T.muted }}>Promotion name *</label>
+                        <label className="block text-xs" style={{ color: T.muted }}>Tên khuyến mãi *</label>
                         <input
                           value={promoName}
                           onChange={(e) => setPromoName(e.target.value)}
-                          placeholder="National Day 2/9 discount"
+                          placeholder="Giảm giá Quốc khánh 2/9"
                           required
                           className="w-full rounded-lg px-3 py-2 text-xs outline-none"
                           style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="block text-xs" style={{ color: T.muted }}>Discount type *</label>
+                        <label className="block text-xs" style={{ color: T.muted }}>Loại giảm giá *</label>
                         <select
                           value={promoDiscountType}
                           onChange={(e) => setPromoDiscountType(e.target.value as "Percentage" | "FixedAmount")}
                           className="w-full rounded-lg px-3 py-2 text-xs outline-none"
                           style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                         >
-                          <option value="Percentage">Percentage</option>
-                          <option value="FixedAmount">FixedAmount</option>
+                          <option value="Percentage">Phần trăm</option>
+                          <option value="FixedAmount">Số tiền cố định</option>
                         </select>
                       </div>
                       <div className="space-y-1">
                         <label className="block text-xs" style={{ color: T.muted }}>
-                          Discount value * {promoDiscountType === "Percentage" ? "(0–100%)" : "(VND)"}
+                          Giá trị giảm * {promoDiscountType === "Percentage" ? "(0–100%)" : "(VND)"}
                         </label>
                         <input
                           type="number" min="0"
@@ -719,17 +724,17 @@ export function TicketApplicationTable({
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="block text-xs" style={{ color: T.muted }}>Description</label>
+                        <label className="block text-xs" style={{ color: T.muted }}>Mô tả</label>
                         <input
                           value={promoDescription}
                           onChange={(e) => setPromoDescription(e.target.value)}
-                          placeholder="For National Day 2/9"
+                          placeholder="Áp dụng dịp Quốc khánh 2/9"
                           className="w-full rounded-lg px-3 py-2 text-xs outline-none"
                           style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="block text-xs" style={{ color: T.muted }}>Start date *</label>
+                        <label className="block text-xs" style={{ color: T.muted }}>Ngày bắt đầu *</label>
                         <input
                           type="date"
                           value={promoStartDate}
@@ -741,7 +746,7 @@ export function TicketApplicationTable({
                         />
                       </div>
                       <div className="space-y-1">
-                        <label className="block text-xs" style={{ color: T.muted }}>End date *</label>
+                        <label className="block text-xs" style={{ color: T.muted }}>Ngày kết thúc *</label>
                         <input
                           type="date"
                           value={promoEndDate}
@@ -767,7 +772,7 @@ export function TicketApplicationTable({
                         className="rounded-lg px-5 py-1.5 text-xs font-medium disabled:opacity-50"
                         style={{ background: "linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)", color: "#FFF" }}
                       >
-                        {promoSubmitting ? "Saving…" : (editingPromoId != null ? "Save changes" : "Create promotion")}
+                        {promoSubmitting ? "Đang lưu…" : (editingPromoId != null ? "Lưu thay đổi" : "Tạo khuyến mãi")}
                       </button>
                     </div>
                   </form>
@@ -789,9 +794,9 @@ export function TicketApplicationTable({
             }}
           >
             <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: T.border }}>
-              <h3 className="text-lg font-bold flex items-center gap-2" style={{ fontFamily: cinzel, color: T.text }}>
+              <h3 className={`${dashboardTitleClass} flex items-center gap-2`} style={{ fontFamily: cinzel, color: T.text }}>
                 <Tag className="h-5 w-5" style={{ color: "#B91C1C" }} />
-                Promotion details
+                Chi tiết khuyến mãi
               </h3>
               <button
                 type="button"
@@ -805,20 +810,20 @@ export function TicketApplicationTable({
 
             <div className="space-y-3.5 text-sm">
               <div>
-                <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Name</span>
+                <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Tên</span>
                 <span className="text-base font-semibold" style={{ color: T.text }}>{viewingPromo.name}</span>
               </div>
 
               {viewingPromo.nameEn && (
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>English name</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Tên tiếng Anh</span>
                   <span className="text-base" style={{ color: T.text }}>{viewingPromo.nameEn}</span>
                 </div>
               )}
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Discount value</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Giá trị giảm</span>
                   <span className="text-base font-bold text-red-600">
                     {viewingPromo.discountType === "Percentage"
                       ? `${viewingPromo.discountValue}%`
@@ -826,45 +831,45 @@ export function TicketApplicationTable({
                   </span>
                 </div>
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Type</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Loại</span>
                   <span className="text-base" style={{ color: T.text }}>
-                    {viewingPromo.discountType}
+                    {viewingPromo.discountType === "Percentage" ? "Phần trăm" : viewingPromo.discountType === "FixedAmount" ? "Số tiền cố định" : viewingPromo.discountType}
                   </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Start date</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Ngày bắt đầu</span>
                   <span className="text-base" style={{ color: T.text }}>
-                    {new Date(viewingPromo.startDate).toLocaleDateString("en-US")}
+                    {new Date(viewingPromo.startDate).toLocaleDateString("vi-VN")}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>End date</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Ngày kết thúc</span>
                   <span className="text-base" style={{ color: T.text }}>
-                    {new Date(viewingPromo.endDate).toLocaleDateString("en-US")}
+                    {new Date(viewingPromo.endDate).toLocaleDateString("vi-VN")}
                   </span>
                 </div>
               </div>
 
               <div>
-                <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Description</span>
+                <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Mô tả</span>
                 <p className="mt-0.5 leading-relaxed" style={{ color: T.text }}>
-                  {viewingPromo.description || <span className="italic" style={{ color: T.mutedLight }}>No description</span>}
+                  {viewingPromo.description || <span className="italic" style={{ color: T.mutedLight }}>Không có mô tả</span>}
                 </p>
               </div>
 
               {viewingPromo.descriptionEn && (
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>English description</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Mô tả tiếng Anh</span>
                   <p className="mt-0.5 leading-relaxed" style={{ color: T.text }}>{viewingPromo.descriptionEn}</p>
                 </div>
               )}
 
               <div className="border-t pt-3 flex items-center justify-between" style={{ borderColor: T.border }}>
                 <div>
-                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Status</span>
+                  <span className="block text-xs font-semibold uppercase tracking-wider" style={{ color: T.muted }}>Trạng thái</span>
                   <span
                     className="mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-bold"
                     style={{
@@ -872,7 +877,7 @@ export function TicketApplicationTable({
                       color: viewingPromo.isActive ? T.success : "#8B3A3A",
                     }}
                   >
-                    {viewingPromo.isActive ? `🟢 ${labelStatus("Active")}` : `⏸ ${labelStatus("Paused")}`}
+                    {viewingPromo.isActive ? "🟢 Đang hoạt động" : "⏸ Tạm dừng"}
                   </span>
                 </div>
                 <button
@@ -884,7 +889,7 @@ export function TicketApplicationTable({
                     color: T.surface,
                   }}
                 >
-                  Close
+                  Đóng
                 </button>
               </div>
             </div>

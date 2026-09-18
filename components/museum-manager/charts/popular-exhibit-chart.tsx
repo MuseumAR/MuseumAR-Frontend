@@ -1,12 +1,12 @@
 import type { PopularExhibit } from "@/types";
 import { formatNumber } from "@/lib/format";
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, dashboardTitleClass } from "@/lib/dashboard-theme";
 
 const EMPTY_ROWS: PopularExhibit[] = [
-  { name: "Exhibit 1", value: 0, color: "#C89B45" },
-  { name: "Exhibit 2", value: 0, color: "#C89B45" },
-  { name: "Exhibit 3", value: 0, color: "#C89B45" },
-  { name: "Exhibit 4", value: 0, color: "#C89B45" },
+  { name: "Hiện vật 1", value: 0, color: "#C89B45" },
+  { name: "Hiện vật 2", value: 0, color: "#C89B45" },
+  { name: "Hiện vật 3", value: 0, color: "#C89B45" },
+  { name: "Hiện vật 4", value: 0, color: "#C89B45" },
 ];
 
 export function PopularExhibitChart({ data }: { data: PopularExhibit[] }) {
@@ -22,8 +22,8 @@ export function PopularExhibitChart({ data }: { data: PopularExhibit[] }) {
         boxShadow: "0 6px 20px rgba(43,29,14,0.05)",
       }}
     >
-      <h2 className="text-base font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-        Popular exhibits
+      <h2 className={dashboardTitleClass} style={{ fontFamily: cinzel, color: T.text }}>
+        Hiện vật phổ biến
       </h2>
       <div className="mt-6 space-y-5">
         {rows.map((item) => (
