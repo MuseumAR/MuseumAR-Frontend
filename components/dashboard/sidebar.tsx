@@ -13,7 +13,7 @@ import {
 import { dashboardTheme as T, cinzel, sans } from "@/lib/dashboard-theme";
 import { NavIcon } from "./nav-icons";
 
-export const SIDEBAR_WIDTH = 280;
+export const SIDEBAR_WIDTH = 304;
 
 export function Sidebar({ role }: { role: DashboardRole }) {
   const pathname = usePathname();
@@ -62,7 +62,7 @@ export function Sidebar({ role }: { role: DashboardRole }) {
           className="mb-3 px-3 text-[10px] font-medium uppercase tracking-[0.22em]"
           style={{ color: T.mutedLight }}
         >
-          Navigation
+          Menu
         </p>
         {navItems.map((item) => {
           const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
@@ -98,7 +98,7 @@ export function Sidebar({ role }: { role: DashboardRole }) {
         })}
       </nav>
 
-      <div className="p-4" style={{ borderTop: `1px solid ${T.border}` }}>
+      <div className="px-5 pb-5 pt-4" style={{ borderTop: `1px solid ${T.border}` }}>
         <div
           className="rounded-2xl p-4"
           style={{
@@ -109,7 +109,7 @@ export function Sidebar({ role }: { role: DashboardRole }) {
         >
           <div className="flex items-center gap-3">
             <div
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-semibold"
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-base font-semibold"
               style={{
                 background: `linear-gradient(135deg, ${T.primary} 0%, ${T.primaryDark} 100%)`,
                 color: T.surface,
@@ -119,41 +119,41 @@ export function Sidebar({ role }: { role: DashboardRole }) {
               {userName.charAt(0)}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium" style={{ color: T.text, fontFamily: sans }}>
+              <p className="truncate text-base font-semibold" style={{ color: T.text, fontFamily: sans }}>
                 {userName}
               </p>
-              <p className="truncate text-xs" style={{ color: T.mutedLight }}>
+              <p className="mt-0.5 truncate text-sm" style={{ color: T.mutedLight }}>
                 {ROLE_LABELS[role]}
               </p>
             </div>
           </div>
 
-          <div className="mt-3 flex gap-2">
+          <div className="mt-4 flex flex-nowrap gap-2">
             <Link
               href="/"
               prefetch={false}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs transition-colors"
+              className="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl px-2.5 py-2.5 text-xs font-medium leading-none whitespace-nowrap transition-colors"
               style={{
                 background: "rgba(200,155,69,0.08)",
                 color: T.muted,
                 border: `1px solid ${T.border}`,
               }}
             >
-              <Home className="h-3.5 w-3.5" />
-              Home
+              <Home className="h-3.5 w-3.5 shrink-0" />
+              Trang chủ
             </Link>
             <button
               type="button"
               onClick={() => logout()}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs transition-colors"
+              className="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl px-2.5 py-2.5 text-xs font-medium leading-none whitespace-nowrap transition-colors"
               style={{
                 background: "rgba(139,58,58,0.06)",
                 color: "#8B3A3A",
                 border: "1px solid rgba(139,58,58,0.12)",
               }}
             >
-              <LogOut className="h-3.5 w-3.5" />
-              Log out
+              <LogOut className="h-3.5 w-3.5 shrink-0" />
+              Đăng xuất
             </button>
           </div>
         </div>

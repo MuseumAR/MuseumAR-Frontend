@@ -7,7 +7,7 @@ import { useAuth } from "@/context/auth-context";
 import { useRole } from "@/context/role-context";
 import { ROLE_LABELS } from "@/lib/roles";
 import { getPageTitle } from "@/lib/page-titles";
-import { dashboardTheme as T, cinzel, sans } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, sans, dashboardTitleClass } from "@/lib/dashboard-theme";
 
 export function TopBar() {
   const pathname = usePathname();
@@ -15,7 +15,7 @@ export function TopBar() {
   const { logout } = useAuth();
   const title = getPageTitle(pathname);
 
-  const today = new Intl.DateTimeFormat("en-GB", {
+  const today = new Intl.DateTimeFormat("vi-VN", {
     weekday: "short",
     day: "numeric",
     month: "long",
@@ -32,7 +32,7 @@ export function TopBar() {
           {ROLE_LABELS[role]}
         </p>
         <h1
-          className="mt-0.5 text-2xl font-semibold"
+          className={`mt-0.5 ${dashboardTitleClass}`}
           style={{ fontFamily: cinzel, color: T.text }}
         >
           {title}
@@ -96,7 +96,7 @@ export function TopBar() {
               style={{ color: T.text }}
             >
               <KeyRound className="h-4 w-4" style={{ color: T.primary }} />
-              Change password
+              Đổi mật khẩu
             </Link>
             <button
               type="button"
@@ -105,7 +105,7 @@ export function TopBar() {
               style={{ color: "#8B3A3A" }}
             >
               <LogOut className="h-4 w-4" />
-              Log out
+              Đăng xuất
             </button>
           </div>
         </div>

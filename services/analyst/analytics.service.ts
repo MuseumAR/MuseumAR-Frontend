@@ -13,22 +13,22 @@ export type AnalyticsPageData = {
 function toMetrics(dashboard: MuseumDashboardDto): AnalyticsMetric[] {
   return [
     {
-      label: "Total QR scans",
+      label: "Tổng lượt quét QR",
       value: dashboard.totalQrScans.toLocaleString(),
       change: "—",
     },
     {
-      label: "Average listening time",
-      value: `${dashboard.averageListeningDurationMinutes.toFixed(1)} min`,
+      label: "Thời lượng nghe trung bình",
+      value: `${dashboard.averageListeningDurationMinutes.toFixed(1)} phút`,
       change: "—",
     },
     {
-      label: "Offline downloads",
+      label: "Lượt tải gói offline",
       value: dashboard.totalOfflineDownloads.toLocaleString(),
       change: "—",
     },
     {
-      label: "Popular exhibits",
+      label: "Hiện vật phổ biến",
       value: dashboard.popularExhibits.length.toLocaleString(),
       change: "—",
     },
@@ -44,7 +44,7 @@ export async function loadAnalyticsPage(): Promise<AnalyticsPageData> {
     return {
       metrics: [],
       dashboard: null,
-      error: getDisplayError(err, "Could not load analytics."),
+      error: getDisplayError(err, "Không tải được dữ liệu phân tích."),
     };
   }
 }

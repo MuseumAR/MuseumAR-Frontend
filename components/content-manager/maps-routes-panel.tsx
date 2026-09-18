@@ -30,7 +30,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, dashboardTitleClass } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
 import { labelStatus } from "@/lib/status-labels";
 import {
@@ -66,10 +66,10 @@ function getMapDisplayName(item: MuseumMapDto): string {
   const type = item.mapType?.trim() ?? "";
   // BE DTO puts MapName into MapType for seeded maps
   if (type && type !== "floor" && type !== "overview") return type;
-  if (type === "overview" || item.floorNumber === 0) return "Overview";
-  if (item.floorNumber === -1) return "Basement B1";
-  if (item.floorNumber != null && item.floorNumber > 0) return `Floor ${item.floorNumber}`;
-  return type === "overview" ? "Overview" : "Floor plan";
+  if (type === "overview" || item.floorNumber === 0) return "Tổng quan";
+  if (item.floorNumber === -1) return "Tầng hầm B1";
+  if (item.floorNumber != null && item.floorNumber > 0) return `Tầng ${item.floorNumber}`;
+  return type === "overview" ? "Tổng quan" : "Sơ đồ tầng";
 }
 
 function mapKind(item: MuseumMapDto): "overview" | "floor" {
@@ -88,7 +88,7 @@ function MapTypeBadge({ kind }: { kind: "overview" | "floor" }) {
         color: overview ? T.success : T.primaryDark,
       }}
     >
-      {kind === "overview" ? "Overview" : "Floor plan"}
+      {kind === "overview" ? "Tổng quan" : "Sơ đồ tầng"}
     </span>
   );
 }
@@ -104,7 +104,7 @@ function MapPreview({ url, title }: { url: string; title: string }) {
       >
         <Map className="h-8 w-8" style={{ color: T.mutedLight }} />
         <p className="text-xs" style={{ color: T.muted }}>
-          Preview unavailable
+          Không xem trước được
         </p>
         <p className="line-clamp-2 text-[11px]" style={{ color: T.mutedLight }}>
           {title}
@@ -185,14 +185,14 @@ function MobileRouteGuideModal({
 
   // Current room & floor details
   const currentRoomName = currentStop
-    ? [currentStop.roomCode, currentStop.roomName].filter(Boolean).join(" - ") || `Unnamed room`
-    : "No stop selected";
+    ? [currentStop.roomCode, currentStop.roomName].filter(Boolean).join(" - ") || `Phòng chưa đặt tên`
+    : "Chưa chọn điểm dừng";
 
-  const currentFloorText = currentStop?.floorNumber != null ? `Floor ${currentStop.floorNumber}` : "Floor not assigned";
+  const currentFloorText = currentStop?.floorNumber != null ? `Tầng ${currentStop.floorNumber}` : "Chưa gán tầng";
 
   const nextRoomName = nextStop
-    ? [nextStop.roomCode, nextStop.roomName].filter(Boolean).join(" - ") || `Unnamed room`
-    : "No stop selected";
+    ? [nextStop.roomCode, nextStop.roomName].filter(Boolean).join(" - ") || `Phòng chưa đặt tên`
+    : "Chưa chọn điểm dừng";
 
   const isFloorChange =
     currentStop?.floorNumber != null &&
@@ -228,7 +228,7 @@ function MobileRouteGuideModal({
               <Smartphone className="h-4 w-4" />
             </div>
             <div>
-              <p className="text-xs font-bold text-amber-300 leading-tight">Mobile route map</p>
+              <p className="text-xs font-bold text-amber-300 leading-tight">Bản đồ lộ trình</p>
               <p className="text-[10px] text-neutral-400 truncate max-w-[200px]">{route.name}</p>
             </div>
           </div>
@@ -249,12 +249,12 @@ function MobileRouteGuideModal({
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
               </span>
-              <span className="truncate">Now at: {currentRoomName}</span>
+              <span className="truncate">Đang ở: {currentRoomName}</span>
             </div>
             <span className="text-neutral-500 shrink-0">➔</span>
             <div className="flex items-center gap-1.5 text-amber-400 font-semibold truncate max-w-[48%]">
               <Target className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">Destination: {nextRoomName}</span>
+              <span className="truncate">Điểm đến: {nextRoomName}</span>
             </div>
           </div>
 
@@ -262,11 +262,11 @@ function MobileRouteGuideModal({
           <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start gap-2">
             <Compass className="h-4 w-4 text-amber-400 shrink-0 mt-0.5 animate-pulse" />
             <div className="text-[11px] leading-tight text-amber-200">
-              <p className="font-bold">Directions:</p>
+              <p className="font-bold">Hướng dẫn:</p>
               <p className="mt-0.5 font-medium">
                 {isFloorChange
-                  ? `🚶‍♂️ Take stairs/elevator from ${currentFloorText} ➔ Floor ${nextStop?.floorNumber} to ${nextRoomName}`
-                  : `➡️ Follow the hallway to ${nextRoomName} to see ${nextStop?.exhibitName || "the next artifact"}`}
+                  ? `🚶‍♂️ Đi cầu thang/thang máy từ ${currentFloorText} ➔ Tầng ${nextStop?.floorNumber} đến ${nextRoomName}`
+                  : `➡️ Đi theo hành lang đến ${nextRoomName} để xem ${nextStop?.exhibitName || "hiện vật tiếp theo"}`}
               </p>
             </div>
           </div>
@@ -276,25 +276,25 @@ function MobileRouteGuideModal({
         <div className="mx-3 rounded-2xl p-3 bg-neutral-950 border border-neutral-800 relative">
           <div className="flex items-center justify-between mb-3 px-1">
             <span className="text-[10px] font-bold tracking-wider uppercase text-neutral-300 flex items-center gap-1">
-              <MapPin className="h-3.5 w-3.5 text-emerald-400" /> PLAN {currentFloorText.toUpperCase()}
+              <MapPin className="h-3.5 w-3.5 text-emerald-400" /> SƠ ĐỒ {currentFloorText.toUpperCase()}
             </span>
             <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-800">
-              Live directions 📍
+              Dẫn đường trực tiếp 📍
             </span>
           </div>
 
           {/* Dynamic Stops Grid */}
           {sortedStops.length === 0 ? (
             <div className="p-8 text-center text-xs text-neutral-500">
-              This route has no artifact stops yet.
+              Lộ trình chưa có điểm dừng hiện vật.
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
               {sortedStops.map((stop, idx) => {
                 const isCurrent = idx === currentStopIndex;
                 const isNext = idx === (currentStopIndex + 1) % sortedStops.length;
-                const roomStr = [stop.roomCode, stop.roomName].filter(Boolean).join(" - ") || `Room not assigned`;
-                const floorStr = stop.floorNumber != null ? `Floor ${stop.floorNumber}` : "";
+                const roomStr = [stop.roomCode, stop.roomName].filter(Boolean).join(" - ") || `Chưa gán phòng`;
+                const floorStr = stop.floorNumber != null ? `Tầng ${stop.floorNumber}` : "";
 
                 return (
                   <div
@@ -312,7 +312,7 @@ function MobileRouteGuideModal({
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
                         isCurrent ? "bg-emerald-500 text-black" : isNext ? "bg-amber-500 text-black" : "bg-neutral-800 text-neutral-400"
                       }`}>
-                        {isCurrent ? "You are here" : isNext ? "Next" : `Stop #${stop.stopOrder}`}
+                        {isCurrent ? "Bạn đang ở đây" : isNext ? "Tiếp" : `Điểm #${stop.stopOrder}`}
                       </span>
                       {floorStr && (
                         <span className="text-[10px] text-neutral-400 font-mono">
@@ -321,7 +321,7 @@ function MobileRouteGuideModal({
                       )}
                     </div>
                     <p className="text-xs font-semibold text-white truncate">
-                      {stop.exhibitName || `Artifact #${stop.exhibitId}`}
+                      {stop.exhibitName || `Hiện vật #${stop.exhibitId}`}
                     </p>
                     <p className="text-[10px] text-neutral-400 truncate mt-0.5">
                       🚪 {roomStr}
@@ -340,11 +340,11 @@ function MobileRouteGuideModal({
             onClick={handlePrevStop}
             className="px-3 py-1.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-xs text-neutral-300 flex items-center gap-1"
           >
-            <ChevronLeft className="h-3.5 w-3.5" /> Previous stop
+            <ChevronLeft className="h-3.5 w-3.5" /> Điểm trước
           </button>
 
           <span className="text-xs text-neutral-400 font-medium">
-            Stop {sortedStops.length > 0 ? `${currentStopIndex + 1}/${sortedStops.length}` : "1/2"}
+            Điểm {sortedStops.length > 0 ? `${currentStopIndex + 1}/${sortedStops.length}` : "1/2"}
           </span>
 
           <button
@@ -352,7 +352,7 @@ function MobileRouteGuideModal({
             onClick={handleNextStop}
             className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs flex items-center gap-1"
           >
-            Next stop <ChevronRight className="h-3.5 w-3.5" />
+            Điểm tiếp <ChevronRight className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
@@ -412,10 +412,10 @@ function RouteDetailModal({
       setSelectedExhibitId("");
       setStopMinutes("");
       setAddingStop(false);
-      showSuccess("Stop added.");
+      showSuccess("Đã thêm điểm dừng.");
       onRefresh();
     } catch (err) {
-      setError(getDisplayError(err, "Could not add stop."));
+      setError(getDisplayError(err, "Không thể thêm điểm dừng."));
     } finally {
       setSaving(false);
     }
@@ -426,10 +426,10 @@ function RouteDetailModal({
     setError(null);
     try {
       await removeRouteStop(route.id, exhibitId);
-      showSuccess("Stop removed.");
+      showSuccess("Đã gỡ điểm dừng.");
       onRefresh();
     } catch (err) {
-      setError(getDisplayError(err, "Could not remove stop."));
+      setError(getDisplayError(err, "Không thể gỡ điểm dừng."));
     } finally {
       setSaving(false);
     }
@@ -443,7 +443,7 @@ function RouteDetailModal({
       onClose();
       onRefresh();
     } catch (err) {
-      setError(getDisplayError(err, "Could not delete route."));
+      setError(getDisplayError(err, "Không thể xóa lộ trình."));
       setSaving(false);
     }
   }
@@ -459,10 +459,10 @@ function RouteDetailModal({
         status: editStatus || undefined,
       });
       setEditing(false);
-      showSuccess("Route updated.");
+      showSuccess("Đã cập nhật lộ trình.");
       onRefresh();
     } catch (err) {
-      setError(getDisplayError(err, "Could not update route."));
+      setError(getDisplayError(err, "Không thể cập nhật lộ trình."));
     } finally {
       setSaving(false);
     }
@@ -471,7 +471,7 @@ function RouteDetailModal({
   function getExhibitDisplayName(exhibit: ExhibitDto): string {
     const vi = exhibit.translations?.find((t) => t.languageCode === "vi");
     const any = exhibit.translations?.[0];
-    return vi?.title || any?.title || exhibit.exhibitCode || `Artifact #${exhibit.id}`;
+    return vi?.title || any?.title || exhibit.exhibitCode || `Hiện vật #${exhibit.id}`;
   }
 
   return (
@@ -501,14 +501,14 @@ function RouteDetailModal({
               />
             ) : (
               <h3
-                className="text-xl font-bold"
+                className={dashboardTitleClass}
                 style={{ fontFamily: cinzel, color: T.primaryDark }}
               >
                 {route.name}
               </h3>
             )}
             <p className="text-xs mt-1" style={{ color: T.mutedLight }}>
-              Route ID: {route.id}
+              Mã lộ trình: {route.id}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -522,7 +522,7 @@ function RouteDetailModal({
                   color: T.surface,
                 }}
               >
-                <Smartphone className="h-3.5 w-3.5" /> Mobile map 📱
+                <Smartphone className="h-3.5 w-3.5" /> Bản đồ di động 📱
               </button>
             )}
             {!editing && (
@@ -531,7 +531,7 @@ function RouteDetailModal({
                 onClick={() => setEditing(true)}
                 className="rounded-xl p-2 hover:bg-[rgba(200,155,69,0.1)] transition-colors"
                 style={{ color: T.primaryDark }}
-                title="Edit route"
+                title="Sửa lộ trình"
               >
                 <Edit3 className="h-4 w-4" />
               </button>
@@ -553,7 +553,7 @@ function RouteDetailModal({
           style={{ background: "rgba(200,155,69,0.06)", border: `1px solid ${T.border}` }}
         >
           <div className="space-y-0.5">
-            <p className="text-xs" style={{ color: T.mutedLight }}>Duration</p>
+            <p className="text-xs" style={{ color: T.mutedLight }}>Thời lượng</p>
             {editing ? (
               <input
                 type="number"
@@ -567,12 +567,12 @@ function RouteDetailModal({
             ) : (
               <p className="text-sm font-medium flex items-center gap-1.5" style={{ color: T.text }}>
                 <Clock className="h-3.5 w-3.5" style={{ color: T.mutedLight }} />
-                {route.estimatedDurationMinutes ? `${route.estimatedDurationMinutes} min` : "—"}
+                {route.estimatedDurationMinutes ? `${route.estimatedDurationMinutes} phút` : "—"}
               </p>
             )}
           </div>
           <div className="space-y-0.5">
-            <p className="text-xs" style={{ color: T.mutedLight }}>Status</p>
+            <p className="text-xs" style={{ color: T.mutedLight }}>Trạng thái</p>
             {editing ? (
               <select
                 value={editStatus}
@@ -589,14 +589,14 @@ function RouteDetailModal({
             )}
           </div>
           <div className="space-y-0.5">
-            <p className="text-xs" style={{ color: T.mutedLight }}>Stops</p>
+            <p className="text-xs" style={{ color: T.mutedLight }}>Điểm dừng</p>
             <p className="text-sm font-medium" style={{ color: T.text }}>
-              {route.stops.length} stops
+              {route.stops.length} điểm dừng
             </p>
           </div>
           {route.exhibitionName && (
             <div className="space-y-0.5">
-              <p className="text-xs" style={{ color: T.mutedLight }}>Exhibition</p>
+              <p className="text-xs" style={{ color: T.mutedLight }}>Triển lãm</p>
               <p className="text-sm font-medium" style={{ color: T.text }}>
                 {route.exhibitionName}
               </p>
@@ -604,7 +604,7 @@ function RouteDetailModal({
           )}
           {route.ageGroupName && (
             <div className="space-y-0.5">
-              <p className="text-xs" style={{ color: T.mutedLight }}>Age group</p>
+              <p className="text-xs" style={{ color: T.mutedLight }}>Nhóm tuổi</p>
               <p className="text-sm font-medium" style={{ color: T.text }}>
                 {route.ageGroupName}
               </p>
@@ -612,9 +612,9 @@ function RouteDetailModal({
           )}
           {route.isDefault && (
             <div className="space-y-0.5">
-              <p className="text-xs" style={{ color: T.mutedLight }}>Default</p>
+              <p className="text-xs" style={{ color: T.mutedLight }}>Mặc định</p>
               <p className="text-sm font-medium flex items-center gap-1" style={{ color: T.success }}>
-                <Check className="h-3.5 w-3.5" /> Default route
+                <Check className="h-3.5 w-3.5" /> Lộ trình mặc định
               </p>
             </div>
           )}
@@ -624,7 +624,7 @@ function RouteDetailModal({
         {(route.description || editing) && (
           <div className="mb-6">
             <p className="text-xs mb-1.5 font-medium" style={{ color: T.mutedLight }}>
-              Description
+              Mô tả
             </p>
             {editing ? (
               <textarea
@@ -633,7 +633,7 @@ function RouteDetailModal({
                 rows={3}
                 className="w-full rounded-xl px-4 py-2.5 text-sm outline-none resize-none"
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
-                placeholder="Describe the tour route…"
+                placeholder="Mô tả lộ trình tham quan…"
               />
             ) : (
               <p className="text-sm leading-relaxed" style={{ color: T.muted }}>
@@ -653,7 +653,7 @@ function RouteDetailModal({
               className="rounded-xl px-5 py-2 text-sm font-medium disabled:opacity-50"
               style={{ background: T.primary, color: T.surface }}
             >
-              {saving ? "Saving…" : "Save changes"}
+              {saving ? "Đang lưu…" : "Lưu thay đổi"}
             </button>
             <button
               type="button"
@@ -667,7 +667,7 @@ function RouteDetailModal({
               className="rounded-xl px-5 py-2 text-sm font-medium"
               style={{ border: `1px solid ${T.border}`, color: T.muted }}
             >
-              Cancel
+              Hủy
             </button>
           </div>
         )}
@@ -676,7 +676,7 @@ function RouteDetailModal({
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-semibold" style={{ color: T.text }}>
-              Stops ({sortedStops.length})
+              Điểm dừng ({sortedStops.length})
             </h4>
             {!addingStop && (
               <button
@@ -688,7 +688,7 @@ function RouteDetailModal({
                   color: T.primaryDark,
                 }}
               >
-                <Plus className="h-3.5 w-3.5" /> Add stop
+                <Plus className="h-3.5 w-3.5" /> Thêm điểm dừng
               </button>
             )}
           </div>
@@ -701,14 +701,14 @@ function RouteDetailModal({
             >
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="sm:col-span-2 space-y-1">
-                  <label className="text-xs" style={{ color: T.muted }}>Select artifact *</label>
+                  <label className="text-xs" style={{ color: T.muted }}>Chọn hiện vật *</label>
                   <select
                     value={selectedExhibitId}
                     onChange={(e) => setSelectedExhibitId(e.target.value ? Number(e.target.value) : "")}
                     className="w-full rounded-lg px-3 py-2 text-sm outline-none"
                     style={{ border: `1px solid ${T.border}`, background: T.surface, color: T.text }}
                   >
-                    <option value="">-- Select artifact --</option>
+                    <option value="">-- Chọn hiện vật --</option>
                     {availableExhibits.map((e) => (
                       <option key={e.id} value={e.id}>
                         {getExhibitDisplayName(e)} (#{e.id})
@@ -717,7 +717,7 @@ function RouteDetailModal({
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs" style={{ color: T.muted }}>Duration (minutes)</label>
+                  <label className="text-xs" style={{ color: T.muted }}>Thời lượng (phút)</label>
                   <input
                     type="number"
                     min="1"
@@ -737,7 +737,7 @@ function RouteDetailModal({
                   className="rounded-lg px-4 py-1.5 text-xs font-medium disabled:opacity-50"
                   style={{ background: T.primary, color: T.surface }}
                 >
-                  {saving ? "Adding…" : "Add"}
+                  {saving ? "Đang thêm…" : "Thêm"}
                 </button>
                 <button
                   type="button"
@@ -745,7 +745,7 @@ function RouteDetailModal({
                   className="rounded-lg px-4 py-1.5 text-xs font-medium"
                   style={{ border: `1px solid ${T.border}`, color: T.muted }}
                 >
-                  Cancel
+                  Hủy
                 </button>
               </div>
             </div>
@@ -759,7 +759,7 @@ function RouteDetailModal({
             >
               <MapPin className="mx-auto h-8 w-8 mb-2" style={{ color: T.mutedLight }} />
               <p className="text-sm" style={{ color: T.muted }}>
-                No stops yet. Add artifacts to build a tour route.
+                Chưa có điểm dừng. Thêm hiện vật để tạo lộ trình.
               </p>
             </div>
           ) : (
@@ -781,16 +781,16 @@ function RouteDetailModal({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate" style={{ color: T.text }}>
-                      {stop.exhibitName || `Artifact #${stop.exhibitId}`}
+                      {stop.exhibitName || `Hiện vật #${stop.exhibitId}`}
                     </p>
                     <div className="flex items-center gap-3 text-xs" style={{ color: T.mutedLight }}>
-                      {stop.exhibitCode && <span>Code: {stop.exhibitCode}</span>}
+                      {stop.exhibitCode && <span>Mã: {stop.exhibitCode}</span>}
                       {stop.estimatedMinutes != null && (
                         <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" /> {stop.estimatedMinutes} min
+                          <Clock className="h-3 w-3" /> {stop.estimatedMinutes} phút
                         </span>
                       )}
-                      {stop.floorNumber != null && <span>Floor {stop.floorNumber}</span>}
+                      {stop.floorNumber != null && <span>Tầng {stop.floorNumber}</span>}
                     </div>
                   </div>
                   <button
@@ -799,7 +799,7 @@ function RouteDetailModal({
                     disabled={saving}
                     className="opacity-0 group-hover:opacity-100 rounded-lg p-1.5 transition-all hover:bg-red-50"
                     style={{ color: "#B45309" }}
-                    title="Remove stop"
+                    title="Gỡ điểm dừng"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
@@ -813,7 +813,7 @@ function RouteDetailModal({
         {route.translations.length > 0 && (
           <div className="mb-6">
             <h4 className="text-sm font-semibold mb-2" style={{ color: T.text }}>
-              Translations ({route.translations.length})
+              Bản dịch ({route.translations.length})
             </h4>
             <div className="space-y-2">
               {route.translations.map((t) => (
@@ -861,7 +861,7 @@ function RouteDetailModal({
           {confirmDelete ? (
             <div className="flex items-center gap-2">
               <span className="text-sm" style={{ color: "#8B2E2E" }}>
-                Delete this route?
+                Xóa lộ trình này?
               </span>
               <button
                 type="button"
@@ -870,7 +870,7 @@ function RouteDetailModal({
                 className="rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-50"
                 style={{ background: "#8B2E2E", color: "#fff" }}
               >
-                {saving ? "Deleting…" : "Delete"}
+                {saving ? "Đang xóa…" : "Xóa"}
               </button>
               <button
                 type="button"
@@ -878,7 +878,7 @@ function RouteDetailModal({
                 className="rounded-lg px-3 py-1.5 text-xs font-medium"
                 style={{ border: `1px solid ${T.border}`, color: T.muted }}
               >
-                Cancel
+                Hủy
               </button>
             </div>
           ) : (
@@ -888,7 +888,7 @@ function RouteDetailModal({
               className="inline-flex items-center gap-1.5 text-xs font-medium transition-colors hover:opacity-80"
               style={{ color: "#8B2E2E" }}
             >
-              <Trash2 className="h-3.5 w-3.5" /> Delete route
+              <Trash2 className="h-3.5 w-3.5" /> Xóa lộ trình
             </button>
           )}
           <button
@@ -897,7 +897,7 @@ function RouteDetailModal({
             className="rounded-xl px-5 py-2 text-sm font-medium"
             style={{ background: T.primary, color: T.surface }}
           >
-            Close
+            Đóng
           </button>
         </div>
       </div>
@@ -988,7 +988,7 @@ export function MapsRoutesPanel({
     e.preventDefault();
     if (!editingMap) return;
     if (!editMapName.trim()) {
-      setMapError("Please enter a map name.");
+      setMapError("Vui lòng nhập tên bản đồ.");
       return;
     }
     setSubmitting("map");
@@ -1006,26 +1006,26 @@ export function MapsRoutesPanel({
       setEditingMap(null);
       setEditMapFile(null);
       setEditMapPreview(null);
-      showSuccess("Map updated.");
+      showSuccess("Đã cập nhật bản đồ.");
       router.refresh();
     } catch (err) {
-      setMapError(getDisplayError(err, "Could not update map."));
+      setMapError(getDisplayError(err, "Không thể cập nhật bản đồ."));
     } finally {
       setSubmitting(null);
     }
   }
 
   async function handleDeleteMap(id: number) {
-    if (!confirm("Delete this floor plan?")) return;
+    if (!confirm("Xóa sơ đồ tầng này?")) return;
     setDeletingMapId(id);
     setMapError(null);
     try {
       await deleteMuseumMap(id);
       if (selectedMap?.id === id) setSelectedMap(null);
-      showSuccess("Map deleted.");
+      showSuccess("Đã xóa bản đồ.");
       router.refresh();
     } catch (err) {
-      setMapError(getDisplayError(err, "Could not delete map."));
+      setMapError(getDisplayError(err, "Không thể xóa bản đồ."));
     } finally {
       setDeletingMapId(null);
     }
@@ -1040,7 +1040,7 @@ export function MapsRoutesPanel({
   async function handleCreateRoute(e: React.FormEvent) {
     e.preventDefault();
     if (!routeName.trim()) {
-      setRouteError("Please enter a route name.");
+      setRouteError("Vui lòng nhập tên lộ trình.");
       return;
     }
     setSubmitting("route");
@@ -1067,10 +1067,10 @@ export function MapsRoutesPanel({
       });
       resetRouteForm();
       setShowRouteForm(false);
-      showSuccess("Route created.");
+      showSuccess("Đã tạo lộ trình.");
       router.refresh();
     } catch (err) {
-      setRouteError(getDisplayError(err, "Could not create route."));
+      setRouteError(getDisplayError(err, "Không thể tạo lộ trình."));
     } finally {
       setSubmitting(null);
     }
@@ -1129,7 +1129,7 @@ export function MapsRoutesPanel({
   async function handleSaveRoom(e: React.FormEvent) {
     e.preventDefault();
     if (!roomCode.trim() || !roomName.trim()) {
-      setRoomError("Please enter a room code and room name.");
+      setRoomError("Vui lòng nhập mã phòng và tên phòng.");
       return;
     }
     setSubmitting("room");
@@ -1145,7 +1145,7 @@ export function MapsRoutesPanel({
           description: roomDesc.trim() || undefined,
           descriptionEn: roomDescEn.trim() || undefined,
         });
-        showSuccess("Room updated.");
+        showSuccess("Đã cập nhật phòng.");
       } else {
         await createRoom({
           museumId,
@@ -1156,12 +1156,12 @@ export function MapsRoutesPanel({
           description: roomDesc.trim() || undefined,
           descriptionEn: roomDescEn.trim() || undefined,
         });
-        showSuccess("Room created.");
+        showSuccess("Đã tạo phòng.");
       }
       resetRoomForm();
       router.refresh();
     } catch (err) {
-      setRoomError(getDisplayError(err, editingRoom ? "Could not update room." : "Could not create room."));
+      setRoomError(getDisplayError(err, editingRoom ? "Không thể cập nhật phòng." : "Không thể tạo phòng."));
     } finally {
       setSubmitting(null);
     }
@@ -1172,10 +1172,10 @@ export function MapsRoutesPanel({
     setRoomError(null);
     try {
       await deleteRoom(id);
-      showSuccess("Room deleted.");
+      showSuccess("Đã xóa phòng.");
       router.refresh();
     } catch (err) {
-      setRoomError(getDisplayError(err, "Could not delete room."));
+      setRoomError(getDisplayError(err, "Không thể xóa phòng."));
     } finally {
       setDeletingRoomId(null);
     }
@@ -1184,11 +1184,11 @@ export function MapsRoutesPanel({
   async function handleCreateMap(e: React.FormEvent) {
     e.preventDefault();
     if (!mapFile) {
-      setMapError("Please choose a map image from your device.");
+      setMapError("Vui lòng chọn ảnh bản đồ từ thiết bị.");
       return;
     }
     if (!mapName.trim()) {
-      setMapError("Please enter a map name.");
+      setMapError("Vui lòng nhập tên bản đồ.");
       return;
     }
     setSubmitting("map");
@@ -1202,10 +1202,10 @@ export function MapsRoutesPanel({
       setMapType("floor");
       if (mapFileRef.current) mapFileRef.current.value = "";
       setShowMapForm(false);
-      showSuccess("Map uploaded.");
+      showSuccess("Đã tải bản đồ lên.");
       router.refresh();
     } catch (err) {
-      setMapError(getDisplayError(err, "Could not upload map."));
+      setMapError(getDisplayError(err, "Không thể tải bản đồ lên."));
     } finally {
       setSubmitting(null);
     }
@@ -1215,7 +1215,7 @@ export function MapsRoutesPanel({
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      setMapError("Please choose an image file (PNG, JPG, …).");
+      setMapError("Vui lòng chọn tệp ảnh (PNG, JPG, …).");
       return;
     }
     setMapError(null);
@@ -1262,20 +1262,20 @@ export function MapsRoutesPanel({
         <Info className="mt-0.5 h-5 w-5 shrink-0" style={{ color: T.primaryDark }} />
         <div className="space-y-1 text-sm" style={{ color: T.muted }}>
           <p style={{ color: T.text }}>
-            <strong>Maps & rooms</strong> manage 2D floor plans, exhibition rooms, and indoor navigation for the mobile app.
+            <strong>Bản đồ & phòng</strong> quản lý sơ đồ 2D, phòng trưng bày và dẫn đường trong nhà cho ứng dụng di động.
           </p>
           <p>
-            <strong>Museum maps</strong> — floor or area layout images.{" "}
-            <strong>Exhibition rooms</strong> — official rooms assigned to a floor map.{" "}
-            <strong>Navigation graph</strong> — walkable paths from room A to room B.
+            <strong>Bản đồ bảo tàng</strong> — ảnh sơ đồ tầng hoặc khu vực.{" "}
+            <strong>Phòng trưng bày</strong> — phòng chính thức gắn với sơ đồ tầng.{" "}
+            <strong>Đồ thị dẫn đường</strong> — đường đi từ phòng A đến phòng B.
           </p>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-3">
-        {tabBtn("maps", "Museum maps", maps.length, MapPin)}
-        {tabBtn("rooms", "Exhibition rooms", rooms.length, Compass)}
-        {tabBtn("graph", "Navigation graph", 1, Navigation)}
+        {tabBtn("maps", "Bản đồ bảo tàng", maps.length, MapPin)}
+        {tabBtn("rooms", "Phòng trưng bày", rooms.length, Compass)}
+        {tabBtn("graph", "Đồ thị dẫn đường", 1, Navigation)}
       </div>
 
       <SuccessBanner message={success} />
@@ -1293,7 +1293,7 @@ export function MapsRoutesPanel({
               <span className="font-semibold" style={{ color: T.text }}>
                 {maps.length}
               </span>
-              {` maps`}
+              {` bản đồ`}
             </p>
             <button
               type="button"
@@ -1305,7 +1305,7 @@ export function MapsRoutesPanel({
               }}
             >
               <Plus className="h-4 w-4" />
-              {showMapForm ? "Close" : "Add map"}
+              {showMapForm ? "Đóng" : "Thêm bản đồ"}
             </button>
           </div>
 
@@ -1318,7 +1318,7 @@ export function MapsRoutesPanel({
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5 sm:col-span-2">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Map image *
+                    Ảnh bản đồ *
                   </label>
                   <button
                     type="button"
@@ -1339,7 +1339,7 @@ export function MapsRoutesPanel({
                     ) : (
                       <>
                         <Upload className="h-8 w-8" style={{ color: T.primaryDark }} />
-                        <span className="text-sm">Click to choose an image from your device</span>
+                        <span className="text-sm">Nhấn để chọn ảnh từ thiết bị</span>
                         <span className="text-xs">PNG, JPG, WEBP</span>
                       </>
                     )}
@@ -1353,18 +1353,18 @@ export function MapsRoutesPanel({
                   />
                   {mapFile && (
                     <p className="text-xs" style={{ color: T.muted }}>
-                      Selected: {mapFile.name}
+                      Đã chọn: {mapFile.name}
                     </p>
                   )}
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Map name *
+                    Tên bản đồ *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Ground floor map, Floor 1 map"
+                    placeholder="vd. Bản đồ tầng trệt, Bản đồ tầng 1"
                     value={mapName}
                     onChange={(e) => setMapName(e.target.value)}
                     className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
@@ -1373,7 +1373,7 @@ export function MapsRoutesPanel({
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Map type
+                    Loại bản đồ
                   </label>
                   <select
                     value={mapType}
@@ -1381,14 +1381,14 @@ export function MapsRoutesPanel({
                     className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                     style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                   >
-                    <option value="floor">Floor plan</option>
-                    <option value="overview">Overview</option>
+                    <option value="floor">Sơ đồ tầng</option>
+                    <option value="overview">Tổng quan</option>
                   </select>
                 </div>
                 {mapType === "floor" && (
                   <div className="space-y-1.5">
                     <label className="block text-sm" style={{ color: T.muted }}>
-                      Floor number *
+                      Số tầng *
                     </label>
                     <input
                       type="number"
@@ -1413,7 +1413,7 @@ export function MapsRoutesPanel({
                   className="rounded-xl px-5 py-2 text-sm font-medium disabled:opacity-50"
                   style={{ background: T.primary, color: T.surface }}
                 >
-                  {submitting === "map" ? "Uploading…" : "Upload map"}
+                  {submitting === "map" ? "Đang tải lên…" : "Tải bản đồ lên"}
                 </button>
               </div>
             </form>
@@ -1426,7 +1426,7 @@ export function MapsRoutesPanel({
             >
               <MapPin className="mx-auto h-10 w-10" style={{ color: T.mutedLight }} />
               <p className="mt-4 text-sm" style={{ color: T.muted }}>
-                No museum maps yet. Add a floor plan or overview image.
+                Chưa có bản đồ. Thêm sơ đồ tầng hoặc ảnh tổng quan.
               </p>
             </div>
           ) : (
@@ -1449,7 +1449,7 @@ export function MapsRoutesPanel({
                         {name}
                       </p>
                       <p className="text-xs" style={{ color: T.mutedLight }}>
-                        Map #{item.id}
+                        Bản đồ #{item.id}
                       </p>
                       <div className="mt-2 flex flex-wrap gap-2">
                         <MapTypeBadge kind={kind} />
@@ -1462,7 +1462,7 @@ export function MapsRoutesPanel({
                           onClick={() => openEditMapModal(item)}
                           className="rounded-lg p-1.5 text-xs font-medium hover:bg-[rgba(200,155,69,0.1)] transition-colors"
                           style={{ color: T.primaryDark }}
-                          title="Edit floor plan"
+                          title="Sửa sơ đồ tầng"
                         >
                           <Edit3 className="h-4 w-4" />
                         </button>
@@ -1471,7 +1471,7 @@ export function MapsRoutesPanel({
                           onClick={() => handleDeleteMap(item.id)}
                           disabled={deletingMapId === item.id}
                           className="rounded-lg p-1.5 text-xs font-medium text-amber-700 hover:bg-amber-100 transition-colors disabled:opacity-50"
-                          title="Delete floor plan"
+                          title="Xóa sơ đồ tầng"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -1484,7 +1484,7 @@ export function MapsRoutesPanel({
                           style={{ color: T.primaryDark }}
                         >
                           <Info className="h-3.5 w-3.5" />
-                          Details
+                          Chi tiết
                         </button>
                       ) : null}
                     </div>
@@ -1510,8 +1510,8 @@ export function MapsRoutesPanel({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b pb-3" style={{ borderColor: T.border }}>
-              <h3 className="text-lg font-bold" style={{ fontFamily: cinzel, color: T.primaryDark }}>
-                Edit floor plan #{editingMap.id}
+              <h3 className={dashboardTitleClass} style={{ fontFamily: cinzel, color: T.primaryDark }}>
+                Sửa sơ đồ tầng #{editingMap.id}
               </h3>
               <button
                 type="button"
@@ -1524,14 +1524,14 @@ export function MapsRoutesPanel({
 
             <div className="space-y-1.5">
               <label className="block text-xs font-medium" style={{ color: T.muted }}>
-                Name / floor plan type *
+                Tên / loại sơ đồ *
               </label>
               <input
                 type="text"
                 required
                 value={editMapName}
                 onChange={(e) => setEditMapName(e.target.value)}
-                placeholder="e.g. Floor 1 plan"
+                placeholder="vd. Sơ đồ tầng 1"
                 className="w-full rounded-xl px-4 py-2 text-sm outline-none"
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
               />
@@ -1539,7 +1539,7 @@ export function MapsRoutesPanel({
 
             <div className="space-y-1.5">
               <label className="block text-xs font-medium" style={{ color: T.muted }}>
-                Floor number *
+                Số tầng *
               </label>
               <input
                 type="number"
@@ -1553,13 +1553,13 @@ export function MapsRoutesPanel({
 
             <div className="space-y-1.5">
               <label className="block text-xs font-medium" style={{ color: T.muted }}>
-                Replace floor plan image (optional)
+                Thay ảnh sơ đồ tầng (tùy chọn)
               </label>
               <div className="flex items-center gap-3">
                 {editMapPreview && (
                   <img
                     src={editMapPreview}
-                    alt="Preview"
+                    alt="Xem trước"
                     className="h-16 w-16 object-cover rounded-xl border"
                     style={{ borderColor: T.border }}
                   />
@@ -1570,7 +1570,7 @@ export function MapsRoutesPanel({
                   className="rounded-xl px-4 py-2 text-xs font-semibold border flex items-center gap-1.5"
                   style={{ borderColor: T.border, background: T.bg, color: T.text }}
                 >
-                  <Upload className="h-3.5 w-3.5" /> Choose new image…
+                  <Upload className="h-3.5 w-3.5" /> Chọn ảnh mới…
                 </button>
                 <input
                   ref={editMapFileRef}
@@ -1587,7 +1587,7 @@ export function MapsRoutesPanel({
                 />
               </div>
               {editMapFile && (
-                <p className="text-[11px] text-emerald-700 font-medium">Selected: {editMapFile.name}</p>
+                <p className="text-[11px] text-emerald-700 font-medium">Đã chọn: {editMapFile.name}</p>
               )}
             </div>
 
@@ -1604,7 +1604,7 @@ export function MapsRoutesPanel({
                 className="rounded-xl px-4 py-2 text-xs font-medium"
                 style={{ border: `1px solid ${T.border}`, color: T.muted }}
               >
-                Cancel
+                Hủy
               </button>
               <button
                 type="submit"
@@ -1612,7 +1612,7 @@ export function MapsRoutesPanel({
                 className="rounded-xl px-5 py-2 text-xs font-medium text-white disabled:opacity-50"
                 style={{ background: T.primary }}
               >
-                {submitting === "map" ? "Saving…" : "Save changes"}
+                {submitting === "map" ? "Đang lưu…" : "Lưu thay đổi"}
               </button>
             </div>
           </form>
@@ -1627,7 +1627,7 @@ export function MapsRoutesPanel({
               <span className="font-semibold" style={{ color: T.text }}>
                 {rooms.length}
               </span>
-              {` official exhibition rooms`}
+              {` phòng trưng bày`}
             </p>
             <button
               type="button"
@@ -1639,7 +1639,7 @@ export function MapsRoutesPanel({
               }}
             >
               <Plus className="h-4 w-4" />
-              {showRoomForm ? "Close" : "Add new room"}
+              {showRoomForm ? "Đóng" : "Thêm phòng mới"}
             </button>
           </div>
 
@@ -1649,13 +1649,13 @@ export function MapsRoutesPanel({
               className="rounded-3xl p-6"
               style={{ background: T.surface, border: `1px solid ${T.border}` }}
             >
-              <h3 className="mb-4 text-lg font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-                {editingRoom ? "Edit exhibition room" : "Add a new exhibition room"}
+              <h3 className={`${dashboardTitleClass} mb-4`} style={{ fontFamily: cinzel, color: T.text }}>
+                {editingRoom ? "Sửa phòng trưng bày" : "Thêm phòng trưng bày"}
               </h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Room code * (e.g. P102)
+                    Mã phòng * (vd. P102)
                   </label>
                   <input
                     type="text"
@@ -1669,7 +1669,7 @@ export function MapsRoutesPanel({
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Room name (Vietnamese) * (e.g. Phòng 102 - Văn hóa Đông Sơn)
+                    Tên (VI) * (vd. Phòng 102 - Văn hóa Đông Sơn)
                   </label>
                   <input
                     type="text"
@@ -1683,7 +1683,7 @@ export function MapsRoutesPanel({
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Room name (English)
+                    Tên (EN)
                   </label>
                   <input
                     type="text"
@@ -1696,7 +1696,7 @@ export function MapsRoutesPanel({
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Link floor map (optional)
+                    Liên kết sơ đồ tầng (tùy chọn)
                   </label>
                   <select
                     value={roomMapId}
@@ -1704,21 +1704,21 @@ export function MapsRoutesPanel({
                     className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                     style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                   >
-                    <option value="">-- No specific map --</option>
+                    <option value="">-- Không gắn bản đồ --</option>
                     {floorMaps.map((m) => (
                       <option key={m.id} value={m.id}>
-                        Floor {m.floorNumber} {m.mapName ? `(${m.mapName})` : ""}
+                        Tầng {m.floorNumber} {m.mapName ? `(${m.mapName})` : ""}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Room description (Vietnamese)
+                    Mô tả (VI)
                   </label>
                   <textarea
                     rows={3}
-                    placeholder="Describe the artifacts displayed in this room..."
+                    placeholder="Mô tả hiện vật trưng bày trong phòng..."
                     value={roomDesc}
                     onChange={(e) => setRoomDesc(e.target.value)}
                     className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
@@ -1727,11 +1727,11 @@ export function MapsRoutesPanel({
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Room description (English)
+                    Mô tả (EN)
                   </label>
                   <textarea
                     rows={3}
-                    placeholder="Optional English description"
+                    placeholder="Mô tả tiếng Anh (tùy chọn)"
                     value={roomDescEn}
                     onChange={(e) => setRoomDescEn(e.target.value)}
                     className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
@@ -1753,7 +1753,7 @@ export function MapsRoutesPanel({
                   className="rounded-xl px-5 py-2 text-sm font-medium"
                   style={{ border: `1px solid ${T.border}`, color: T.muted }}
                 >
-                  Cancel
+                  Hủy
                 </button>
                 <button
                   type="submit"
@@ -1763,11 +1763,11 @@ export function MapsRoutesPanel({
                 >
                   {submitting === "room"
                     ? editingRoom
-                      ? "Saving..."
-                      : "Creating..."
+                      ? "Đang lưu..."
+                      : "Đang tạo..."
                     : editingRoom
-                      ? "Save room"
-                      : "Save new room"}
+                      ? "Lưu phòng"
+                      : "Lưu phòng mới"}
                 </button>
               </div>
             </form>
@@ -1779,9 +1779,9 @@ export function MapsRoutesPanel({
               style={{ background: T.surface, border: `1px solid ${T.border}` }}
             >
               <Compass className="mx-auto mb-3 h-10 w-10 opacity-30" style={{ color: T.muted }} />
-              <p className="font-semibold" style={{ color: T.text }}>No exhibition rooms yet</p>
+              <p className="font-semibold" style={{ color: T.text }}>Chưa có phòng trưng bày</p>
               <p className="mt-1 text-sm" style={{ color: T.muted }}>
-                Register official rooms so you can assign artifacts and build indoor navigation.
+                Đăng ký phòng chính thức để gán hiện vật và xây dẫn đường trong nhà.
               </p>
             </div>
           ) : (
@@ -1798,7 +1798,7 @@ export function MapsRoutesPanel({
                         {room.roomCode}
                       </span>
                       <span className="text-xs font-semibold" style={{ color: T.mutedLight }}>
-                        Floor {room.floorNumber}
+                        Tầng {room.floorNumber}
                       </span>
                     </div>
                     <h4 className="font-semibold text-base mb-1" style={{ color: T.text }}>
@@ -1824,7 +1824,7 @@ export function MapsRoutesPanel({
                         className="font-medium transition-colors"
                         style={{ color: T.primaryDark }}
                       >
-                        Edit
+                        Sửa
                       </button>
                       <button
                         type="button"
@@ -1832,7 +1832,7 @@ export function MapsRoutesPanel({
                         disabled={deletingRoomId === room.id}
                         className="text-red-500 hover:text-red-700 font-medium transition-colors"
                       >
-                        {deletingRoomId === room.id ? "Deleting..." : "Delete"}
+                        {deletingRoomId === room.id ? "Đang xóa..." : "Xóa"}
                       </button>
                     </div>
                   </div>
@@ -1851,7 +1851,7 @@ export function MapsRoutesPanel({
               <span className="font-semibold" style={{ color: T.text }}>
                 {routes.length}
               </span>
-              {` routes`}
+              {` lộ trình`}
             </p>
             <button
               type="button"
@@ -1866,7 +1866,7 @@ export function MapsRoutesPanel({
               }}
             >
               <Plus className="h-4 w-4" />
-              {showRouteForm ? "Close" : "Add route"}
+              {showRouteForm ? "Đóng" : "Thêm lộ trình"}
             </button>
           </div>
 
@@ -1880,19 +1880,19 @@ export function MapsRoutesPanel({
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Route name *
+                    Tên lộ trình *
                   </label>
                   <input
                     value={routeName}
                     onChange={(e) => setRouteName(e.target.value)}
-                    placeholder="Heritage Discovery Journey"
+                    placeholder="Hành trình khám phá di sản"
                     className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                     style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Duration (minutes)
+                    Thời lượng (phút)
                   </label>
                   <input
                     type="number"
@@ -1906,13 +1906,13 @@ export function MapsRoutesPanel({
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Description
+                    Mô tả
                   </label>
                   <textarea
                     value={routeDesc}
                     onChange={(e) => setRouteDesc(e.target.value)}
                     rows={3}
-                    placeholder="Describe the tour route in detail…"
+                    placeholder="Mô tả chi tiết lộ trình tham quan…"
                     className="w-full rounded-xl px-4 py-2.5 text-sm outline-none resize-none"
                     style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                   />
@@ -1920,7 +1920,7 @@ export function MapsRoutesPanel({
                 {exhibitions.length > 0 && (
                   <div className="space-y-1.5">
                     <label className="block text-sm" style={{ color: T.muted }}>
-                      Exhibition
+                      Triển lãm
                     </label>
                     <select
                       value={routeExhibitionId}
@@ -1928,10 +1928,10 @@ export function MapsRoutesPanel({
                       className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                       style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                     >
-                      <option value="">-- None --</option>
+                      <option value="">-- Không --</option>
                       {exhibitions.map((ex) => (
                         <option key={ex.id} value={ex.id}>
-                          {ex.name || `Exhibition #${ex.id}`}
+                          {ex.name || `Triển lãm #${ex.id}`}
                         </option>
                       ))}
                     </select>
@@ -1940,7 +1940,7 @@ export function MapsRoutesPanel({
                 {ageGroups.length > 0 && (
                   <div className="space-y-1.5">
                     <label className="block text-sm" style={{ color: T.muted }}>
-                      Age group
+                      Nhóm tuổi
                     </label>
                     <select
                       value={routeAgeGroupId}
@@ -1948,7 +1948,7 @@ export function MapsRoutesPanel({
                       className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                       style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                     >
-                      <option value="">-- None --</option>
+                      <option value="">-- Không --</option>
                       {ageGroups.map((ag) => (
                         <option key={ag.id} value={ag.id}>
                           {ag.groupName}
@@ -1962,7 +1962,7 @@ export function MapsRoutesPanel({
                 <div className="space-y-2 sm:col-span-2 pt-2 border-t" style={{ borderColor: T.border }}>
                   <div className="flex items-center justify-between">
                     <label className="block text-sm font-semibold" style={{ color: T.text }}>
-                      Select artifacts for this route ({selectedExhibitIds.length} stops)
+                      Chọn hiện vật cho lộ trình ({selectedExhibitIds.length} điểm dừng)
                     </label>
                     {selectedExhibitIds.length > 0 && (
                       <button
@@ -1970,16 +1970,16 @@ export function MapsRoutesPanel({
                         onClick={() => setSelectedExhibitIds([])}
                         className="text-xs text-amber-600 hover:underline font-medium"
                       >
-                        Deselect all
+                        Bỏ chọn tất cả
                       </button>
                     )}
                   </div>
                   <p className="text-xs" style={{ color: T.muted }}>
-                    Click artifacts in the order visitors should follow.
+                    Nhấn hiện vật theo thứ tự khách nên đi.
                   </p>
 
                   {exhibits.length === 0 ? (
-                    <p className="text-xs italic" style={{ color: T.muted }}>No artifacts in the museum yet.</p>
+                    <p className="text-xs italic" style={{ color: T.muted }}>Bảo tàng chưa có hiện vật.</p>
                   ) : (
                     <div
                       className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 max-h-60 overflow-y-auto p-2.5 rounded-2xl border"
@@ -1988,10 +1988,10 @@ export function MapsRoutesPanel({
                       {exhibits.map((ex) => {
                         const isSelected = selectedExhibitIds.includes(ex.id);
                         const orderIdx = selectedExhibitIds.indexOf(ex.id);
-                        const title = ex.translations?.[0]?.title ?? ex.exhibitCode ?? `Artifact #${ex.id}`;
+                        const title = ex.translations?.[0]?.title ?? ex.exhibitCode ?? `Hiện vật #${ex.id}`;
                         const locText = ex.floorNumber != null || ex.roomCode || ex.roomName
-                          ? `${ex.floorNumber != null ? `Floor ${ex.floorNumber}` : ""} ${ex.roomCode ? `· ${ex.roomCode}` : ""}`.trim()
-                          : "Location not assigned";
+                          ? `${ex.floorNumber != null ? `Tầng ${ex.floorNumber}` : ""} ${ex.roomCode ? `· ${ex.roomCode}` : ""}`.trim()
+                          : "Chưa gán vị trí";
 
                         return (
                           <button
@@ -2038,7 +2038,7 @@ export function MapsRoutesPanel({
                       style={{ accentColor: T.primary }}
                     />
                     <span className="text-sm" style={{ color: T.muted }}>
-                      Set as default route
+                      Đặt làm lộ trình mặc định
                     </span>
                   </label>
                 </div>
@@ -2055,7 +2055,7 @@ export function MapsRoutesPanel({
                   className="rounded-xl px-5 py-2 text-sm font-medium disabled:opacity-50"
                   style={{ background: T.primary, color: T.surface }}
                 >
-                  {submitting === "route" ? "Saving…" : "Save route"}
+                  {submitting === "route" ? "Đang lưu…" : "Lưu lộ trình"}
                 </button>
               </div>
             </form>
@@ -2070,7 +2070,7 @@ export function MapsRoutesPanel({
               <div className="px-8 py-16 text-center">
                 <Route className="mx-auto h-10 w-10" style={{ color: T.mutedLight }} />
                 <p className="mt-4 text-sm" style={{ color: T.muted }}>
-                  No tour routes yet. Create a suggested route for visitors.
+                  Chưa có lộ trình. Tạo lộ trình gợi ý cho khách tham quan.
                 </p>
               </div>
             ) : (
@@ -2083,7 +2083,7 @@ export function MapsRoutesPanel({
                         background: "rgba(245,230,200,0.35)",
                       }}
                     >
-                      {["ID", "Route name", "Description", "Exhibition", "Stops", "Duration", "Status", ""].map((h) => (
+                      {["ID", "Tên lộ trình", "Mô tả", "Triển lãm", "Điểm dừng", "Thời lượng", "Trạng thái", ""].map((h) => (
                         <th
                           key={h || "actions"}
                           className="px-5 py-4 font-medium whitespace-nowrap"
@@ -2113,7 +2113,7 @@ export function MapsRoutesPanel({
                                 className="inline-flex items-center gap-1 mt-0.5 text-[10px] font-medium"
                                 style={{ color: T.success }}
                               >
-                                <Check className="h-3 w-3" /> Default
+                                <Check className="h-3 w-3" /> Mặc định
                               </span>
                             )}
                           </div>
@@ -2144,7 +2144,7 @@ export function MapsRoutesPanel({
                           >
                             <Clock className="h-3.5 w-3.5" />
                             {item.estimatedDurationMinutes != null
-                              ? `${item.estimatedDurationMinutes} min`
+                              ? `${item.estimatedDurationMinutes} phút`
                               : "—"}
                           </span>
                         </td>
@@ -2165,7 +2165,7 @@ export function MapsRoutesPanel({
                                 color: T.surface,
                               }}
                             >
-                              <Smartphone className="h-3.5 w-3.5" /> Mobile map 📱
+                              <Smartphone className="h-3.5 w-3.5" /> Bản đồ di động 📱
                             </button>
                             <button
                               type="button"
@@ -2176,7 +2176,7 @@ export function MapsRoutesPanel({
                               className="text-xs font-medium"
                               style={{ color: T.primaryDark }}
                             >
-                              Details →
+                              Chi tiết →
                             </button>
                           </div>
                         </td>
@@ -2222,27 +2222,27 @@ export function MapsRoutesPanel({
             <div className="w-full md:w-80 flex flex-col justify-between">
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-xl font-bold" style={{ fontFamily: cinzel, color: T.primaryDark }}>
+                  <h3 className={dashboardTitleClass} style={{ fontFamily: cinzel, color: T.primaryDark }}>
                     {getMapDisplayName(selectedMap)}
                   </h3>
-                  <p className="text-xs" style={{ color: T.mutedLight }}>Map ID: {selectedMap.id}</p>
+                  <p className="text-xs" style={{ color: T.mutedLight }}>Mã bản đồ: {selectedMap.id}</p>
                 </div>
 
                 <div className="space-y-2 border-t pt-4 text-sm" style={{ borderColor: T.border, color: T.muted }}>
                   <div className="flex justify-between">
-                    <span>Floor</span>
+                    <span>Tầng</span>
                     <span className="font-semibold" style={{ color: T.text }}>
-                      {selectedMap.floorNumber === 0 ? "Ground floor (0)" : selectedMap.floorNumber ?? "—"}
+                      {selectedMap.floorNumber === 0 ? "Tầng trệt (0)" : selectedMap.floorNumber ?? "—"}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Type</span>
+                    <span>Loại</span>
                     <span className="font-semibold" style={{ color: T.text }}>
-                      {mapKind(selectedMap) === "overview" ? "Overview" : "Floor plan"}
+                      {mapKind(selectedMap) === "overview" ? "Tổng quan" : "Sơ đồ tầng"}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Image link</span>
+                    <span>Liên kết ảnh</span>
                     <a 
                       href={selectedMap.mapImageUrl} 
                       target="_blank" 
@@ -2250,7 +2250,7 @@ export function MapsRoutesPanel({
                       className="underline truncate max-w-[150px] inline-block hover:text-black"
                       style={{ color: T.primaryDark }}
                     >
-                      Open original image
+                      Mở ảnh gốc
                     </a>
                   </div>
                 </div>
@@ -2262,7 +2262,7 @@ export function MapsRoutesPanel({
                 className="mt-6 w-full rounded-xl py-2.5 text-sm font-medium"
                 style={{ background: T.primary, color: T.surface }}
               >
-                Close details
+                Đóng chi tiết
               </button>
             </div>
           </div>

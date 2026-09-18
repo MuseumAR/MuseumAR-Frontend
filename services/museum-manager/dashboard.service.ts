@@ -68,7 +68,7 @@ export async function loadMuseumManagerOverview(): Promise<MuseumManagerOverview
       popularExhibits: [],
       languageUsage: [],
       scanByExhibit: [],
-      error: getDisplayError(err, "Could not load museum statistics."),
+      error: getDisplayError(err, "Không thể tải thống kê bảo tàng."),
     };
   }
 }

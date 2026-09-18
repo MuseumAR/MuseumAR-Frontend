@@ -25,11 +25,11 @@ export function OverviewStats() {
 
   return (
     <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
-      <StatCard label="Total artifacts" value={stats.total} icon="layers" watermark="scroll" />
-      <StatCard label="Published" value={stats.published} icon="box" watermark="column" />
-      <StatCard label="Drafts" value={stats.draft} icon="layers" watermark="vase" />
-      <StatCard label="With AR" value={stats.withAr} icon="box" watermark="map" />
-      <StatCard label="With QR" value={stats.withQr} icon="qrCode" watermark="scroll" />
+      <StatCard label="Tổng hiện vật" value={stats.total} icon="layers" watermark="scroll" />
+      <StatCard label="Đã xuất bản" value={stats.published} icon="box" watermark="column" />
+      <StatCard label="Bản nháp" value={stats.draft} icon="layers" watermark="vase" />
+      <StatCard label="Có AR" value={stats.withAr} icon="box" watermark="map" />
+      <StatCard label="Có QR" value={stats.withQr} icon="qrCode" watermark="scroll" />
     </div>
   );
 }

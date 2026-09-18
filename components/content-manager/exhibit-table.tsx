@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Eye, Pencil, Search, Send, Trash2 } from "lucide-react";
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, dashboardTitleClass } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
 import { SuccessBanner, useSuccessToast } from "@/components/shared/success-banner";
 import { labelStatus } from "@/lib/status-labels";
@@ -80,7 +80,7 @@ export function ExhibitTable({
         setRows([]);
         setTotalItems(0);
         setTotalPages(1);
-        setError(getDisplayError(err, "Could not load artifacts."));
+        setError(getDisplayError(err, "Không thể tải hiện vật."));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -96,27 +96,27 @@ export function ExhibitTable({
     try {
       if (published) await unpublishExhibit(id);
       else await publishExhibit(id);
-      showSuccess(published ? "Artifact unpublished." : "Artifact published.");
+      showSuccess(published ? "Đã hủy xuất bản hiện vật." : "Đã xuất bản hiện vật.");
       setReloadKey((k) => k + 1);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Action failed."));
+      setError(getDisplayError(err, "Thao tác thất bại."));
     } finally {
       setActingId(null);
     }
   }
 
   async function handleDelete(id: number) {
-    if (!confirm("Delete this artifact?")) return;
+    if (!confirm("Xóa hiện vật này?")) return;
     setActingId(id);
     setError(null);
     try {
       await deleteExhibit(id);
-      showSuccess("Artifact deleted.");
+      showSuccess("Đã xóa hiện vật.");
       setReloadKey((k) => k + 1);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Could not delete artifact."));
+      setError(getDisplayError(err, "Không thể xóa hiện vật."));
     } finally {
       setActingId(null);
     }
@@ -127,8 +127,8 @@ export function ExhibitTable({
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h3 className="text-lg font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-          Artifacts
+        <h3 className={dashboardTitleClass} style={{ fontFamily: cinzel, color: T.text }}>
+          Hiện vật
         </h3>
         <div className="flex items-center gap-3">
           <div className="relative w-64 min-w-[200px]">
@@ -138,7 +138,7 @@ export function ExhibitTable({
             />
             <input
               type="search"
-              placeholder="Search artifacts..."
+              placeholder="Tìm hiện vật..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="w-full rounded-2xl py-2.5 pl-11 pr-4 text-sm outline-none"
@@ -158,7 +158,7 @@ export function ExhibitTable({
                 color: T.surface,
               }}
             >
-              Create artifact
+              Tạo hiện vật
             </Link>
           )}
         </div>
@@ -184,11 +184,11 @@ export function ExhibitTable({
       >
         {loading && rows.length === 0 ? (
           <div className="px-8 py-16 text-center text-sm" style={{ color: T.muted }}>
-            Loading artifacts…
+            Đang tải hiện vật…
           </div>
         ) : rows.length === 0 ? (
           <div className="px-8 py-16 text-center text-sm" style={{ color: T.muted }}>
-            No artifacts found.
+            Không tìm thấy hiện vật.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -200,7 +200,7 @@ export function ExhibitTable({
                     background: "rgba(245,230,200,0.35)",
                   }}
                 >
-                  {["Artifact", "Code", "Location", "Status", "AR", "QR", "Audio", "Actions"].map((col) => (
+                  {["Hiện vật", "Mã", "Vị trí", "Trạng thái", "AR", "QR", "Âm thanh", "Thao tác"].map((col) => (
                     <th
                       key={col}
                       className="px-5 py-4 text-xs font-medium uppercase tracking-wider"
@@ -252,7 +252,7 @@ export function ExhibitTable({
                       <td className="px-5 py-4 text-xs font-medium" style={{ color: T.text }}>
                         {(typeof row.floorNumber === "number" && !Number.isNaN(row.floorNumber)) || row.roomName || row.roomCode ? (
                           <span>
-                            {typeof row.floorNumber === "number" && !Number.isNaN(row.floorNumber) ? `Floor ${row.floorNumber}` : ""}
+                            {typeof row.floorNumber === "number" && !Number.isNaN(row.floorNumber) ? `Tầng ${row.floorNumber}` : ""}
                             {row.roomName || row.roomCode ? `${typeof row.floorNumber === "number" && !Number.isNaN(row.floorNumber) ? " · " : ""}${row.roomCode ? `${row.roomCode} ` : ""}${row.roomName ?? ""}`.trim() : ""}
                           </span>
                         ) : (
@@ -268,13 +268,13 @@ export function ExhibitTable({
                         </span>
                       </td>
                       <td className="px-5 py-4" style={{ color: T.muted }}>
-                        {row.hasAr ? "Yes" : "—"}
+                        {row.hasAr ? "Có" : "—"}
                       </td>
                       <td className="px-5 py-4" style={{ color: T.muted }}>
-                        {row.hasQr ? "Yes" : "—"}
+                        {row.hasQr ? "Có" : "—"}
                       </td>
                       <td className="px-5 py-4" style={{ color: T.muted }}>
-                        {row.hasAudio ? "Yes" : "—"}
+                        {row.hasAudio ? "Có" : "—"}
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-1">
@@ -283,7 +283,7 @@ export function ExhibitTable({
                             prefetch={false}
                             className="rounded-lg p-2 transition-colors"
                             style={{ color: T.muted }}
-                            aria-label="View"
+                            aria-label="Xem"
                           >
                             <Eye className="h-4 w-4" />
                           </Link>
@@ -293,7 +293,7 @@ export function ExhibitTable({
                               prefetch={false}
                               className="rounded-lg p-2 transition-colors"
                               style={{ color: T.muted }}
-                              aria-label="Edit"
+                              aria-label="Sửa"
                             >
                               <Pencil className="h-4 w-4" />
                             </Link>
@@ -305,7 +305,7 @@ export function ExhibitTable({
                               onClick={() => handlePublish(row.id, row.status === "Published")}
                               className="rounded-lg p-2 transition-colors disabled:opacity-40"
                               style={{ color: T.primaryDark }}
-                              aria-label="Publish"
+                              aria-label="Xuất bản"
                             >
                               <Send className="h-4 w-4" />
                             </button>
@@ -317,7 +317,7 @@ export function ExhibitTable({
                               onClick={() => handleDelete(row.id)}
                               className="rounded-lg p-2 transition-colors disabled:opacity-40"
                               style={{ color: T.danger }}
-                              aria-label="Delete"
+                              aria-label="Xóa"
                             >
                               <Trash2 className="h-4 w-4" />
                             </button>
@@ -338,8 +338,8 @@ export function ExhibitTable({
           <span className="font-medium" style={{ color: T.text }}>
             {totalItems}
           </span>
-          {` artifacts`}
-          {totalPages > 1 ? ` · page ${currentPage} / ${totalPages}` : ""}
+          {` hiện vật`}
+          {totalPages > 1 ? ` · trang ${currentPage} / ${totalPages}` : ""}
         </p>
         {totalPages > 1 && (
           <div className="flex items-center gap-2">
@@ -351,7 +351,7 @@ export function ExhibitTable({
               style={{ border: `1px solid ${T.border}`, color: T.text, background: T.surface }}
             >
               <ChevronLeft className="h-4 w-4" />
-              Previous
+              Trước
             </button>
             <button
               type="button"
@@ -360,7 +360,7 @@ export function ExhibitTable({
               className="inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm disabled:opacity-40"
               style={{ border: `1px solid ${T.border}`, color: T.text, background: T.surface }}
             >
-              Next
+              Sau
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>

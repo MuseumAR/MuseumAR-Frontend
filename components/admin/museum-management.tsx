@@ -1,6 +1,12 @@
-import { dashboardTheme as T, sans } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, sans, dashboardTitleClass } from "@/lib/dashboard-theme";
 import { labelStatus } from "@/lib/status-labels";
 import type { MuseumDto } from "@/types/api";
+
+function visibleStatus(status: string) {
+  if (status === "Active") return "Hoạt động";
+  if (status === "Inactive") return "Không hoạt động";
+  return labelStatus(status);
+}
 
 function StatusBadge({ status }: { status: string }) {
   const active = status === "Active";
@@ -12,7 +18,7 @@ function StatusBadge({ status }: { status: string }) {
         color: active ? T.success : T.danger,
       }}
     >
-      {labelStatus(status)}
+      {visibleStatus(status)}
     </span>
   );
 }
@@ -39,7 +45,7 @@ export function MuseumManagementPanel({ museum }: { museum: MuseumDto | null }) 
           style={{ background: T.surface, border: `1px solid ${T.border}` }}
         >
           <p className="text-sm" style={{ color: T.muted }}>
-            No museum profile yet.
+            Chưa có hồ sơ bảo tàng.
           </p>
         </div>
       </div>
@@ -68,7 +74,7 @@ export function MuseumManagementPanel({ museum }: { museum: MuseumDto | null }) 
                 className="flex h-full w-full items-center justify-center text-sm"
                 style={{ color: T.mutedLight }}
               >
-                No image yet
+                Chưa có ảnh
               </div>
             )}
           </div>
@@ -76,7 +82,7 @@ export function MuseumManagementPanel({ museum }: { museum: MuseumDto | null }) 
           <div className="flex-1 space-y-5">
             <div className="flex flex-wrap items-center gap-3">
               <h2
-                className="text-xl font-semibold tracking-tight"
+                className={dashboardTitleClass}
                 style={{ fontFamily: sans, color: T.text }}
               >
                 {museum.name}
@@ -113,17 +119,17 @@ export function MuseumManagementPanel({ museum }: { museum: MuseumDto | null }) 
 
               return (
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <InfoRow label="ID" value={String(museum.id)} />
-                  <InfoRow label="City" value={displayCity} />
-                  <InfoRow label="Address" value={museum.address ?? "—"} />
-                  <InfoRow label="Address (English)" value={museum.addressEn ?? "—"} />
-                  <InfoRow label="Province" value={displayProvince} />
-                  <InfoRow label="Country" value={displayCountry} />
-                  <InfoRow label="Phone" value={museum.contactPhone ?? "—"} />
+                  <InfoRow label="Mã" value={String(museum.id)} />
+                  <InfoRow label="Thành phố" value={displayCity} />
+                  <InfoRow label="Địa chỉ (VI)" value={museum.address ?? "—"} />
+                  <InfoRow label="Địa chỉ (EN)" value={museum.addressEn ?? "—"} />
+                  <InfoRow label="Quận/Huyện" value={displayProvince} />
+                  <InfoRow label="Quốc gia" value={displayCountry} />
+                  <InfoRow label="Điện thoại" value={museum.contactPhone ?? "—"} />
                   <InfoRow label="Email" value={museum.contactEmail ?? "—"} />
                   <InfoRow label="Website" value={museum.website ?? "—"} />
-                  <InfoRow label="Opening hours" value={museum.openingHours ?? "—"} />
-                  <InfoRow label="Opening hours (English)" value={museum.openingHoursEn ?? "—"} />
+                  <InfoRow label="Giờ mở cửa (VI)" value={museum.openingHours ?? "—"} />
+                  <InfoRow label="Giờ mở cửa (EN)" value={museum.openingHoursEn ?? "—"} />
                 </div>
               );
             })()}
@@ -131,7 +137,7 @@ export function MuseumManagementPanel({ museum }: { museum: MuseumDto | null }) 
             {museum.description && (
               <div>
                 <p className="text-xs font-medium" style={{ color: T.mutedLight }}>
-                  Description
+                  Mô tả (VI)
                 </p>
                 <p
                   className="mt-1 text-sm leading-relaxed"
@@ -144,7 +150,7 @@ export function MuseumManagementPanel({ museum }: { museum: MuseumDto | null }) 
             {museum.descriptionEn && (
               <div>
                 <p className="text-xs font-medium" style={{ color: T.mutedLight }}>
-                  Description (English)
+                  Mô tả (EN)
                 </p>
                 <p
                   className="mt-1 text-sm leading-relaxed"

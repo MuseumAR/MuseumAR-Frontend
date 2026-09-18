@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, dashboardTitleClass } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
 import { SuccessBanner, useSuccessToast } from "@/components/shared/success-banner";
 import { labelStatus } from "@/lib/status-labels";
@@ -121,34 +121,34 @@ export function ExhibitionDetail({
       setSelectedExhibitIds([]);
       setSearchQuery("");
       setShowAddModal(false);
-      showSuccess("Artifacts assigned to this exhibition.");
+      showSuccess("Đã gán hiện vật vào triển lãm.");
       await loadExhibitsData();
     } catch (err) {
-      setAssignError(getDisplayError(err, "Could not assign artifacts to exhibition."));
+      setAssignError(getDisplayError(err, "Không thể gán hiện vật vào triển lãm."));
     } finally {
       setIsAssigning(false);
     }
   };
 
   const handleRemoveExhibit = async (exhibitId: number) => {
-    if (!confirm("Remove this artifact from the exhibition?")) return;
+    if (!confirm("Gỡ hiện vật này khỏi triển lãm?")) return;
     try {
       await removeExhibitFromExhibition(exhibition.id, exhibitId);
-      showSuccess("Artifact removed from this exhibition.");
+      showSuccess("Đã gỡ hiện vật khỏi triển lãm.");
       await loadExhibitsData();
     } catch (err) {
-      alert(getDisplayError(err, "Could not remove artifact."));
+      alert(getDisplayError(err, "Không thể gỡ hiện vật."));
     }
   };
 
   async function handleDelete() {
-    if (!confirm("Delete this exhibition?")) return;
+    if (!confirm("Xóa triển lãm này?")) return;
     try {
       await deleteExhibition(exhibition.id);
       router.push("/content-manager/exhibition");
       router.refresh();
     } catch (err) {
-      alert(getDisplayError(err, "Could not delete exhibition."));
+      alert(getDisplayError(err, "Không thể xóa triển lãm."));
     }
   }
 
@@ -158,7 +158,7 @@ export function ExhibitionDetail({
     setIsSubmitting(true);
 
     if (!name.trim()) {
-      setError("Please enter an exhibition name.");
+      setError("Vui lòng nhập tên triển lãm.");
       setIsSubmitting(false);
       return;
     }
@@ -171,7 +171,7 @@ export function ExhibitionDetail({
       const s = new Date(startDate);
       s.setHours(0, 0, 0, 0);
       if (s < today) {
-        setError("Ngày bắt đầu không được ở trong quá khứ (Start date cannot be in the past).");
+        setError("Ngày bắt đầu không được ở trong quá khứ.");
         setIsSubmitting(false);
         return;
       }
@@ -181,7 +181,7 @@ export function ExhibitionDetail({
       const eDate = new Date(endDate);
       eDate.setHours(0, 0, 0, 0);
       if (eDate < today) {
-        setError("Ngày kết thúc không được ở trong quá khứ (End date cannot be in the past).");
+        setError("Ngày kết thúc không được ở trong quá khứ.");
         setIsSubmitting(false);
         return;
       }
@@ -209,7 +209,7 @@ export function ExhibitionDetail({
             });
             finalThemeId = newTheme.id;
           } catch (err) {
-            setError(getDisplayError(err, "Could not create a new theme."));
+            setError(getDisplayError(err, "Không thể tạo chủ đề mới."));
             setIsSubmitting(false);
             return;
           }
@@ -231,10 +231,10 @@ export function ExhibitionDetail({
       }
 
       setShowEdit(false);
-      showSuccess("Exhibition updated.");
+      showSuccess("Đã cập nhật triển lãm.");
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Could not update exhibition."));
+      setError(getDisplayError(err, "Không thể cập nhật triển lãm."));
     } finally {
       setIsSubmitting(false);
     }
@@ -262,7 +262,7 @@ export function ExhibitionDetail({
         className="mb-6 inline-flex items-center gap-2 text-sm"
         style={{ color: T.muted }}
       >
-        ← Back to list
+        ← Quay lại danh sách
       </Link>
 
       <div className="space-y-6">
@@ -274,13 +274,13 @@ export function ExhibitionDetail({
         >
           {showEdit ? (
             <form onSubmit={handleUpdate} className="space-y-4">
-              <h3 className="text-lg font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-                Edit exhibition
+              <h3 className={dashboardTitleClass} style={{ fontFamily: cinzel, color: T.text }}>
+                Sửa triển lãm
               </h3>
               {error && <p className="text-sm" style={{ color: "#8B2E2E" }}>{error}</p>}
               
               <div className="space-y-1.5">
-                <label className="block text-sm" style={{ color: T.muted }}>Exhibition name</label>
+                <label className="block text-sm" style={{ color: T.muted }}>Tên triển lãm</label>
                 <input
                   type="text"
                   required
@@ -292,7 +292,7 @@ export function ExhibitionDetail({
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-sm" style={{ color: T.muted }}>Description</label>
+                <label className="block text-sm" style={{ color: T.muted }}>Mô tả</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -304,7 +304,7 @@ export function ExhibitionDetail({
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="block text-sm" style={{ color: T.muted }}>Start date</label>
+                  <label className="block text-sm" style={{ color: T.muted }}>Ngày bắt đầu</label>
                   <input
                     type="date"
                     min={exhibition.startDate && exhibition.startDate.slice(0, 10) < todayStr ? exhibition.startDate.slice(0, 10) : todayStr}
@@ -315,7 +315,7 @@ export function ExhibitionDetail({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-sm" style={{ color: T.muted }}>End date</label>
+                  <label className="block text-sm" style={{ color: T.muted }}>Ngày kết thúc</label>
                   <input
                     type="date"
                     min={startDate || todayStr}
@@ -326,7 +326,7 @@ export function ExhibitionDetail({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-sm" style={{ color: T.muted }}>Status</label>
+                  <label className="block text-sm" style={{ color: T.muted }}>Trạng thái</label>
                   <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}>
                     <option value="Active">{labelStatus("Active")}</option>
                     <option value="Inactive">{labelStatus("Inactive")}</option>
@@ -334,7 +334,7 @@ export function ExhibitionDetail({
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-sm" style={{ color: T.muted }}>New thumbnail</label>
+                  <label className="block text-sm" style={{ color: T.muted }}>Thumbnail mới</label>
                   <input
                     type="file"
                     accept="image/*"
@@ -344,11 +344,11 @@ export function ExhibitionDetail({
                   />
                 </div>
                 <div className="space-y-1.5 relative">
-                  <label className="block text-sm" style={{ color: T.muted }}>Theme</label>
+                  <label className="block text-sm" style={{ color: T.muted }}>Chủ đề</label>
                   <input
                     type="text"
                     list="theme-suggestions"
-                    placeholder="Select or type a new theme..."
+                    placeholder="Chọn hoặc nhập chủ đề mới..."
                     value={themeInput}
                     onChange={(e) => setThemeInput(e.target.value)}
                     className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
@@ -363,10 +363,10 @@ export function ExhibitionDetail({
               </div>
               <div className="flex justify-end gap-3 mt-6">
                 <button type="button" onClick={() => setShowEdit(false)} className="rounded-xl px-5 py-2 text-sm font-medium" style={{ border: `1px solid ${T.border}`, color: T.text }}>
-                  Cancel
+                  Hủy
                 </button>
                 <button type="submit" disabled={isSubmitting} className="rounded-xl px-5 py-2 text-sm font-medium disabled:opacity-50" style={{ background: T.primary, color: T.surface }}>
-                  {isSubmitting ? "Saving…" : "Save changes"}
+                  {isSubmitting ? "Đang lưu…" : "Lưu thay đổi"}
                 </button>
               </div>
             </form>
@@ -379,7 +379,7 @@ export function ExhibitionDetail({
                 {exhibition.thumbnailUrl ? (
                   <img
                     src={exhibition.thumbnailUrl}
-                    alt={exhibition.name || `Exhibition #${exhibition.id}`}
+                    alt={exhibition.name || `Triển lãm #${exhibition.id}`}
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -387,7 +387,7 @@ export function ExhibitionDetail({
                     className="flex h-full w-full items-center justify-center text-sm"
                     style={{ color: T.mutedLight }}
                   >
-                    No image yet
+                    Chưa có ảnh
                   </div>
                 )}
               </div>
@@ -396,12 +396,12 @@ export function ExhibitionDetail({
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h2
-                      className="text-2xl font-bold"
+                      className={dashboardTitleClass}
                       style={{ fontFamily: cinzel, color: T.primaryDark }}
                     >
-                      {exhibition.name || `Exhibition #${exhibition.id}`}
+                      {exhibition.name || `Triển lãm #${exhibition.id}`}
                     </h2>
-                    <p className="text-xs mt-1" style={{ color: T.mutedLight }}>Exhibition ID: {exhibition.id}</p>
+                    <p className="text-xs mt-1" style={{ color: T.mutedLight }}>Mã triển lãm: {exhibition.id}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <StatusBadge status={exhibition.status} />
@@ -411,7 +411,7 @@ export function ExhibitionDetail({
                       className="rounded-xl px-4 py-1.5 text-xs font-medium"
                       style={{ border: `1px solid ${T.border}`, color: T.text, background: T.surface }}
                     >
-                      Edit
+                      Sửa
                     </button>
                     <button
                       type="button"
@@ -419,7 +419,7 @@ export function ExhibitionDetail({
                       className="rounded-xl px-4 py-1.5 text-xs font-medium"
                       style={{ border: `1px solid ${T.danger}`, color: T.danger, background: "rgba(180,40,40,0.05)" }}
                     >
-                      Delete
+                      Xóa
                     </button>
                   </div>
                 </div>
@@ -431,11 +431,11 @@ export function ExhibitionDetail({
                 )}
 
                 <dl className="grid gap-3 text-sm sm:grid-cols-2 mt-4 pt-4 border-t" style={{ borderColor: T.border }}>
-                  <InfoRow label="Museum ID" value={String(exhibition.museumId)} />
-                  <InfoRow label="Status" value={labelStatus(exhibition.status)} />
-                  <InfoRow label="Start date" value={formatDate(exhibition.startDate)} />
-                  <InfoRow label="End date" value={formatDate(exhibition.endDate)} />
-                  <InfoRow label="Theme" value={exhibition.themeName || "—"} />
+                  <InfoRow label="Mã bảo tàng" value={String(exhibition.museumId)} />
+                  <InfoRow label="Trạng thái" value={labelStatus(exhibition.status)} />
+                  <InfoRow label="Ngày bắt đầu" value={formatDate(exhibition.startDate)} />
+                  <InfoRow label="Ngày kết thúc" value={formatDate(exhibition.endDate)} />
+                  <InfoRow label="Chủ đề" value={exhibition.themeName || "—"} />
                 </dl>
               </div>
             </div>
@@ -449,11 +449,11 @@ export function ExhibitionDetail({
         >
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div>
-              <h3 className="text-lg font-bold" style={{ fontFamily: cinzel, color: T.primaryDark }}>
-                Artifacts in this exhibition ({exhibitsInExhibition.length})
+              <h3 className={dashboardTitleClass} style={{ fontFamily: cinzel, color: T.primaryDark }}>
+                Hiện vật trong triển lãm ({exhibitsInExhibition.length})
               </h3>
               <p className="text-xs" style={{ color: T.mutedLight }}>
-                Links artifacts to this event. Floor / Room (map and AR location) is not changed here.
+                Gán hiện vật vào sự kiện này. Tầng / Phòng (bản đồ và vị trí AR) không đổi ở đây.
               </p>
             </div>
 
@@ -466,25 +466,25 @@ export function ExhibitionDetail({
               className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-semibold shadow-sm transition-opacity hover:opacity-90"
               style={{ background: T.primary, color: T.surface }}
             >
-              + Assign artifact to exhibition
+              + Gán hiện vật vào triển lãm
             </button>
           </div>
 
           {loadingExhibits ? (
             <div className="py-8 text-center text-xs font-medium" style={{ color: T.muted }}>
-              Loading artifacts...
+              Đang tải hiện vật...
             </div>
           ) : exhibitsInExhibition.length === 0 ? (
             <div
               className="rounded-2xl py-8 text-center text-xs font-medium"
               style={{ background: T.bg, color: T.muted }}
             >
-              No artifacts assigned to this exhibition yet. Use the button above to assign artifacts.
+              Chưa gán hiện vật nào. Dùng nút phía trên để gán.
             </div>
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {exhibitsInExhibition.map((ex) => {
-                const title = ex.translations?.[0]?.title || `Artifact #${ex.id}`;
+                const title = ex.translations?.[0]?.title || `Hiện vật #${ex.id}`;
                 const code = ex.exhibitCode || `EX-${ex.id}`;
                 return (
                   <div
@@ -513,7 +513,7 @@ export function ExhibitionDetail({
                         {title}
                       </h4>
                       <p className="text-[11px] font-mono mt-0.5" style={{ color: T.mutedLight }}>
-                        Code: {code}
+                        Mã: {code}
                       </p>
                       {ex.roomName && (
                         <p className="text-[10px] mt-0.5" style={{ color: T.success }}>
@@ -527,7 +527,7 @@ export function ExhibitionDetail({
                       onClick={() => handleRemoveExhibit(ex.id)}
                       className="rounded-lg p-1.5 text-xs font-medium transition-colors hover:bg-red-50"
                       style={{ color: T.danger }}
-                      title="Remove from exhibition"
+                      title="Gỡ khỏi triển lãm"
                     >
                       ✕
                     </button>
@@ -546,18 +546,18 @@ export function ExhibitionDetail({
             className="w-full max-w-md rounded-3xl p-6 shadow-xl"
             style={{ background: T.surface, border: `1px solid ${T.border}` }}
           >
-            <h3 className="text-base font-bold mb-2" style={{ color: T.primaryDark }}>
-              Assign artifact to exhibition
+            <h3 className={`${dashboardTitleClass} mb-2`} style={{ color: T.primaryDark }}>
+              Gán hiện vật vào triển lãm
             </h3>
             <p className="text-xs mb-3" style={{ color: T.mutedLight }}>
-              Choose artifacts from the museum to assign to &ldquo;{exhibition.name || `#${exhibition.id}`}&rdquo;
+              Chọn hiện vật của bảo tàng để gán vào &ldquo;{exhibition.name || `#${exhibition.id}`}&rdquo;
             </p>
             <p
               className="mb-4 rounded-xl px-3 py-2.5 text-xs leading-relaxed"
               style={{ background: "rgba(200,155,69,0.12)", color: T.primaryDark }}
             >
-              This only attaches the artifact to the exhibition. It does not move it on the map.
-              If the piece was physically relocated, update Floor / Room on the artifact edit page so map and AR stay correct.
+              Chỉ gắn hiện vật vào triển lãm, không đổi vị trí trên bản đồ.
+              Nếu hiện vật đã chuyển chỗ, cập nhật Tầng / Phòng ở trang sửa hiện vật để bản đồ và AR đúng.
             </p>
 
             {assignError && (
@@ -569,11 +569,11 @@ export function ExhibitionDetail({
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text }}>
-                  Select artifacts:
+                  Chọn hiện vật:
                 </label>
                 {unassignedExhibits.length === 0 ? (
                   <p className="text-xs italic py-2" style={{ color: T.muted }}>
-                    All museum artifacts are already assigned to this exhibition.
+                    Tất cả hiện vật đã được gán vào triển lãm này.
                   </p>
                 ) : (
                   <>
@@ -581,7 +581,7 @@ export function ExhibitionDetail({
                     <div className="mb-3">
                       <input
                         type="text"
-                        placeholder="Search by code or title..."
+                        placeholder="Tìm theo mã hoặc tên..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="w-full rounded-xl px-3 py-2 text-xs outline-none"
@@ -592,7 +592,7 @@ export function ExhibitionDetail({
                     {/* Selection Helpers */}
                     <div className="flex items-center justify-between text-[11px] mb-2 px-1">
                       <span style={{ color: T.muted }}>
-                        Selected: <strong>{selectedExhibitIds.length}</strong> / {unassignedExhibits.length}
+                        Đã chọn: <strong>{selectedExhibitIds.length}</strong> / {unassignedExhibits.length}
                       </span>
                       <div className="flex gap-2 font-semibold">
                         <button
@@ -607,7 +607,7 @@ export function ExhibitionDetail({
                           className="hover:underline"
                           style={{ color: T.primaryDark }}
                         >
-                          Select visible
+                          Chọn đang hiện
                         </button>
                         <span style={{ color: T.border }}>|</span>
                         <button
@@ -616,7 +616,7 @@ export function ExhibitionDetail({
                           className="hover:underline"
                           style={{ color: T.danger }}
                         >
-                          Clear all
+                          Bỏ chọn tất cả
                         </button>
                       </div>
                     </div>
@@ -628,12 +628,12 @@ export function ExhibitionDetail({
                     >
                       {filteredExhibits.length === 0 ? (
                         <p className="text-xs italic py-4 text-center" style={{ color: T.muted }}>
-                          No matching artifacts found.
+                          Không tìm thấy hiện vật khớp.
                         </p>
                       ) : (
                         filteredExhibits.map((ex) => {
                           const isChecked = selectedExhibitIds.includes(ex.id);
-                          const title = ex.translations?.[0]?.title || `Artifact #${ex.id}`;
+                          const title = ex.translations?.[0]?.title || `Hiện vật #${ex.id}`;
                           const code = ex.exhibitCode || `EX-${ex.id}`;
                           return (
                             <label
@@ -687,7 +687,7 @@ export function ExhibitionDetail({
                   </>
                 )}
                 <p className="mt-2 text-xs" style={{ color: T.muted }}>
-                  Need to edit Floor / Room locations for these artifacts? You can do so from their edit pages in the Artifacts list.
+                  Cần sửa Tầng / Phòng? Làm trên trang sửa hiện vật trong danh sách Hiện vật.
                 </p>
               </div>
 
@@ -702,7 +702,7 @@ export function ExhibitionDetail({
                   className="rounded-xl px-4 py-2 text-xs font-semibold"
                   style={{ border: `1px solid ${T.border}`, color: T.text }}
                 >
-                  Cancel
+                  Hủy
                 </button>
                 <button
                   type="button"
@@ -711,7 +711,7 @@ export function ExhibitionDetail({
                   className="rounded-xl px-4 py-2 text-xs font-semibold disabled:opacity-50"
                   style={{ background: T.primary, color: T.surface }}
                 >
-                  {isAssigning ? "Assigning…" : "Confirm assign"}
+                  {isAssigning ? "Đang gán…" : "Xác nhận gán"}
                 </button>
               </div>
             </div>

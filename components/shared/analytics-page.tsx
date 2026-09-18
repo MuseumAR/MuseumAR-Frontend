@@ -15,7 +15,7 @@ import {
   Ticket,
   ArrowUpRight,
 } from "lucide-react";
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, dashboardTitleClass } from "@/lib/dashboard-theme";
 import type { AnalyticsMetric } from "@/types";
 import type {
   MuseumDashboardDto,
@@ -110,10 +110,10 @@ export function AnalyticsPageContent({ metrics, dashboard, error: initialError }
             Báo cáo & Thống kê thông minh
           </p>
           <h1
-            className="mt-1 text-2xl sm:text-3xl font-bold tracking-tight"
+            className={`mt-1 ${dashboardTitleClass}`}
             style={{ fontFamily: cinzel, color: T.text }}
           >
-            Trung tâm Phân tích Bảo tàng (Analytics)
+            Trung tâm phân tích bảo tàng
           </h1>
         </div>
 
@@ -316,7 +316,7 @@ export function AnalyticsPageContent({ metrics, dashboard, error: initialError }
               className="rounded-3xl p-6 border"
               style={{ background: T.surface, borderColor: T.border }}
             >
-              <h3 className="text-base font-semibold mb-1" style={{ fontFamily: cinzel, color: T.text }}>
+              <h3 className={`${dashboardTitleClass} mb-1`} style={{ fontFamily: cinzel, color: T.text }}>
                 Chi tiết lượt khách vào cổng theo ngày
               </h3>
               <p className="text-xs mb-4" style={{ color: T.mutedLight }}>
@@ -360,7 +360,7 @@ export function AnalyticsPageContent({ metrics, dashboard, error: initialError }
               style={{ background: T.surface, borderColor: T.border }}
             >
               <p className="text-xs uppercase font-medium" style={{ color: T.muted }}>
-                Tổng doanh thu (Gross)
+                Tổng doanh thu
               </p>
               <p className="mt-2 text-2xl font-bold" style={{ color: T.text }}>
                 {formatVnd(revenueData?.totalGrossRevenue ?? 0)}
@@ -378,7 +378,7 @@ export function AnalyticsPageContent({ metrics, dashboard, error: initialError }
               }}
             >
               <p className="text-xs uppercase font-semibold text-rose-700">
-                Tiền hoàn trả (Refunded)
+                Tiền hoàn trả
               </p>
               <p className="mt-2 text-2xl font-bold text-rose-700">
                 {formatVnd(revenueData?.totalRefundedAmount ?? 0)}
@@ -396,7 +396,7 @@ export function AnalyticsPageContent({ metrics, dashboard, error: initialError }
               }}
             >
               <p className="text-xs uppercase font-bold text-emerald-800">
-                Doanh thu thực nhận (Net)
+                Doanh thu thực nhận
               </p>
               <p className="mt-2 text-2xl font-bold text-emerald-800">
                 {formatVnd(revenueData?.netRevenue ?? 0)}
@@ -446,7 +446,7 @@ export function AnalyticsPageContent({ metrics, dashboard, error: initialError }
               className="rounded-3xl p-6 border"
               style={{ background: T.surface, borderColor: T.border }}
             >
-              <h3 className="text-base font-semibold mb-1" style={{ fontFamily: cinzel, color: T.text }}>
+              <h3 className={`${dashboardTitleClass} mb-1`} style={{ fontFamily: cinzel, color: T.text }}>
                 Báo cáo doanh số và vé bán theo ngày
               </h3>
               <p className="text-xs mb-4" style={{ color: T.mutedLight }}>
@@ -459,9 +459,9 @@ export function AnalyticsPageContent({ metrics, dashboard, error: initialError }
                     <tr className="border-b font-semibold" style={{ borderColor: T.border, color: T.mutedLight }}>
                       <th className="pb-2">Ngày</th>
                       <th className="pb-2 text-center">Số vé bán</th>
-                      <th className="pb-2 text-right">Tổng thu (Gross)</th>
+                      <th className="pb-2 text-right">Tổng thu</th>
                       <th className="pb-2 text-right">Tiền hoàn trả</th>
-                      <th className="pb-2 text-right">Doanh thu thực (Net)</th>
+                      <th className="pb-2 text-right">Doanh thu thực</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y" style={{ borderColor: T.border }}>
@@ -498,7 +498,7 @@ export function AnalyticsPageContent({ metrics, dashboard, error: initialError }
           <section>
             <div className="mb-4">
               <h2
-                className="text-xl font-semibold"
+                className={dashboardTitleClass}
                 style={{ fontFamily: cinzel, color: T.text }}
               >
                 Chỉ số tương tác tham quan
@@ -566,7 +566,7 @@ export function AnalyticsPageContent({ metrics, dashboard, error: initialError }
           <section>
             <div className="mb-4">
               <h2
-                className="text-xl font-semibold"
+                className={dashboardTitleClass}
                 style={{ fontFamily: cinzel, color: T.text }}
               >
                 Biểu đồ Tương tác AR & Audio Guide

@@ -21,3 +21,6 @@ export const sans =
  * Do not reintroduce Cinzel here (no Vietnamese glyphs).
  */
 export const cinzel = sans;
+
+/** Small page/section titles across admin, content, and museum manager dashboards. */
+export const dashboardTitleClass = "text-sm font-semibold tracking-tight";

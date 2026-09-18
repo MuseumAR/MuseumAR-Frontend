@@ -28,7 +28,7 @@ export function ContentVersionsPanel({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!versionNumber.trim()) {
-      setError("Please enter a version number.");
+      setError("Vui lòng nhập số phiên bản.");
       return;
     }
     setError(null);
@@ -52,7 +52,7 @@ export function ContentVersionsPanel({
       setDescription("");
       setShowForm(false);
     } catch (err) {
-      setError(getDisplayError(err, "Could not create content version."));
+      setError(getDisplayError(err, "Không thể tạo phiên bản nội dung."));
     } finally {
       setIsSubmitting(false);
     }
@@ -66,7 +66,7 @@ export function ContentVersionsPanel({
         prev.map((v) => (v.id === id ? { ...v, status: "Published" } : v))
       );
     } catch (err) {
-      setError(getDisplayError(err, "Could not publish content version."));
+      setError(getDisplayError(err, "Không thể xuất bản phiên bản nội dung."));
     }
   }
 
@@ -79,20 +79,20 @@ export function ContentVersionsPanel({
         <Info className="mt-0.5 h-5 w-5 shrink-0" style={{ color: T.primaryDark }} />
         <div className="space-y-1 text-sm" style={{ color: T.muted }}>
           <p style={{ color: T.text }}>
-            <strong>Content Versions</strong> mark a snapshot of museum content
-            (artifacts, media, AR assets, etc.).
+            <strong>Phiên bản nội dung</strong> đánh dấu một bản chụp nội dung bảo tàng
+            (hiện vật, media, tài sản AR, v.v.).
           </p>
           <p>
-            Create a version, then open{" "}
+            Tạo phiên bản, rồi mở{" "}
             <Link
               href="/content-manager/offline-packages"
               prefetch={false}
               className="font-medium underline-offset-2 hover:underline"
               style={{ color: T.primaryDark }}
             >
-              Offline Packages
+              Gói offline
             </Link>{" "}
-            and pick it from the dropdown to generate a ZIP.
+            và chọn phiên bản trong danh sách để tạo ZIP.
           </p>
         </div>
       </div>
@@ -102,7 +102,7 @@ export function ContentVersionsPanel({
           <span className="font-semibold" style={{ color: T.text }}>
             {versions.length}
           </span>
-          {` versions`}
+          {` phiên bản`}
         </p>
         <button
           type="button"
@@ -114,7 +114,7 @@ export function ContentVersionsPanel({
           }}
         >
           <Plus className="h-4 w-4" />
-          {showForm ? "Close" : "Create version"}
+          {showForm ? "Đóng" : "Tạo phiên bản"}
         </button>
       </div>
 
@@ -123,7 +123,7 @@ export function ContentVersionsPanel({
           className="rounded-2xl px-4 py-3 text-sm"
           style={{ background: "rgba(79,125,74,0.10)", color: T.success }}
         >
-          Version created. It will appear in the Offline Packages dropdown.
+          Đã tạo phiên bản. Nó sẽ xuất hiện trong danh sách Gói offline.
         </p>
       )}
 
@@ -136,7 +136,7 @@ export function ContentVersionsPanel({
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <label className="block text-sm" style={{ color: T.muted }}>
-                Version number *
+                Số phiên bản *
               </label>
               <input
                 value={versionNumber}
@@ -148,13 +148,13 @@ export function ContentVersionsPanel({
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <label className="block text-sm" style={{ color: T.muted }}>
-                Change description
+                Mô tả thay đổi
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                placeholder="e.g. First release with Dong Son artifacts"
+                placeholder="vd. Phát hành đầu với hiện vật Đông Sơn"
                 className="w-full resize-none rounded-xl px-4 py-2.5 text-sm outline-none"
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
               />
@@ -172,7 +172,7 @@ export function ContentVersionsPanel({
               className="rounded-xl px-5 py-2 text-sm font-medium disabled:opacity-50"
               style={{ background: T.primary, color: T.surface }}
             >
-              {isSubmitting ? "Creating…" : "Save"}
+              {isSubmitting ? "Đang tạo…" : "Lưu"}
             </button>
           </div>
         </form>
@@ -184,7 +184,7 @@ export function ContentVersionsPanel({
       >
         {versions.length === 0 ? (
           <p className="px-8 py-16 text-center text-sm" style={{ color: T.muted }}>
-            No content versions yet. Create a version to get started.
+            Chưa có phiên bản nội dung. Tạo phiên bản để bắt đầu.
           </p>
         ) : (
           <table className="w-full text-left text-sm">
@@ -195,7 +195,7 @@ export function ContentVersionsPanel({
                   background: "rgba(245,230,200,0.35)",
                 }}
               >
-                {["ID", "Version", "Status", "Description", "Created", "Actions"].map((h) => (
+                {["ID", "Phiên bản", "Trạng thái", "Mô tả", "Ngày tạo", "Thao tác"].map((h) => (
                   <th key={h} className="px-5 py-4 font-medium" style={{ color: T.mutedLight }}>
                     {h}
                   </th>
@@ -243,11 +243,11 @@ export function ContentVersionsPanel({
                         className="rounded-xl px-3 py-1 text-xs font-semibold shadow-sm transition-transform active:scale-95 hover:opacity-90 text-white"
                         style={{ background: T.primary }}
                       >
-                        Publish
+                        Xuất bản
                       </button>
                     ) : (
                       <span className="text-xs italic" style={{ color: T.mutedLight }}>
-                        Published
+                        {labelStatus(item.status)}
                       </span>
                     )}
                   </td>

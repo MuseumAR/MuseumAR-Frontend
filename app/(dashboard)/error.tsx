@@ -10,13 +10,13 @@ export default function DashboardErrorPage({
 }) {
   return (
     <AppStatusPage
-      title="Something went wrong"
-      description="The dashboard could not load this page. Try again, or go back home."
-      primaryLabel="Try again"
+      title="Đã xảy ra lỗi"
+      description="Không tải được trang này. Thử lại hoặc quay về trang chủ."
+      primaryLabel="Thử lại"
       primaryAsButton
       onPrimary={reset}
       secondaryHref="/"
-      secondaryLabel="Home"
+      secondaryLabel="Trang chủ"
     />
   );
 }

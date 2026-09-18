@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Plus } from "lucide-react";
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, dashboardTitleClass } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
 import { labelStatus } from "@/lib/status-labels";
 import { createExhibitionEntry, uploadExhibitionImage } from "@/services/content-manager/exhibition.service";
@@ -58,7 +58,7 @@ export function ExhibitionPanel({
     setIsSubmitting(true);
 
     if (!name.trim()) {
-      setError("Please enter an exhibition name.");
+      setError("Vui lòng nhập tên triển lãm.");
       setIsSubmitting(false);
       return;
     }
@@ -70,7 +70,7 @@ export function ExhibitionPanel({
       const s = new Date(startDate);
       s.setHours(0, 0, 0, 0);
       if (s < today) {
-        setError("Ngày bắt đầu không được ở trong quá khứ (Start date cannot be in the past).");
+        setError("Ngày bắt đầu không được ở trong quá khứ.");
         setIsSubmitting(false);
         return;
       }
@@ -80,7 +80,7 @@ export function ExhibitionPanel({
       const eDate = new Date(endDate);
       eDate.setHours(0, 0, 0, 0);
       if (eDate < today) {
-        setError("Ngày kết thúc không được ở trong quá khứ (End date cannot be in the past).");
+        setError("Ngày kết thúc không được ở trong quá khứ.");
         setIsSubmitting(false);
         return;
       }
@@ -108,7 +108,7 @@ export function ExhibitionPanel({
             });
             finalThemeId = newTheme.id;
           } catch (err) {
-            setError(getDisplayError(err, "Could not create a new theme."));
+            setError(getDisplayError(err, "Không thể tạo chủ đề mới."));
             setIsSubmitting(false);
             return;
           }
@@ -138,7 +138,7 @@ export function ExhibitionPanel({
       setThumbnailFile(null);
       router.refresh();
     } catch (err) {
-      setError(getDisplayError(err, "Could not create exhibition."));
+      setError(getDisplayError(err, "Không thể tạo triển lãm."));
     } finally {
       setIsSubmitting(false);
     }
@@ -153,7 +153,7 @@ export function ExhibitionPanel({
           <span className="font-semibold" style={{ color: T.text }}>
             {exhibitions.length}
           </span>
-          {` exhibitions`}
+          {` triển lãm`}
         </p>
         <button
           type="button"
@@ -165,7 +165,7 @@ export function ExhibitionPanel({
           }}
         >
           <Plus className="h-4 w-4" />
-          {showForm ? "Close" : "Create exhibition"}
+          {showForm ? "Đóng" : "Tạo triển lãm"}
         </button>
       </div>
 
@@ -176,11 +176,11 @@ export function ExhibitionPanel({
           style={{ background: T.surface, border: `1px solid ${T.border}` }}
         >
           <div className="space-y-1.5">
-            <label className="block text-sm" style={{ color: T.muted }}>Exhibition name</label>
+            <label className="block text-sm" style={{ color: T.muted }}>Tên triển lãm</label>
             <input
               type="text"
               required
-              placeholder="e.g. Nature and Archaeology of Saigon"
+              placeholder="vd. Thiên nhiên và Khảo cổ Sài Gòn"
               value={name}
               onChange={(e) => setName(e.target.value)}
               className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
@@ -189,9 +189,9 @@ export function ExhibitionPanel({
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-sm" style={{ color: T.muted }}>Description</label>
+            <label className="block text-sm" style={{ color: T.muted }}>Mô tả</label>
             <textarea
-              placeholder="Enter a detailed description of the exhibition..."
+              placeholder="Nhập mô tả chi tiết về triển lãm..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
@@ -202,7 +202,7 @@ export function ExhibitionPanel({
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div className="space-y-1.5">
-              <label className="block text-sm" style={{ color: T.muted }}>Start date</label>
+              <label className="block text-sm" style={{ color: T.muted }}>Ngày bắt đầu</label>
               <input
                 type="date"
                 min={todayStr}
@@ -213,7 +213,7 @@ export function ExhibitionPanel({
               />
             </div>
             <div className="space-y-1.5">
-              <label className="block text-sm" style={{ color: T.muted }}>End date</label>
+              <label className="block text-sm" style={{ color: T.muted }}>Ngày kết thúc</label>
               <input
                 type="date"
                 min={startDate || todayStr}
@@ -224,11 +224,11 @@ export function ExhibitionPanel({
               />
             </div>
             <div className="space-y-1.5 relative">
-              <label className="block text-sm" style={{ color: T.muted }}>Theme</label>
+              <label className="block text-sm" style={{ color: T.muted }}>Chủ đề</label>
               <input
                 type="text"
                 list="theme-suggestions"
-                placeholder="Select or type a new theme..."
+                placeholder="Chọn hoặc nhập chủ đề mới..."
                 value={themeInput}
                 onChange={(e) => setThemeInput(e.target.value)}
                 className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
@@ -241,7 +241,7 @@ export function ExhibitionPanel({
               </datalist>
             </div>
             <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
-              <label className="block text-sm" style={{ color: T.muted }}>Thumbnail</label>
+              <label className="block text-sm" style={{ color: T.muted }}>Ảnh thumbnail</label>
               <input
                 type="file"
                 accept="image/*"
@@ -252,14 +252,14 @@ export function ExhibitionPanel({
             </div>
             <div className="sm:col-span-2 lg:col-span-3 rounded-xl p-3 text-xs leading-relaxed" style={{ background: "rgba(200,155,69,0.08)", border: `1px dashed ${T.border}` }}>
               <p style={{ color: T.text }}>
-                <strong style={{ color: T.primaryDark }}>* Lưu ý trạng thái:</strong> Triển lãm mới tạo sẽ mặc định ở trạng thái <span className="font-semibold" style={{ color: T.primaryDark }}>Inactive (Chờ kích hoạt)</span>. Hệ thống sẽ tự động kích hoạt sang <span className="font-semibold" style={{ color: T.success }}>Active</span> khi đến ngày bắt đầu và đổi sang <span className="font-semibold" style={{ color: "#9E2A2B" }}>Ended</span> khi hết hạn. Content Manager có thể kích hoạt thủ công bất kỳ lúc nào trong trang chi tiết triển lãm.
+                <strong style={{ color: T.primaryDark }}>* Lưu ý trạng thái:</strong> Triển lãm mới tạo sẽ mặc định ở trạng thái <span className="font-semibold" style={{ color: T.primaryDark }}>Inactive (Chờ kích hoạt)</span>. Hệ thống sẽ tự động kích hoạt sang <span className="font-semibold" style={{ color: T.success }}>Active</span> khi đến ngày bắt đầu và đổi sang <span className="font-semibold" style={{ color: "#9E2A2B" }}>Ended</span> khi hết hạn. Quản lý nội dung có thể kích hoạt thủ công bất kỳ lúc nào trong trang chi tiết triển lãm.
               </p>
             </div>
           </div>
           {error && <p className="mt-4 text-sm" style={{ color: "#8B2E2E" }}>{error}</p>}
           <div className="mt-4 flex justify-end">
             <button type="submit" disabled={isSubmitting} className="rounded-xl px-5 py-2 text-sm font-medium disabled:opacity-50" style={{ background: T.primary, color: T.surface }}>
-              {isSubmitting ? "Saving…" : "Save"}
+              {isSubmitting ? "Đang lưu…" : "Lưu"}
             </button>
           </div>
         </form>
@@ -267,7 +267,7 @@ export function ExhibitionPanel({
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {exhibitions.length === 0 ? (
-          <p className="text-sm" style={{ color: T.muted }}>No exhibitions yet.</p>
+          <p className="text-sm" style={{ color: T.muted }}>Chưa có triển lãm.</p>
         ) : (
           exhibitions.map((item) => (
             <Link
@@ -290,30 +290,30 @@ export function ExhibitionPanel({
                   />
                 </div>
               ) : null}
-              <h3 className="font-semibold text-lg" style={{ fontFamily: cinzel, color: T.primaryDark }}>
-                {item.name || `Exhibition #${item.id}`}
+              <h3 className={dashboardTitleClass} style={{ fontFamily: cinzel, color: T.primaryDark }}>
+                {item.name || `Triển lãm #${item.id}`}
               </h3>
               <p className="text-xs mt-0.5" style={{ color: T.mutedLight }}>ID: {item.id}</p>
               <div className="mt-3 space-y-2 text-sm" style={{ color: T.muted }}>
                 <div className="flex justify-between">
-                  <span>Theme</span>
+                  <span>Chủ đề</span>
                   <span style={{ color: T.text }}>{item.themeName || "—"}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Start</span>
+                  <span>Bắt đầu</span>
                   <span style={{ color: T.text }}>{item.startDate?.slice(0, 10) ?? "—"}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>End</span>
+                  <span>Kết thúc</span>
                   <span style={{ color: T.text }}>{item.endDate?.slice(0, 10) ?? "—"}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span>Status</span>
+                  <span>Trạng thái</span>
                   <StatusBadge status={item.status} />
                 </div>
               </div>
               <p className="mt-4 text-xs font-medium" style={{ color: T.primaryDark }}>
-                View details →
+                Xem chi tiết →
               </p>
             </Link>
           ))

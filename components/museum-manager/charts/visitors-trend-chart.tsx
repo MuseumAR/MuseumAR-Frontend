@@ -1,5 +1,5 @@
 import type { VisitorTrend } from "@/types";
-import { dashboardTheme as T, cinzel } from "@/lib/dashboard-theme";
+import { dashboardTheme as T, cinzel, dashboardTitleClass } from "@/lib/dashboard-theme";
 
 const CHART_HEIGHT = 280;
 const CHART_WIDTH = 520;
@@ -54,15 +54,15 @@ export function VisitorsTrendChart({ data }: { data: VisitorTrend[] }) {
         boxShadow: "0 6px 20px rgba(43,29,14,0.05)",
       }}
     >
-      <h2 className="text-base font-semibold" style={{ fontFamily: cinzel, color: T.text }}>
-        QR scans by exhibit
+      <h2 className={dashboardTitleClass} style={{ fontFamily: cinzel, color: T.text }}>
+        Lượt quét QR theo hiện vật
       </h2>
       <div className="mt-4 flex flex-1 items-center justify-center overflow-x-auto">
         <svg
           viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
           className="h-full w-full max-w-full"
           role="img"
-          aria-label="QR scans by exhibit"
+          aria-label="Lượt quét QR theo hiện vật"
         >
           {Y_TICKS.map((tick) => {
             const y = PADDING.top + innerHeight - (tick / Y_MAX) * innerHeight;
