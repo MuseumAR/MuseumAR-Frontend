@@ -49,7 +49,7 @@ export type Artifact = {
   exhibitId?: number;
   name: string;
   arModel: string;
-  status: "Published" | "Draft" | "Pending";
+  status: "Published" | "Draft" | "Pending" | "Archived";
   category: string;
   era: string;
   eraEn?: string;

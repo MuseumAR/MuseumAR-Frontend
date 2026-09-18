@@ -61,6 +61,10 @@ export function ArtifactDetail({
       setError("Không tìm thấy hiện vật này.");
       return;
     }
+    if (artifact.status === "Archived") {
+      setError("Hiện vật này đã bị xóa.");
+      return;
+    }
     if (!confirm("Xóa hiện vật này?")) return;
 
     setIsDeleting(true);
@@ -316,23 +320,38 @@ export function ArtifactDetail({
 
         {variant === "content-manager" && (
           <div className="mt-6 flex justify-end gap-3">
-            <button
-              type="button"
-              disabled={isDeleting}
-              onClick={handleDelete}
-              className="rounded-xl border px-5 py-1.5 text-sm disabled:opacity-50"
-              style={{ borderColor: "rgba(180,83,9,0.35)", color: T.danger }}
-            >
-              {isDeleting ? "Đang xóa…" : "Xóa"}
-            </button>
-            <Link
-              href={`/content-manager/artifact/${artifact.exhibitId ?? artifact.id}/edit`}
-              prefetch={false}
-              className="rounded-xl border px-5 py-1.5 text-sm"
-              style={{ borderColor: "rgba(79,125,74,0.35)", color: T.success }}
-            >
-              Cập nhật
-            </Link>
+            {artifact.status === "Archived" ? (
+              <span
+                className="rounded-xl border px-4 py-1.5 text-sm font-medium"
+                style={{
+                  borderColor: "rgba(180,40,40,0.30)",
+                  background: "rgba(180,40,40,0.08)",
+                  color: "#8B2E2E",
+                }}
+              >
+                Hiện vật đã bị xóa (Archived)
+              </span>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={handleDelete}
+                  className="rounded-xl border px-5 py-1.5 text-sm disabled:opacity-50"
+                  style={{ borderColor: "rgba(180,83,9,0.35)", color: T.danger }}
+                >
+                  {isDeleting ? "Đang xóa…" : "Xóa"}
+                </button>
+                <Link
+                  href={`/content-manager/artifact/${artifact.exhibitId ?? artifact.id}/edit`}
+                  prefetch={false}
+                  className="rounded-xl border px-5 py-1.5 text-sm"
+                  style={{ borderColor: "rgba(79,125,74,0.35)", color: T.success }}
+                >
+                  Cập nhật
+                </Link>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -363,11 +382,12 @@ function StatusBadge({ status }: { status: Artifact["status"] }) {
     Published: { border: "rgba(79,125,74,0.30)", bg: "rgba(79,125,74,0.10)", color: T.success },
     Draft: { border: "rgba(109,90,69,0.26)", bg: "rgba(109,90,69,0.10)", color: T.muted },
     Pending: { border: "rgba(200,155,69,0.30)", bg: "rgba(200,155,69,0.12)", color: T.primaryDark },
+    Archived: { border: "rgba(180,40,40,0.30)", bg: "rgba(180,40,40,0.10)", color: T.danger },
   };
-  const s = styles[status];
+  const s = styles[status] ?? styles.Pending;
   return (
     <span
-      className="rounded-full border px-3 py-0.5 text-xs"
+      className="rounded-full border px-3 py-0.5 text-xs font-medium"
       style={{ borderColor: s.border, background: s.bg, color: s.color }}
     >
       {labelStatus(status)}

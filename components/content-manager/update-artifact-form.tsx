@@ -552,8 +552,9 @@ function StatusBadge({ status }: { status: Artifact["status"] }) {
     Published: { bg: "rgba(79,125,74,0.12)", color: T.success },
     Draft: { bg: "rgba(200,155,69,0.15)", color: T.primaryDark },
     Pending: { bg: "rgba(109,90,69,0.12)", color: T.muted },
+    Archived: { bg: "rgba(180,40,40,0.12)", color: T.danger },
   };
-  const s = styles[status];
+  const s = styles[status] ?? styles.Pending;
   return (
     <span
       className="rounded-full px-3 py-1 text-xs font-medium"
