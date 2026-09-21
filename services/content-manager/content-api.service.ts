@@ -345,8 +345,9 @@ export function migrateOldOverlayAssets() {
   return apiPostAuth<number>("/api/content/ar-assets/migrate-overlay");
 }
 
-export function getOfflinePackages() {
-  return apiGet<OfflinePackageDto[]>("/api/content/packages");
+export function getOfflinePackages(exhibitionId?: number) {
+  const query = exhibitionId != null ? `?exhibitionId=${exhibitionId}` : "";
+  return apiGet<OfflinePackageDto[]>(`/api/content/packages${query}`);
 }
 
 export function generateOfflinePackage(payload: CreateOfflinePackageDto) {

@@ -354,12 +354,17 @@ export type ContentVersionDto = {
 export type CreateOfflinePackageDto = {
   versionId: number;
   museumId: number;
+  exhibitionId?: number | null;
+  packageName?: string | null;
 };
 
 export type OfflinePackageDto = {
   id: number;
   museumId: number;
   versionId: number;
+  exhibitionId?: number | null;
+  exhibitionTitle?: string | null;
+  packageName?: string | null;
   packageUrl?: string | null;
   packageSizeBytes?: number | null;
   checksum?: string | null;
