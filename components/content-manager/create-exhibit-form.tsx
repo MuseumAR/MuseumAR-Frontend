@@ -146,13 +146,17 @@ export function CreateExhibitForm({
         }
       }
 
-      if (arFile) await tryUpload("Mô hình 3D", () => uploadArModel3d(exhibitId, arFile));
-      if (imageFile) await tryUpload("Ảnh", () => uploadExhibitImage(exhibitId, imageFile, displayTitle));
-      if (audioFileVi) await tryUpload("Âm thanh (VI)", () => uploadExhibitAudio(exhibitId, "vi", audioFileVi));
-      if (audioFileEn) await tryUpload("Âm thanh (EN)", () => uploadExhibitAudio(exhibitId, "en", audioFileEn));
+      const uploadTasks: Promise<void>[] = [];
+      if (arFile) uploadTasks.push(tryUpload("Mô hình 3D", () => uploadArModel3d(exhibitId, arFile)));
+      if (imageFile) uploadTasks.push(tryUpload("Ảnh", () => uploadExhibitImage(exhibitId, imageFile, displayTitle)));
+      if (audioFileVi) uploadTasks.push(tryUpload("Âm thanh (VI)", () => uploadExhibitAudio(exhibitId, "vi", audioFileVi)));
+      if (audioFileEn) uploadTasks.push(tryUpload("Âm thanh (EN)", () => uploadExhibitAudio(exhibitId, "en", audioFileEn)));
       if (selectedTagIds.length > 0) {
-        await tryUpload("Thẻ", () => syncExhibitTags(exhibitId, selectedTagIds));
+        uploadTasks.push(tryUpload("Thẻ", () => syncExhibitTags(exhibitId, selectedTagIds)));
       }
+
+      await Promise.all(uploadTasks);
+
       if (uploadErrors.length > 0) {
         throw new Error(`Đã tạo hiện vật, nhưng một số tệp thất bại: ${uploadErrors.join(" ")}`);
       }
