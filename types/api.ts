@@ -638,6 +638,19 @@ export type TicketDetailDto = {
   /** Optional QR payload / image for check-in */
   qrCodeData?: string | null;
   qrCodeImageUrl?: string | null;
+  /** Latest refund request if exists */
+  latestRefundRequest?: {
+    id: number;
+    amount: number;
+    reason: string;
+    bankName: string;
+    accountNumber: string;
+    accountHolderName: string;
+    status: string;
+    rejectReason?: string | null;
+    createdAt: string;
+    processedAt?: string | null;
+  } | null;
 };
 
 export type ValidateTicketResponseDto = {

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { CheckCircle2, ArrowLeft, Loader2, QrCode, ShieldCheck, RotateCcw, Clock, X } from "lucide-react";
+import { CheckCircle2, ArrowLeft, Loader2, QrCode, ShieldCheck, RotateCcw, Clock, X, AlertCircle } from "lucide-react";
 import { Navbar } from "@/components/shared/navbar";
 import { useAuth } from "@/context/auth-context";
 import { formatDateTimeVi, formatVnd } from "@/lib/format";
@@ -78,6 +78,12 @@ export function TicketDetailPanel() {
       .then((res) => {
         if (cancelled) return;
         setDetail(res);
+        if (res?.latestRefundRequest) {
+          if (res.latestRefundRequest.bankName) setBankName(res.latestRefundRequest.bankName);
+          if (res.latestRefundRequest.accountNumber) setAccountNumber(res.latestRefundRequest.accountNumber);
+          if (res.latestRefundRequest.accountHolderName) setAccountHolderName(res.latestRefundRequest.accountHolderName);
+          if (res.latestRefundRequest.reason) setRefundReason(res.latestRefundRequest.reason);
+        }
         setLoadError(null);
       })
       .catch((err) => {
@@ -131,7 +137,26 @@ export function TicketDetailPanel() {
         accountHolderName: accountHolderName.trim(),
         reason: refundReason.trim(),
       });
-      setDetail((prev) => (prev ? { ...prev, status: "Refund_Pending" } : null));
+      setDetail((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: "Refund_Pending",
+              latestRefundRequest: {
+                id: prev.latestRefundRequest?.id ?? 0,
+                amount: prev.price ?? prev.ticketType.price,
+                reason: refundReason.trim(),
+                bankName: bankName.trim(),
+                accountNumber: accountNumber.trim(),
+                accountHolderName: accountHolderName.trim(),
+                status: "Pending",
+                rejectReason: null,
+                createdAt: new Date().toISOString(),
+                processedAt: null,
+              },
+            }
+          : null
+      );
       setRefundSuccess(true);
       setIsRefundModalOpen(false);
     } catch (err: unknown) {
@@ -145,6 +170,7 @@ export function TicketDetailPanel() {
   const isUsed = detail?.status === "Used";
   const isRefundPending = detail?.status === "Refund_Pending";
   const isRefunded = detail?.status === "Refunded";
+  const hasRejectedRefund = detail?.latestRefundRequest?.status === "Rejected";
 
   return (
     <div className="min-h-screen" style={{ background: C.bg }}>
@@ -328,6 +354,37 @@ export function TicketDetailPanel() {
               </div>
             )}
 
+            {hasRejectedRefund && !isRefundPending && !isRefunded && (
+              <div
+                className="flex flex-col gap-2 rounded-2xl p-4 sm:p-5 text-sm font-medium"
+                style={{
+                  background: "rgba(220,38,38,0.08)",
+                  border: "1px solid rgba(220,38,38,0.25)",
+                  color: "#991B1B",
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 shrink-0 mt-0.5 text-red-600" />
+                  <div className="flex-1">
+                    <strong className="text-red-800 text-base">Yêu cầu hoàn tiền trước đó đã bị từ chối</strong>
+                    <div className="mt-2 rounded-xl bg-red-100/70 p-3 text-xs leading-relaxed text-red-900 border border-red-200">
+                      <p>
+                        <strong>Lý do từ chối:</strong> {detail.latestRefundRequest?.rejectReason || "Thông tin hoàn tiền không trùng khớp hoặc không hợp lệ."}
+                      </p>
+                      {detail.latestRefundRequest?.processedAt && (
+                        <p className="mt-1 text-[11px] text-red-700/80">
+                          Thời gian phản hồi: {formatDateTimeVi(detail.latestRefundRequest.processedAt)}
+                        </p>
+                      )}
+                    </div>
+                    <p className="mt-2 text-xs text-amber-950 font-normal">
+                      💡 Vé của bạn vẫn ở trạng thái <strong>Hợp lệ ({labelStatus(detail.status)})</strong>. Bạn có thể nhấn <strong>&quot;Tạo lại yêu cầu hoàn tiền&quot;</strong> bên dưới để cập nhật đúng thông tin tài khoản, hoặc sử dụng vé để vào cổng bình thường.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {refundSuccess && (
               <div
                 className="flex items-start gap-3 rounded-2xl p-4 text-sm font-medium"
@@ -403,7 +460,7 @@ export function TicketDetailPanel() {
                     style={{ color: "#B45309" }}
                   >
                     <RotateCcw className="h-3.5 w-3.5" />
-                    Yêu cầu hoàn tiền vé
+                    {hasRejectedRefund ? "Tạo lại yêu cầu hoàn tiền" : "Yêu cầu hoàn tiền vé"}
                   </button>
                 </div>
               </div>
@@ -519,6 +576,70 @@ export function TicketDetailPanel() {
                 />
               </dl>
             </section>
+
+            {detail.latestRefundRequest && (
+              <section
+                className="border-t pt-6"
+                style={{ borderColor: C.border }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-semibold" style={{ color: C.text }}>
+                    Yêu cầu hoàn tiền gần nhất
+                  </h2>
+                  <span
+                    className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                    style={{
+                      background:
+                        detail.latestRefundRequest.status === "Approved"
+                          ? "rgba(60,120,80,0.15)"
+                          : detail.latestRefundRequest.status === "Rejected"
+                          ? "rgba(220,38,38,0.15)"
+                          : "rgba(234,179,8,0.15)",
+                      color:
+                        detail.latestRefundRequest.status === "Approved"
+                          ? "#2F5D3A"
+                          : detail.latestRefundRequest.status === "Rejected"
+                          ? "#DC2626"
+                          : "#B45309",
+                    }}
+                  >
+                    {detail.latestRefundRequest.status === "Approved"
+                      ? "Đã duyệt hoàn tiền"
+                      : detail.latestRefundRequest.status === "Rejected"
+                      ? "Đã bị từ chối"
+                      : "Đang chờ duyệt"}
+                  </span>
+                </div>
+                <dl className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Số tiền yêu cầu" value={formatVnd(detail.latestRefundRequest.amount)} />
+                  <Field
+                    label="Ngân hàng"
+                    value={`${detail.latestRefundRequest.bankName} - ${detail.latestRefundRequest.accountNumber}`}
+                  />
+                  <Field label="Chủ tài khoản" value={detail.latestRefundRequest.accountHolderName} />
+                  <Field
+                    label="Ngày gửi yêu cầu"
+                    value={formatDateTimeVi(detail.latestRefundRequest.createdAt)}
+                  />
+                  <div className="sm:col-span-2">
+                    <Field label="Lý do hoàn vé của bạn" value={detail.latestRefundRequest.reason} />
+                  </div>
+                  {detail.latestRefundRequest.status === "Rejected" && (
+                    <div className="sm:col-span-2 rounded-2xl bg-red-50 p-3.5 border border-red-200 text-xs">
+                      <strong className="text-red-800 block mb-1 text-sm font-bold">Lý do từ chối từ Ban quản lý:</strong>
+                      <p className="text-red-950 font-medium leading-relaxed">
+                        {detail.latestRefundRequest.rejectReason || "Ban quản lý từ chối yêu cầu hoàn tiền."}
+                      </p>
+                      {detail.latestRefundRequest.processedAt && (
+                        <p className="mt-1.5 text-[11px] text-red-700/80">
+                          Thời gian từ chối: {formatDateTimeVi(detail.latestRefundRequest.processedAt)}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </dl>
+              </section>
+            )}
 
             <section
               className="border-t pt-6"
