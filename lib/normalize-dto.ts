@@ -62,7 +62,7 @@ function firstNonEmpty(
   return null;
 }
 
-function resolveApiMediaUrl(url: string | null | undefined): string | null {
+export function resolveApiMediaUrl(url: string | null | undefined): string | null {
   if (url == null) return null;
   const trimmed = String(url).trim();
   if (!trimmed) return null;
@@ -370,7 +370,7 @@ export function normalizeTourRouteDto(
         "estimatedMinutes",
         "EstimatedMinutes",
       ) ?? null,
-    thumbnailUrl: pickStr(o, "thumbnailUrl", "ThumbnailUrl") ?? null,
+    thumbnailUrl: resolveApiMediaUrl(pickStr(o, "thumbnailUrl", "ThumbnailUrl") ?? null),
     ageGroupId: pickNum(o, "ageGroupId", "AgeGroupId") ?? null,
     ageGroupName: pickStr(o, "ageGroupName", "AgeGroupName") ?? null,
     exhibitionId: pickNum(o, "exhibitionId", "ExhibitionId") ?? null,

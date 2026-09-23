@@ -12,7 +12,6 @@ import {
   createTagEntry,
   createTagGroupEntry,
   createThemeEntry,
-  deleteCategoryEntry,
   deleteTagEntry,
   deleteTagGroupEntry,
   deleteThemeEntry,
@@ -29,12 +28,25 @@ import {
   updateThemeEntry,
   upsertCategoryTranslationEntry,
 } from "@/services/content-manager/taxonomy.service";
+import { getExhibitionList } from "@/services/content-manager/exhibition.service";
 import type {
   CategoryDto,
+  ExhibitionDto,
   TagDto,
   TagGroupDto,
   ThemeDto,
 } from "@/types/api";
+
+function constraintDeleteError(err: unknown, fallback: string) {
+  const msg = getDisplayError(err, fallback);
+  if (
+    /REFERENCE|FK_|foreign key|SqlException|conflicted with/i.test(msg) ||
+    /Internal Server Error/i.test(msg)
+  ) {
+    return fallback;
+  }
+  return msg;
+}
 
 type Tab = "categories" | "themes" | "tag-groups" | "tags";
 
@@ -52,6 +64,63 @@ function visibleStatus(status: string) {
   if (status === "Active") return "Hoạt động";
   if (status === "Inactive") return "Không hoạt động";
   return labelStatus(status);
+}
+
+function StatusBadge({
+  tone,
+  label,
+}: {
+  tone: "on" | "off" | "warn";
+  label: string;
+}) {
+  const s =
+    tone === "on"
+      ? { bg: "rgba(79,125,74,0.12)", color: T.success }
+      : tone === "off"
+        ? { bg: "rgba(160,128,96,0.14)", color: T.muted }
+        : { bg: "rgba(200,155,69,0.14)", color: T.primaryDark };
+  return (
+    <span
+      className="inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-medium"
+      style={{ background: s.bg, color: s.color }}
+    >
+      {label}
+    </span>
+  );
+}
+
+function categoryTone(status: string): "on" | "off" | "warn" {
+  if (status === "Active") return "on";
+  if (status === "Inactive") return "off";
+  return "warn";
+}
+
+function StatusSwitch({
+  on,
+  disabled,
+  onClick,
+}: {
+  on: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      disabled={disabled}
+      onClick={onClick}
+      title={on ? "Tắt hoạt động" : "Bật hoạt động"}
+      className="relative h-6 w-10 shrink-0 rounded-full disabled:opacity-50"
+      style={{ background: on ? T.success : "rgba(160,128,96,0.45)" }}
+    >
+      <span
+        className="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-[left]"
+        style={{ left: on ? 18 : 2 }}
+      />
+    </button>
+  );
 }
 
 const TABS: { id: Tab; label: string }[] = [
@@ -178,7 +247,12 @@ function CategoriesTab({
   const [parentId, setParentId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [showInactive, setShowInactive] = useState(true);
   const { success, showSuccess } = useSuccessToast();
+  const visibleCategories = showInactive
+    ? categories
+    : categories.filter((item) => item.status !== "Inactive");
 
   function openCreate() {
     setEditing(null);
@@ -255,14 +329,32 @@ function CategoriesTab({
     }
   }
 
-  async function handleDelete(id: number) {
-    if (!confirm("Xóa danh mục này?")) return;
+  async function handleToggle(item: CategoryDto) {
+    const next = item.status === "Active" ? "Inactive" : "Active";
+    setTogglingId(item.id);
+    setError(null);
     try {
-      await deleteCategoryEntry(id);
-      showSuccess("Đã xóa danh mục.");
+      const translations = (item.categoryTranslations ?? []).map((t) => ({
+        id: t.id,
+        categoryId: item.id,
+        languageCode: t.languageCode,
+        categoryName: t.categoryName,
+        description: t.description ?? undefined,
+      }));
+      await updateCategoryEntry(item.id, {
+        museumId: item.museumId ?? museumId ?? undefined,
+        parentId: item.parentId,
+        sortOrder: item.sortOrder,
+        iconUrl: item.iconUrl,
+        status: next,
+        ...(translations.length > 0 ? { categoryTranslations: translations } : {}),
+      });
+      showSuccess(next === "Active" ? "Đã bật danh mục." : "Đã tắt danh mục.");
       await onReload();
     } catch (err) {
-      setError(getDisplayError(err, "Không thể xóa danh mục."));
+      setError(getDisplayError(err, "Không thể đổi trạng thái danh mục."));
+    } finally {
+      setTogglingId(null);
     }
   }
 
@@ -323,18 +415,39 @@ function CategoriesTab({
       )}
 
       <DataTable
-        empty="Chưa có danh mục."
+        empty={
+          categories.length === 0
+            ? "Chưa có danh mục."
+            : "Không có danh mục đang hoạt động."
+        }
+        toolbar={
+          <label className="flex items-center gap-2 text-xs" style={{ color: T.muted }}>
+            <input
+              type="checkbox"
+              checked={showInactive}
+              onChange={(e) => setShowInactive(e.target.checked)}
+              style={{ accentColor: T.primary }}
+            />
+            Hiện danh mục đã ngừng
+          </label>
+        }
         headers={["Mã", "Tên (VI)", "Tên (EN)", "Trạng thái", "Thứ tự", ""]}
-        rows={categories.map((item) => [
+        rows={visibleCategories.map((item) => [
           String(item.id),
           categoryDisplayName(item, "vi"),
           item.categoryTranslations?.find((t) => t.languageCode === "en")?.categoryName || "—",
-          visibleStatus(item.status),
+          <StatusBadge
+            key={`cat-st-${item.id}`}
+            tone={categoryTone(item.status)}
+            label={visibleStatus(item.status)}
+          />,
           String(item.sortOrder),
           <RowActions
             key={item.id}
             onEdit={() => openEdit(item)}
-            onDelete={() => void handleDelete(item.id)}
+            onToggle={() => void handleToggle(item)}
+            toggled={item.status === "Active"}
+            toggleDisabled={togglingId === item.id}
           />,
         ])}
       />
@@ -359,7 +472,22 @@ function ThemesTab({
   const [descriptionEn, setDescriptionEn] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [exhibitions, setExhibitions] = useState<ExhibitionDto[]>([]);
   const { success, showSuccess } = useSuccessToast();
+
+  useEffect(() => {
+    let cancelled = false;
+    void getExhibitionList().then((list) => {
+      if (!cancelled) setExhibitions(list);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function exhibitionsUsing(themeId: number) {
+    return exhibitions.filter((item) => item.themeId === themeId);
+  }
 
   function openCreate() {
     setEditing(null);
@@ -427,13 +555,26 @@ function ThemesTab({
   }
 
   async function handleDelete(id: number) {
+    const used = exhibitionsUsing(id);
+    if (used.length > 0) {
+      const names = used.map((item) => item.name?.trim() || `Triển lãm #${item.id}`).join(", ");
+      setError(
+        `Không xóa được chủ đề này vì đang gắn với triển lãm: ${names}. Đổi chủ đề của triển lãm trước, rồi xóa lại.`,
+      );
+      return;
+    }
     if (!confirm("Xóa chủ đề này?")) return;
     try {
       await deleteThemeEntry(id);
       showSuccess("Đã xóa chủ đề.");
       await onReload();
     } catch (err) {
-      setError(getDisplayError(err, "Không thể xóa chủ đề."));
+      setError(
+        constraintDeleteError(
+          err,
+          "Không xóa được chủ đề vì triển lãm hoặc dữ liệu khác đang dùng.",
+        ),
+      );
     }
   }
 
@@ -470,18 +611,21 @@ function ThemesTab({
 
       <DataTable
         empty="Chưa có chủ đề."
-        headers={["Mã", "Tên (VI)", "Tên (EN)", "Mô tả", ""]}
-        rows={themes.map((item) => [
-          String(item.id),
-          themeDisplayName(item, "vi"),
-          item.translations?.find((t) => t.languageCode === "en")?.themeName || "—",
-          item.description?.trim() || "—",
-          <RowActions
-            key={item.id}
-            onEdit={() => openEdit(item)}
-            onDelete={() => void handleDelete(item.id)}
-          />,
-        ])}
+        headers={["Mã", "Tên (VI)", "Tên (EN)", "Đang dùng", ""]}
+        rows={themes.map((item) => {
+          const used = exhibitionsUsing(item.id);
+          return [
+            String(item.id),
+            themeDisplayName(item, "vi"),
+            item.translations?.find((t) => t.languageCode === "en")?.themeName || "—",
+            used.length > 0 ? `${used.length} triển lãm` : "—",
+            <RowActions
+              key={item.id}
+              onEdit={() => openEdit(item)}
+              onDelete={() => void handleDelete(item.id)}
+            />,
+          ];
+        })}
       />
     </Section>
   );
@@ -974,9 +1118,15 @@ function FormActions({
 function RowActions({
   onEdit,
   onDelete,
+  onToggle,
+  toggled,
+  toggleDisabled,
 }: {
   onEdit: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
+  onToggle?: () => void;
+  toggled?: boolean;
+  toggleDisabled?: boolean;
 }) {
   return (
     <div className="flex items-center justify-end gap-2">
@@ -989,15 +1139,24 @@ function RowActions({
       >
         <Pencil className="h-4 w-4" />
       </button>
-      <button
-        type="button"
-        onClick={onDelete}
-        className="rounded-lg p-2"
-        style={{ color: T.danger }}
-        aria-label="Xóa"
-      >
-        <Trash2 className="h-4 w-4" />
-      </button>
+      {onToggle && (
+        <StatusSwitch
+          on={Boolean(toggled)}
+          disabled={toggleDisabled}
+          onClick={onToggle}
+        />
+      )}
+      {onDelete && (
+        <button
+          type="button"
+          onClick={onDelete}
+          className="rounded-lg p-2"
+          style={{ color: T.danger }}
+          aria-label="Xóa"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      )}
     </div>
   );
 }
@@ -1006,16 +1165,23 @@ function DataTable({
   empty,
   headers,
   rows,
+  toolbar,
 }: {
   empty: string;
   headers: string[];
   rows: React.ReactNode[][];
+  toolbar?: React.ReactNode;
 }) {
   return (
     <div
       className="overflow-hidden rounded-3xl"
       style={{ background: T.surface, border: `1px solid ${T.border}` }}
     >
+      {toolbar && (
+        <div className="flex justify-end px-5 py-3" style={{ borderBottom: `1px solid ${T.border}` }}>
+          {toolbar}
+        </div>
+      )}
       {rows.length === 0 ? (
         <p className="px-8 py-16 text-center text-sm" style={{ color: T.muted }}>
           {empty}

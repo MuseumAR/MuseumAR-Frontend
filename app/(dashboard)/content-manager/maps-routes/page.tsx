@@ -1,16 +1,24 @@
 import { MapsRoutesPanel } from "@/components/content-manager/maps-routes-panel";
 import { ContentNoMuseumState } from "@/components/content-manager/no-museum-empty-state";
-import { getMapList } from "@/services/content-manager/maps-routes.service";
+import { getMapList, getRouteList } from "@/services/content-manager/maps-routes.service";
 import { getRoomList } from "@/services/content-manager/room.service";
 import { resolveActiveMuseumId } from "@/services/content-manager/museum-context";
 import { getMuseumProfileEntry } from "@/services/admin";
+import { getExhibitionList } from "@/services/content-manager/exhibition.service";
+import { getAgeGroupOptions } from "@/services/content-manager/taxonomy.service";
+import { getExhibits } from "@/services/content-manager/content-api.service";
 
 export default async function MapsRoutesPage() {
-  const [maps, museumIdFromJwt, museum] = await Promise.all([
-    getMapList(),
-    resolveActiveMuseumId(),
-    getMuseumProfileEntry(),
-  ]);
+  const [maps, routes, museumIdFromJwt, museum, exhibitions, ageGroups, exhibits] =
+    await Promise.all([
+      getMapList(),
+      getRouteList().catch(() => []),
+      resolveActiveMuseumId(),
+      getMuseumProfileEntry(),
+      getExhibitionList().catch(() => []),
+      getAgeGroupOptions().catch(() => []),
+      getExhibits().catch(() => []),
+    ]);
   const museumId = museumIdFromJwt ?? museum?.id ?? null;
   if (museumId == null) {
     return <ContentNoMuseumState />;
@@ -21,8 +29,12 @@ export default async function MapsRoutesPage() {
   return (
     <MapsRoutesPanel
       maps={maps}
+      routes={routes}
       rooms={rooms}
       museumId={museumId}
+      exhibitions={exhibitions}
+      ageGroups={ageGroups}
+      exhibits={exhibits}
     />
   );
 }
