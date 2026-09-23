@@ -219,6 +219,7 @@ function CategoriesTab({
     try {
       const translations = [
         {
+          ...(editing ? { categoryId: editing.id } : {}),
           languageCode: "vi",
           categoryName: nameVi.trim(),
           description: descriptionVi.trim() || undefined,
@@ -226,6 +227,7 @@ function CategoriesTab({
       ];
       if (nameEn.trim()) {
         translations.push({
+          ...(editing ? { categoryId: editing.id } : {}),
           languageCode: "en",
           categoryName: nameEn.trim(),
           description: descriptionEn.trim() || undefined,
@@ -236,24 +238,12 @@ function CategoriesTab({
         parentId: parentId.trim() ? Number(parentId) : undefined,
         sortOrder: Number(sortOrder) || 0,
         status,
+        categoryTranslations: translations,
       };
-      const saved = editing
-        ? await updateCategoryEntry(editing.id, payload)
-        : await createCategoryEntry(payload);
-      let id = entityId(saved, editing?.id);
-      if (!id) {
-        const list = await getCategoryOptions();
-        id =
-          list.find((item) =>
-            item.categoryTranslations?.some(
-              (t) => t.languageCode === "vi" && t.categoryName === nameVi.trim(),
-            ),
-          )?.id ?? null;
-      }
-      if (id) {
-        for (const t of translations) {
-          await upsertCategoryTranslationEntry(id, t);
-        }
+      if (editing) {
+        await updateCategoryEntry(editing.id, payload);
+      } else {
+        await createCategoryEntry(payload);
       }
       setShowForm(false);
       showSuccess(editing ? "Đã cập nhật danh mục." : "Đã tạo danh mục.");
