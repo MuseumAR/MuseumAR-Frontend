@@ -95,6 +95,12 @@ function normalizeLoginResponse(
 
 export async function logout(): Promise<void> {
   try {
+    if (
+      typeof window !== "undefined" &&
+      window.google?.accounts?.id?.disableAutoSelect
+    ) {
+      window.google.accounts.id.disableAutoSelect();
+    }
     const res = await fetch(getApiUrl("/api/auth/logout"), {
       method: "POST",
     });
