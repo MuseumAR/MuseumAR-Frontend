@@ -327,6 +327,47 @@ export function confirmArAssetUpload(
   ).then(normalizeExhibitArassetDto);
 }
 
+/** Direct Cloudinary upload using a ContentManager signed token. Does not create an AR asset. */
+export async function uploadImageViaSignedCloudinary(exhibitId: number, file: File): Promise<string> {
+  const signed = await signArAssetUpload(exhibitId, {
+    fileName: file.name,
+    fileSize: file.size,
+    contentType: file.type || "image/jpeg",
+  });
+  const uploadUrl =
+    signed.uploadUrl ||
+    (signed.cloudName
+      ? `https://api.cloudinary.com/v1_1/${signed.cloudName}/auto/upload`
+      : "");
+  if (!uploadUrl || !signed.signature) {
+    throw new Error("Không lấy được chữ ký tải ảnh.");
+  }
+  const form = new FormData();
+  form.append("file", file);
+  if (signed.apiKey) form.append("api_key", signed.apiKey);
+  if (signed.timestamp) form.append("timestamp", String(signed.timestamp));
+  form.append("signature", signed.signature);
+  if (signed.folder) form.append("folder", signed.folder);
+  if (signed.publicId) form.append("public_id", signed.publicId);
+  const res = await fetch(uploadUrl, { method: "POST", body: form });
+  let json: Record<string, unknown> = {};
+  try {
+    json = (await res.json()) as Record<string, unknown>;
+  } catch {
+    json = {};
+  }
+  const url = String(json.secure_url ?? json.url ?? "").trim();
+  if (!res.ok || !url) {
+    const err = json.error;
+    const message =
+      err && typeof err === "object" && "message" in err
+        ? String((err as { message?: unknown }).message ?? "")
+        : "";
+    throw new Error(message || "Không tải được ảnh lên máy chủ.");
+  }
+  return url;
+}
+
 /** Multipart upload to BE — 3D models are stored locally (up to 200 MB), not Cloudinary. */
 export async function uploadArModel3d(exhibitId: number, file: File) {
   if (file.size > AR_MODEL_MAX_BYTES) {
@@ -454,7 +495,13 @@ export function getTourRoutes() {
 }
 
 export function createTourRoute(payload: CreateTourRouteDto) {
-  return apiPostAuth<TourRouteDto>("/api/content/routes", payload);
+  return apiPostAuth<unknown>("/api/content/routes", payload).then(normalizeTourRouteDto);
+}
+
+export function uploadRouteImage(id: number, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiPostFormAuth<unknown>(`/api/content/routes/${id}/upload-image`, formData);
 }
 
 export function getTourRouteById(id: number) {

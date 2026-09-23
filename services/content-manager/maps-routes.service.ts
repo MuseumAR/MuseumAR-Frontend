@@ -1,4 +1,5 @@
 import { safeFetch } from "@/lib/fetch-safe";
+import { resolveApiMediaUrl } from "@/lib/normalize-dto";
 import type {
   CreateTourRouteDto,
   CreateTourRouteStopDto,
@@ -6,6 +7,7 @@ import type {
   TourRouteDto,
   UpdateTourRouteDto,
 } from "@/types/api";
+import { uploadMuseumImage } from "@/services/admin/admin-api.service";
 import {
   addStopToRoute,
   createTourRoute,
@@ -16,7 +18,9 @@ import {
   removeStopFromRoute,
   reorderRouteStops,
   updateTourRoute,
+  uploadImageViaSignedCloudinary,
   uploadMuseumMap,
+  uploadRouteImage,
 } from "./content-api.service";
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -62,6 +66,77 @@ export async function createMapWithImage(
   floorNumber: number,
 ) {
   return uploadMuseumMap(museumId, file, mapType, mapName, floorNumber);
+}
+
+function hostedImageUrl(raw: unknown): string | null {
+  if (typeof raw === "string") {
+    return resolveApiMediaUrl(raw);
+  }
+  const o = asRecord(raw);
+  const candidates = [
+    o.thumbnailUrl,
+    o.ThumbnailUrl,
+    o.url,
+    o.Url,
+    o.secureUrl,
+    o.SecureUrl,
+    o.mapImageUrl,
+    o.MapImageUrl,
+  ];
+  for (const value of candidates) {
+    if (typeof value === "string") {
+      const url = resolveApiMediaUrl(value);
+      if (url) return url;
+    }
+  }
+  return null;
+}
+
+async function tryHost(fn: () => Promise<unknown>): Promise<string | null> {
+  try {
+    return hostedImageUrl(await fn());
+  } catch {
+    return null;
+  }
+}
+
+/** Host the file then return a public URL for TourRoute.ThumbnailUrl (NVARCHAR 500). */
+export async function hostRouteThumbnail(
+  file: File,
+  exhibitId?: number,
+  museumId?: number,
+): Promise<string> {
+  // ContentManager usually cannot call Admin museum-profile upload — try last.
+  if (exhibitId && exhibitId > 0) {
+    const fromCloud = await tryHost(() => uploadImageViaSignedCloudinary(exhibitId, file));
+    if (fromCloud) return fromCloud;
+  }
+
+  if (museumId && museumId > 0) {
+    const fromMap = await tryHost(() =>
+      uploadMuseumMap(museumId, file, "route-thumb", `route-cover-${Date.now()}`, 0),
+    );
+    if (fromMap) return fromMap;
+  }
+
+  const fromMuseum = await tryHost(() => uploadMuseumImage(file));
+  if (fromMuseum) return fromMuseum;
+
+  throw new Error("Không tải được ảnh đại diện. Thử file PNG/JPG nhỏ hơn rồi lưu lại.");
+}
+
+export async function attachRouteThumbnail(
+  routeId: number,
+  file: File,
+  exhibitId?: number,
+  museumId?: number,
+): Promise<string> {
+  const fromRoute = await tryHost(() => uploadRouteImage(routeId, file));
+  if (fromRoute) return fromRoute;
+
+  const hosted = await hostRouteThumbnail(file, exhibitId, museumId);
+  await updateTourRoute(routeId, { thumbnailUrl: hosted });
+  return hosted;
 }
 
 export async function createRouteEntry(payload: CreateTourRouteDto) {

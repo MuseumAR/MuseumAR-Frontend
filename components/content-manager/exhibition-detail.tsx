@@ -19,7 +19,7 @@ import {
   assignExhibitsToExhibition,
   removeExhibitFromExhibition,
 } from "@/services/content-manager/content-api.service";
-import { createThemeEntry, themeDisplayName, themeMatchesName } from "@/services/content-manager/taxonomy.service";
+import { themeDisplayName, themeMatchesName } from "@/services/content-manager/taxonomy.service";
 import type { ExhibitionDto, ExhibitDto, ThemeDto } from "@/types/api";
 
 function StatusBadge({ status }: { status: string }) {
@@ -62,7 +62,14 @@ export function ExhibitionDetail({
   const [startDate, setStartDate] = useState(exhibition.startDate?.slice(0, 10) ?? "");
   const [endDate, setEndDate] = useState(exhibition.endDate?.slice(0, 10) ?? "");
   const [status, setStatus] = useState(exhibition.status);
-  const [themeInput, setThemeInput] = useState(exhibition.themeName ?? "");
+  const [themeId, setThemeId] = useState<number | "">(() => {
+    if (exhibition.themeId) return exhibition.themeId;
+    if (exhibition.themeName) {
+      const matched = themes.find((t) => themeMatchesName(t, exhibition.themeName!));
+      if (matched) return matched.id;
+    }
+    return "";
+  });
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -194,31 +201,9 @@ export function ExhibitionDetail({
     }
 
     try {
-      let finalThemeId: number | undefined = undefined;
-      const trimmedTheme = themeInput.trim();
-      if (trimmedTheme) {
-        const existing = themes.find((t) => themeMatchesName(t, trimmedTheme));
-        if (existing) {
-          finalThemeId = existing.id;
-        } else {
-          try {
-            const newTheme = await createThemeEntry({
-              museumId: exhibition.museumId,
-              themeName: trimmedTheme,
-              translations: [{ languageCode: "vi", themeName: trimmedTheme }],
-            });
-            finalThemeId = newTheme.id;
-          } catch (err) {
-            setError(getDisplayError(err, "Không thể tạo chủ đề mới."));
-            setIsSubmitting(false);
-            return;
-          }
-        }
-      }
-
       await updateExhibition(exhibition.id, {
         museumId: exhibition.museumId,
-        themeId: finalThemeId,
+        themeId: themeId ? Number(themeId) : undefined,
         name: name.trim(),
         description: description.trim() || undefined,
         startDate: startDate || undefined,
@@ -343,22 +328,26 @@ export function ExhibitionDetail({
                     style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                   />
                 </div>
-                <div className="space-y-1.5 relative">
+                <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>Chủ đề</label>
-                  <input
-                    type="text"
-                    list="theme-suggestions"
-                    placeholder="Chọn hoặc nhập chủ đề mới..."
-                    value={themeInput}
-                    onChange={(e) => setThemeInput(e.target.value)}
+                  <select
+                    value={themeId}
+                    onChange={(e) => setThemeId(e.target.value ? Number(e.target.value) : "")}
                     className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                     style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
-                  />
-                  <datalist id="theme-suggestions">
+                  >
+                    <option value="">Không chọn</option>
                     {themes.map((theme) => (
-                      <option key={theme.id} value={themeDisplayName(theme)} />
+                      <option key={theme.id} value={theme.id}>
+                        {themeDisplayName(theme)}
+                      </option>
                     ))}
-                  </datalist>
+                  </select>
+                  {themes.length === 0 && (
+                    <p className="text-[11px]" style={{ color: T.mutedLight }}>
+                      Chưa có chủ đề. Tạo ở Admin → Phân loại → Chủ đề trước.
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex justify-end gap-3 mt-6">
