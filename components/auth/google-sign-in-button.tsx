@@ -12,6 +12,7 @@ type GoogleIdApi = {
   initialize: (config: {
     client_id: string;
     callback: (response: GoogleCredentialResponse) => void;
+    ux_mode?: "popup" | "redirect";
     auto_select?: boolean;
     cancel_on_tap_outside?: boolean;
   }) => void;
@@ -128,6 +129,7 @@ export function GoogleSignInButton({
       try {
         window.google.accounts.id.initialize({
           client_id: clientId!,
+          ux_mode: "popup",
           callback: (response: GoogleCredentialResponse) => {
             if (response.credential) {
               callbackRef.current(response.credential);
@@ -204,9 +206,9 @@ export function GoogleSignInButton({
       {clientId && (
         <div
           ref={overlayRef}
-          className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-2xl [&_iframe]:!h-full [&_iframe]:!w-full [&_iframe]:!scale-[1.25] [&_iframe]:!opacity-0"
+          className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded-2xl [&_div]:!h-full [&_div]:!w-full [&_iframe]:!h-full [&_iframe]:!w-full [&_iframe]:!scale-[1.25]"
           style={{
-            opacity: 0,
+            opacity: 0.01,
             pointerEvents: isInteractive ? "auto" : "none",
           }}
           aria-hidden
