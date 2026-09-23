@@ -12,6 +12,8 @@ type GoogleIdApi = {
   initialize: (config: {
     client_id: string;
     callback: (response: GoogleCredentialResponse) => void;
+    auto_select?: boolean;
+    cancel_on_tap_outside?: boolean;
   }) => void;
   renderButton: (
     parent: HTMLElement,
@@ -20,9 +22,11 @@ type GoogleIdApi = {
       theme?: string;
       size?: string;
       text?: string;
+      shape?: string;
       width?: number;
     },
   ) => void;
+  disableAutoSelect?: () => void;
 };
 
 declare global {
@@ -89,9 +93,6 @@ function GoogleButtonFace({
   );
 }
 
-let isGsiInitialized = false;
-let activeGoogleCallback: ((credential: string) => void) | null = null;
-
 export function GoogleSignInButton({
   onCredential,
   disabled,
@@ -111,47 +112,61 @@ export function GoogleSignInButton({
 
   useEffect(() => {
     callbackRef.current = onCredential;
-    activeGoogleCallback = onCredential;
   }, [onCredential]);
 
   useEffect(() => {
-    if (!clientId || !overlayRef.current) return;
+    if (!clientId) return;
 
-    activeGoogleCallback = (cred) => callbackRef.current(cred);
+    let isMounted = true;
 
     function renderGoogleButton() {
+      if (!isMounted) return;
       const overlay = overlayRef.current;
       const wrapper = wrapperRef.current;
-      if (!overlay || !wrapper || !window.google?.accounts?.id) return;
+      if (!overlay || !window.google?.accounts?.id) return;
 
-      if (!isGsiInitialized) {
+      try {
         window.google.accounts.id.initialize({
           client_id: clientId!,
-          callback: (response) => {
-            if (response.credential && activeGoogleCallback) {
-              activeGoogleCallback(response.credential);
+          callback: (response: GoogleCredentialResponse) => {
+            if (response.credential) {
+              callbackRef.current(response.credential);
             }
           },
+          auto_select: false,
+          cancel_on_tap_outside: true,
         });
-        isGsiInitialized = true;
+
+        overlay.innerHTML = "";
+        const calcWidth = Math.min(
+          Math.max(wrapper?.offsetWidth || 340, 200),
+          400,
+        );
+
+        window.google.accounts.id.renderButton(overlay, {
+          type: "standard",
+          theme: "outline",
+          size: "large",
+          text: "continue_with",
+          shape: "rectangular",
+          width: calcWidth,
+        });
+
+        if (isMounted) {
+          setGsiReady(true);
+        }
+      } catch (err) {
+        console.error("Failed to render Google Sign-In button:", err);
       }
-
-      overlay.innerHTML = "";
-      window.google.accounts.id.renderButton(overlay, {
-        type: "standard",
-        theme: "outline",
-        size: "large",
-        text: "continue_with",
-        width: wrapper.offsetWidth || 340,
-      });
-
-      setGsiReady(true);
     }
 
     const existing = document.querySelector(`script[src="${GSI_SCRIPT}"]`);
     if (existing && window.google?.accounts?.id) {
-      renderGoogleButton();
-      return;
+      const timer = setTimeout(renderGoogleButton, 50);
+      return () => {
+        isMounted = false;
+        clearTimeout(timer);
+      };
     }
 
     const script = existing || document.createElement("script");
@@ -165,6 +180,10 @@ export function GoogleSignInButton({
     } else {
       (script as HTMLScriptElement).addEventListener("load", renderGoogleButton);
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [clientId]);
 
   return (
@@ -185,7 +204,7 @@ export function GoogleSignInButton({
       {clientId && (
         <div
           ref={overlayRef}
-          className="absolute inset-0 overflow-hidden rounded-2xl"
+          className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-2xl [&_iframe]:!h-full [&_iframe]:!w-full [&_iframe]:!scale-[1.25] [&_iframe]:!opacity-0"
           style={{
             opacity: 0,
             pointerEvents: isInteractive ? "auto" : "none",
