@@ -506,6 +506,9 @@ export function normalizeTicketDetailDto(
   const exhibition = exhibitionRaw != null ? asRecord(exhibitionRaw) : null;
   const order = asRecord(pickField(o, "order", "Order"));
 
+  const refundRaw = pickField(o, "latestRefundRequest", "LatestRefundRequest");
+  const refund = refundRaw != null ? asRecord(refundRaw) : null;
+
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
     ticketCode: String(pickField(o, "ticketCode", "TicketCode") ?? ""),
@@ -540,6 +543,20 @@ export function normalizeTicketDetailDto(
     },
     qrCodeData: pickStr(o, "qrCodeData", "QrCodeData", "QRCodeData") ?? null,
     qrCodeImageUrl: pickStr(o, "qrCodeImageUrl", "QrCodeImageUrl", "QRCodeImageUrl") ?? null,
+    latestRefundRequest: refund
+      ? {
+          id: Number(pickField(refund, "id", "Id") ?? 0),
+          amount: Number(pickField(refund, "amount", "Amount") ?? 0),
+          reason: pickStr(refund, "reason", "Reason") ?? "",
+          bankName: pickStr(refund, "bankName", "BankName") ?? "",
+          accountNumber: pickStr(refund, "accountNumber", "AccountNumber") ?? "",
+          accountHolderName: pickStr(refund, "accountHolderName", "AccountHolderName") ?? "",
+          status: pickStr(refund, "status", "Status") ?? "",
+          rejectReason: pickStr(refund, "rejectReason", "RejectReason") ?? null,
+          createdAt: pickStr(refund, "createdAt", "CreatedAt") ?? "",
+          processedAt: pickStr(refund, "processedAt", "ProcessedAt") ?? null,
+        }
+      : null,
   };
 }
 
