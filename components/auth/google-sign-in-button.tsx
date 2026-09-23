@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
 import { AUTH_C, AUTH_CINZEL } from "@/lib/auth-theme";
 
 type GoogleCredentialResponse = {
@@ -140,10 +139,7 @@ export function GoogleSignInButton({
         });
 
         overlay.innerHTML = "";
-        const calcWidth = Math.min(
-          Math.max(wrapper?.offsetWidth || 340, 200),
-          400,
-        );
+        const calcWidth = Math.max(wrapper?.offsetWidth || 340, 200);
 
         window.google.accounts.id.renderButton(overlay, {
           type: "standard",
@@ -151,7 +147,20 @@ export function GoogleSignInButton({
           size: "large",
           text: "continue_with",
           shape: "rectangular",
-          width: calcWidth,
+          width: Math.min(calcWidth, 400),
+        });
+
+        requestAnimationFrame(() => {
+          const iframe = overlay.querySelector("iframe");
+          const host = wrapper;
+          if (!iframe || !host) return;
+          const iw = iframe.offsetWidth || 1;
+          const ih = iframe.offsetHeight || 1;
+          iframe.style.position = "absolute";
+          iframe.style.top = "0";
+          iframe.style.left = "0";
+          iframe.style.transformOrigin = "0 0";
+          iframe.style.transform = `scale(${host.offsetWidth / iw}, ${host.offsetHeight / ih})`;
         });
 
         if (isMounted) {
@@ -189,13 +198,11 @@ export function GoogleSignInButton({
   }, [clientId]);
 
   return (
-    <motion.div
+    <div
       ref={wrapperRef}
       className="relative w-full"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      whileHover={isInteractive ? { scale: 1.015 } : undefined}
-      whileTap={isInteractive ? { scale: 0.975 } : undefined}
       style={{
         opacity: disabled || loading ? 0.65 : 1,
         cursor: isInteractive ? "pointer" : "not-allowed",
@@ -206,7 +213,7 @@ export function GoogleSignInButton({
       {clientId && (
         <div
           ref={overlayRef}
-          className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden rounded-2xl [&_div]:!h-full [&_div]:!w-full [&_iframe]:!h-full [&_iframe]:!w-full [&_iframe]:!scale-[1.25]"
+          className="absolute inset-0 z-10 overflow-hidden rounded-2xl"
           style={{
             opacity: 0.01,
             pointerEvents: isInteractive ? "auto" : "none",
@@ -224,6 +231,6 @@ export function GoogleSignInButton({
           }}
         />
       )}
-    </motion.div>
+    </div>
   );
 }
