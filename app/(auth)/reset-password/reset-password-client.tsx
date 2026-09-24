@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, Eye, EyeOff, KeyRound, Lock } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, KeyRound, Lock, Mail } from "lucide-react";
 import { AuthField } from "@/components/auth/auth-field";
 import { AuthPageShell } from "@/components/auth/auth-page-shell";
 import { AUTH_C, AUTH_CINZEL } from "@/lib/auth-theme";
@@ -18,8 +18,10 @@ import { resetPassword } from "@/services/auth";
 export default function ResetPasswordPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const emailFromUrl = searchParams.get("email") ?? "";
   const tokenFromUrl = searchParams.get("token") ?? "";
 
+  const [email, setEmail] = useState(emailFromUrl);
   const [token, setToken] = useState(tokenFromUrl);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -33,7 +35,12 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     setError(null);
 
-    const validation = validateResetPassword({ token, newPassword, confirmPassword });
+    const validation = validateResetPassword({
+      email,
+      token,
+      newPassword,
+      confirmPassword,
+    });
     if (!validation.valid) {
       setError(getFirstValidationError(validation));
       return;
@@ -41,11 +48,15 @@ export default function ResetPasswordPage() {
 
     setIsSubmitting(true);
     try {
-      await resetPassword({ token: token.trim(), newPassword });
+      await resetPassword({
+        email: email.trim(),
+        token: token.trim(),
+        newPassword,
+      });
       setDone(true);
       setTimeout(() => router.push("/login"), 2000);
     } catch (err) {
-      setError(getDisplayError(err, "Không đặt lại được mật khẩu. Vui lòng thử lại."));
+      setError(getDisplayError(err, "Không đặt lại được mật khẩu. Vui lòng kiểm tra lại mã OTP."));
     } finally {
       setIsSubmitting(false);
     }
@@ -56,13 +67,14 @@ export default function ResetPasswordPage() {
       title="Đặt lại mật khẩu"
       subtitle={
         done
-          ? "Mật khẩu đã được cập nhật. Đang chuyển tới trang đăng nhập..."
-          : "Nhập mã từ email và chọn mật khẩu mới."
+          ? "Mật khẩu đã được cập nhật thành công. Đang chuyển tới trang đăng nhập..."
+          : "Nhập mã OTP 6 số từ email và mật khẩu mới."
       }
       footer={
         <p className="text-center text-xs" style={{ color: AUTH_C.muted }}>
+          Chưa nhận được mã OTP?{" "}
           <Link href="/forgot-password" className="font-medium hover:opacity-70" style={{ color: AUTH_C.primary }}>
-            Yêu cầu liên kết mới
+            Gửi lại mã OTP
           </Link>
         </p>
       }
@@ -81,11 +93,20 @@ export default function ResetPasswordPage() {
       ) : (
         <form onSubmit={handleSubmit} className="space-y-3">
           <AuthField
+            type="email"
+            name="email"
+            value={email}
+            onChange={setEmail}
+            placeholder="Email nhận mã OTP"
+            icon={Mail}
+            disabled={isSubmitting}
+          />
+          <AuthField
             type="text"
             name="token"
             value={token}
-            onChange={setToken}
-            placeholder="Mã đặt lại"
+            onChange={(val) => setToken(val.replace(/\D/g, "").slice(0, 6))}
+            placeholder="Mã OTP (6 chữ số)"
             icon={KeyRound}
             disabled={isSubmitting}
           />
@@ -135,7 +156,7 @@ export default function ResetPasswordPage() {
             >
               {error}{" "}
               <Link href="/forgot-password" className="font-semibold underline underline-offset-2">
-                Gửi lại email
+                Gửi lại mã OTP
               </Link>
             </p>
           )}

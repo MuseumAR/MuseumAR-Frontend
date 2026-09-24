@@ -30,6 +30,7 @@ export type ResetPasswordInput = {
   token: string;
   newPassword: string;
   confirmPassword: string;
+  email?: string;
 };
 
 export type ChangePasswordInput = {
@@ -160,10 +161,21 @@ export function validateForgotPassword(input: ForgotPasswordInput): ValidationRe
 
 export function validateResetPassword(input: ResetPasswordInput): ValidationResult {
   const errors: Record<string, string> = {};
-  const { token, newPassword, confirmPassword } = input;
+  const { token, newPassword, confirmPassword, email } = input;
+
+  if (email !== undefined) {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      errors.email = "Vui lòng nhập email.";
+    } else if (!EMAIL_REGEX.test(trimmedEmail)) {
+      errors.email = "Email không hợp lệ.";
+    }
+  }
 
   if (!token.trim()) {
-    errors.token = "Mã đặt lại mật khẩu không hợp lệ.";
+    errors.token = "Vui lòng nhập mã OTP.";
+  } else if (!/^\d{6}$/.test(token.trim())) {
+    errors.token = "Mã OTP gồm 6 chữ số.";
   }
 
   if (!newPassword) {
@@ -306,7 +318,9 @@ const API_MESSAGE_MAP: Record<string, string> = {
   "Registration failed": "Đăng ký thất bại. Vui lòng thử lại.",
   "Not authenticated": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
   "Incorrect old password.": "Mật khẩu hiện tại không đúng.",
-  "Invalid or expired reset token.": "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Hãy gửi lại email.",
+  "Invalid or expired reset token.": "Mã OTP không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.",
+  "Mã OTP không chính xác hoặc đã hết hạn.": "Mã OTP không chính xác hoặc đã hết hạn.",
+  "Mã OTP không được để trống.": "Mã OTP không được để trống.",
   "Ticket already used.": "Vé này đã được check-in.",
   "Ticket already used": "Vé này đã được check-in.",
   "Ticket expired.": "Vé đã hết hạn.",
