@@ -14,12 +14,13 @@ import {
   getFirstValidationError,
   validateChangePassword,
 } from "@/lib/validation";
-import { changePassword, getHomePathForRole } from "@/services/auth";
+import { changePassword, checkHasPassword, getHomePathForRole } from "@/services/auth";
 
 export default function ChangePasswordPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading, user } = useAuth();
 
+  const [hasPassword, setHasPassword] = useState<boolean | null>(null);
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -33,6 +34,12 @@ export default function ChangePasswordPage() {
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       router.replace("/login");
+      return;
+    }
+    if (isAuthenticated) {
+      checkHasPassword()
+        .then((hp) => setHasPassword(hp))
+        .catch(() => setHasPassword(true));
     }
   }, [isAuthenticated, isLoading, router]);
 
@@ -40,7 +47,13 @@ export default function ChangePasswordPage() {
     e.preventDefault();
     setError(null);
 
-    const validation = validateChangePassword({ oldPassword, newPassword, confirmPassword });
+    const isExistingPassword = hasPassword !== false;
+    const validation = validateChangePassword({
+      oldPassword,
+      newPassword,
+      confirmPassword,
+      requireOldPassword: isExistingPassword,
+    });
     if (!validation.valid) {
       setError(getFirstValidationError(validation));
       return;
@@ -48,10 +61,13 @@ export default function ChangePasswordPage() {
 
     setIsSubmitting(true);
     try {
-      await changePassword({ oldPassword, newPassword });
+      await changePassword({
+        oldPassword: isExistingPassword ? oldPassword : "",
+        newPassword,
+      });
       setDone(true);
     } catch (err) {
-      setError(getDisplayError(err, "Không đổi được mật khẩu. Vui lòng thử lại."));
+      setError(getDisplayError(err, "Không cập nhật được mật khẩu. Vui lòng thử lại."));
     } finally {
       setIsSubmitting(false);
     }
@@ -68,15 +84,26 @@ export default function ChangePasswordPage() {
   }
 
   const dashboardPath = user ? getHomePathForRole(user.roleName) : "/";
+  const isGoogleAccountWithoutPassword = hasPassword === false;
 
   return (
     <AuthPageShell
       backHref={dashboardPath}
       backLabel="Về bảng điều khiển"
-      title="Đổi mật khẩu"
+      title={
+        done
+          ? "Thành công"
+          : isGoogleAccountWithoutPassword
+          ? "Thiết lập mật khẩu"
+          : "Đổi mật khẩu"
+      }
       subtitle={
         done
-          ? "Mật khẩu đã được cập nhật."
+          ? isGoogleAccountWithoutPassword
+            ? "Mật khẩu đã được thiết lập. Bạn có thể đăng nhập bằng cả Google và Email + Mật khẩu."
+            : "Mật khẩu đã được cập nhật thành công."
+          : isGoogleAccountWithoutPassword
+          ? "Tài khoản của bạn đăng nhập qua Google. Bạn có thể tạo mật khẩu để đăng nhập trực tiếp."
           : "Cập nhật mật khẩu tài khoản."
       }
       footer={
@@ -100,26 +127,30 @@ export default function ChangePasswordPage() {
     >
       {done ? null : (
         <form onSubmit={handleSubmit} className="space-y-3">
-          <AuthField
-            type={showOld ? "text" : "password"}
-            name="oldPassword"
-            value={oldPassword}
-            onChange={setOldPassword}
-            placeholder="Mật khẩu hiện tại"
-            icon={Lock}
-            disabled={isSubmitting}
-            suffix={
-              <button type="button" onClick={() => setShowOld((v) => !v)} style={{ color: AUTH_C.mutedLight }}>
-                {showOld ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            }
-          />
+          {/* Chỉ hiển thị mật khẩu hiện tại nếu tài khoản đã có mật khẩu */}
+          {!isGoogleAccountWithoutPassword && (
+            <AuthField
+              type={showOld ? "text" : "password"}
+              name="oldPassword"
+              value={oldPassword}
+              onChange={setOldPassword}
+              placeholder="Mật khẩu hiện tại"
+              icon={Lock}
+              disabled={isSubmitting}
+              suffix={
+                <button type="button" onClick={() => setShowOld((v) => !v)} style={{ color: AUTH_C.mutedLight }}>
+                  {showOld ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              }
+            />
+          )}
+
           <AuthField
             type={showNew ? "text" : "password"}
             name="newPassword"
             value={newPassword}
             onChange={setNewPassword}
-            placeholder="Mật khẩu mới"
+            placeholder={isGoogleAccountWithoutPassword ? "Mật khẩu mới (tối thiểu 6 ký tự)" : "Mật khẩu mới"}
             icon={Lock}
             disabled={isSubmitting}
             suffix={
@@ -133,7 +164,7 @@ export default function ChangePasswordPage() {
             name="confirmPassword"
             value={confirmPassword}
             onChange={setConfirmPassword}
-            placeholder="Xác nhận mật khẩu mới"
+            placeholder={isGoogleAccountWithoutPassword ? "Xác nhận mật khẩu" : "Xác nhận mật khẩu mới"}
             icon={Lock}
             disabled={isSubmitting}
             suffix={
@@ -165,7 +196,11 @@ export default function ChangePasswordPage() {
                 letterSpacing: "0.12em",
               }}
             >
-              {isSubmitting ? "Đang lưu..." : "Cập nhật mật khẩu"}
+              {isSubmitting
+                ? "Đang lưu..."
+                : isGoogleAccountWithoutPassword
+                ? "Thiết lập mật khẩu"
+                : "Cập nhật mật khẩu"}
               <ArrowRight className="h-4 w-4" />
             </button>
           </motion.div>

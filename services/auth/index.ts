@@ -1,5 +1,6 @@
 export {
   changePassword,
+  checkHasPassword,
   forgotPassword,
   login,
   loginWithGoogle,
