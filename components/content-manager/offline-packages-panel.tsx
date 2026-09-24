@@ -47,6 +47,9 @@ export function OfflinePackagesPanel({
   const [scopeType, setScopeType] = useState<"all" | "exhibition">("all");
   const [selectedExhibitionId, setSelectedExhibitionId] = useState("");
   const [packageName, setPackageName] = useState("");
+  const [packageNameEn, setPackageNameEn] = useState("");
+  const [packageDesc, setPackageDesc] = useState("");
+  const [packageDescEn, setPackageDescEn] = useState("");
   const [filterScope, setFilterScope] = useState<"all" | "museum_only" | "exhibition_only">("all");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -124,11 +127,17 @@ export function OfflinePackagesPanel({
         museumId,
         exhibitionId: exId,
         packageName: packageName.trim() || undefined,
+        packageNameEn: packageNameEn.trim() || undefined,
+        description: packageDesc.trim() || undefined,
+        descriptionEn: packageDescEn.trim() || undefined,
       });
       setShowForm(false);
       setVersionId("");
       setSelectedExhibitionId("");
       setPackageName("");
+      setPackageNameEn("");
+      setPackageDesc("");
+      setPackageDescEn("");
       router.refresh();
     } catch (err) {
       setError(getDisplayError(err, "Không thể tạo gói offline."));
@@ -316,12 +325,48 @@ export function OfflinePackagesPanel({
 
           {/* Tên gói hiển thị */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold" style={{ color: T.muted }}>Tên gợi nhớ gói dữ liệu (Tùy chọn)</label>
+            <label className="block text-xs font-semibold" style={{ color: T.muted }}>Tên gói dữ liệu (VI - Tùy chọn)</label>
             <input
               type="text"
               value={packageName}
               onChange={(e) => setPackageName(e.target.value)}
               placeholder="VD: Gói tham quan Chuyên đề Đông Sơn v1.2"
+              className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+              style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold" style={{ color: T.muted }}>Tên gói dữ liệu (EN - Tùy chọn)</label>
+            <input
+              type="text"
+              value={packageNameEn}
+              onChange={(e) => setPackageNameEn(e.target.value)}
+              placeholder="VD: Dong Son Culture Tour Package v1.2"
+              className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+              style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold" style={{ color: T.muted }}>Mô tả gói dữ liệu (VI - Tùy chọn)</label>
+            <textarea
+              rows={2}
+              value={packageDesc}
+              onChange={(e) => setPackageDesc(e.target.value)}
+              placeholder="Mô tả nội dung gói dữ liệu offline..."
+              className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+              style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold" style={{ color: T.muted }}>Mô tả gói dữ liệu (EN - Tùy chọn)</label>
+            <textarea
+              rows={2}
+              value={packageDescEn}
+              onChange={(e) => setPackageDescEn(e.target.value)}
+              placeholder="Offline package description in English..."
               className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
               style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
             />
@@ -411,6 +456,11 @@ export function OfflinePackagesPanel({
                             <span className="text-xs font-medium" style={{ color: isExhibitionEnded ? T.muted : T.text }}>
                               {pkg.exhibitionTitle || pkg.packageName || `Triển lãm #${pkg.exhibitionId}`}
                             </span>
+                            {pkg.packageNameEn && (
+                              <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                                EN: {pkg.packageNameEn}
+                              </span>
+                            )}
                           </div>
                         ) : (
                           <div className="flex flex-col gap-1 items-start">
@@ -428,6 +478,11 @@ export function OfflinePackagesPanel({
                             {pkg.packageName && (
                               <span className="text-xs font-medium" style={{ color: T.muted }}>
                                 {pkg.packageName}
+                              </span>
+                            )}
+                            {pkg.packageNameEn && (
+                              <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
+                                EN: {pkg.packageNameEn}
                               </span>
                             )}
                           </div>

@@ -433,6 +433,9 @@ export function uploadMuseumMap(
   mapType: string,
   mapName: string,
   floorNumber: number,
+  mapNameEn?: string,
+  description?: string,
+  descriptionEn?: string,
 ) {
   const formData = new FormData();
   formData.append("MuseumId", String(museumId));
@@ -440,6 +443,9 @@ export function uploadMuseumMap(
   formData.append("MapType", mapType);
   formData.append("MapName", mapName);
   formData.append("FloorNumber", String(floorNumber));
+  if (mapNameEn?.trim()) formData.append("MapNameEn", mapNameEn.trim());
+  if (description?.trim()) formData.append("Description", description.trim());
+  if (descriptionEn?.trim()) formData.append("DescriptionEn", descriptionEn.trim());
   return apiPostFormAuth<MuseumMapDto>("/api/content/maps", formData);
 }
 

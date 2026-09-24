@@ -579,13 +579,23 @@ export function normalizeMuseumMapDto(
   raw: unknown,
 ): import("@/types/api").MuseumMapDto {
   const o = asRecord(raw);
+  const translations = Array.isArray(pickField<unknown[]>(o, "translations", "Translations"))
+    ? (pickField<unknown[]>(o, "translations", "Translations") as any[])
+    : [];
+  const viTrans = translations.find((t: any) => (t?.languageCode ?? t?.LanguageCode) === "vi");
+  const enTrans = translations.find((t: any) => (t?.languageCode ?? t?.LanguageCode) === "en");
+
   return {
     id: Number(pickField(o, "id", "Id") ?? 0),
     museumId: Number(pickField(o, "museumId", "MuseumId") ?? 0),
     mapImageUrl: pickStr(o, "mapImageUrl", "MapImageUrl") ?? "",
     mapType: pickStr(o, "mapType", "MapType") ?? "floor",
     floorNumber: pickNum(o, "floorNumber", "FloorNumber") ?? undefined,
-    mapName: pickStr(o, "mapName", "MapName") ?? undefined,
+    mapName: pickStr(o, "mapName", "MapName") ?? viTrans?.mapName ?? viTrans?.MapName ?? undefined,
+    mapNameEn: pickStr(o, "mapNameEn", "MapNameEn") ?? enTrans?.mapName ?? enTrans?.MapName ?? undefined,
+    description: (viTrans?.description ?? viTrans?.Description) as string | undefined,
+    descriptionEn: (enTrans?.description ?? enTrans?.Description) as string | undefined,
+    translations,
   };
 }
 
