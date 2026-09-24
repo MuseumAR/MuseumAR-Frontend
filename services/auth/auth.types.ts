@@ -30,6 +30,7 @@ export type ForgotPasswordRequest = {
 export type ResetPasswordRequest = {
   token: string;
   newPassword: string;
+  email?: string;
 };
 
 export type ChangePasswordRequest = {

@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
       await forgotPassword({ email: email.trim() });
       setSent(true);
     } catch (err) {
-      setError(getDisplayError(err, "Không gửi được liên kết. Vui lòng thử lại."));
+      setError(getDisplayError(err, "Không gửi được mã OTP. Vui lòng thử lại."));
     } finally {
       setIsSubmitting(false);
     }
@@ -46,8 +46,8 @@ export default function ForgotPasswordPage() {
       title="Quên mật khẩu"
       subtitle={
         sent
-          ? "Nếu email tồn tại, liên kết đặt lại mật khẩu đã được gửi."
-          : "Nhập email để nhận liên kết đặt lại mật khẩu."
+          ? "Mã OTP đặt lại mật khẩu đã được gửi tới email của bạn."
+          : "Nhập email của bạn để nhận mã OTP đặt lại mật khẩu."
       }
       footer={
         <p className="text-center text-xs" style={{ color: AUTH_C.muted }}>
@@ -59,15 +59,41 @@ export default function ForgotPasswordPage() {
       }
     >
       {sent ? (
-        <div
-          className="rounded-2xl px-4 py-4 text-sm leading-relaxed"
-          style={{
-            background: "rgba(200,155,60,0.08)",
-            border: `1px solid ${AUTH_C.border}`,
-            color: AUTH_C.muted,
-          }}
-        >
-          Hãy kiểm tra hộp thư. Ở môi trường phát triển, backend ghi token ra console máy chủ.
+        <div className="space-y-4">
+          <div
+            className="rounded-2xl px-4 py-4 text-sm leading-relaxed"
+            style={{
+              background: "rgba(200,155,60,0.08)",
+              border: `1px solid ${AUTH_C.border}`,
+              color: AUTH_C.muted,
+            }}
+          >
+            Mã OTP gồm 6 chữ số đã được gửi tới <strong>{email.trim()}</strong> (hiệu lực trong 15 phút). Hãy kiểm tra hộp thư (hoặc mục Spam).
+          </div>
+
+          <Link
+            href={`/reset-password?email=${encodeURIComponent(email.trim())}`}
+            className="flex w-full items-center justify-center gap-2.5 rounded-2xl py-3.5 text-sm font-semibold tracking-wide transition-opacity hover:opacity-90"
+            style={{
+              background: `linear-gradient(135deg, ${AUTH_C.primary} 0%, ${AUTH_C.secondary} 100%)`,
+              color: AUTH_C.card,
+              boxShadow: "0 6px 24px rgba(166,124,45,0.38)",
+              fontFamily: AUTH_CINZEL,
+              letterSpacing: "0.12em",
+            }}
+          >
+            Nhập mã OTP đặt lại mật khẩu
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => setSent(false)}
+            className="w-full text-center text-xs font-medium transition-opacity hover:opacity-80"
+            style={{ color: AUTH_C.muted }}
+          >
+            Gửi lại hoặc đổi email khác
+          </button>
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -103,7 +129,7 @@ export default function ForgotPasswordPage() {
                 letterSpacing: "0.12em",
               }}
             >
-              {isSubmitting ? "Đang gửi..." : "Gửi liên kết đặt lại"}
+              {isSubmitting ? "Đang gửi mã..." : "Gửi mã OTP"}
               <ArrowRight className="h-4 w-4" />
             </button>
           </motion.div>

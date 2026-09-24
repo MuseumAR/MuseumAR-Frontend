@@ -821,13 +821,9 @@ export function TicketShop() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-amber-950">
                     <Calendar className="h-4 w-4 text-amber-700" />
-                    <span>{checkoutTarget.exhibitionId ? "Thời hạn vé triển lãm" : "Ngày tham quan (Đặt ngày đi coi)"}</span>
+                    <span>{checkoutTarget.exhibitionId ? "Thời hạn vé triển lãm" : "Ngày tham quan"}</span>
                   </div>
-                  {!checkoutTarget.exhibitionId ? (
-                    <span className="text-[11px] font-semibold text-amber-800 bg-amber-200/60 px-2 py-0.5 rounded-full">
-                      🎬 Tương tự vé xem phim
-                    </span>
-                  ) : (
+                  {checkoutTarget.exhibitionId && (
                     <span className="text-[11px] font-semibold text-amber-800 bg-amber-200/60 px-2 py-0.5 rounded-full">
                       🏛️ Vé chuyên đề
                     </span>
