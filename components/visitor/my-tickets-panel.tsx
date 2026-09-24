@@ -50,6 +50,7 @@ type OrderGroup = {
   totalCount: number;
   paidCount: number;
   usedCount: number;
+  expiredCount: number;
   focCount: number;
   isGroupOrder: boolean;
   tickets: TicketDto[];
@@ -71,8 +72,8 @@ export function MyTicketsPanel() {
   const [expandedOrders, setExpandedOrders] = useState<Record<string, boolean>>({});
   // Search query per order
   const [searchQueries, setSearchQueries] = useState<Record<string, string>>({});
-  // Status filter per order (all / paid / used)
-  const [statusFilters, setStatusFilters] = useState<Record<string, "all" | "paid" | "used">>({});
+  // Status filter per order (all / paid / used / expired)
+  const [statusFilters, setStatusFilters] = useState<Record<string, "all" | "paid" | "used" | "expired">>({});
   // Page index per order
   const [orderPages, setOrderPages] = useState<Record<string, number>>({});
   const PAGE_SIZE = 15;
@@ -139,6 +140,7 @@ export function MyTicketsPanel() {
       const totalCount = groupTickets.length;
       const paidCount = groupTickets.filter((t) => t.status === "Paid" || t.status === "Active").length;
       const usedCount = groupTickets.filter((t) => t.status === "Used").length;
+      const expiredCount = groupTickets.filter((t) => t.status === "Expired").length;
       const focCount = groupTickets.filter((t) => t.isFoc || t.price === 0).length;
       const isGroupOrder = totalCount >= 30 || focCount > 0;
 
@@ -150,6 +152,7 @@ export function MyTicketsPanel() {
         totalCount,
         paidCount,
         usedCount,
+        expiredCount,
         focCount,
         isGroupOrder,
         tickets: groupTickets,
@@ -429,6 +432,7 @@ export function MyTicketsPanel() {
               const filteredTickets = group.tickets.filter((t) => {
                 if (statusFilter === "paid" && t.status !== "Paid" && t.status !== "Active") return false;
                 if (statusFilter === "used" && t.status !== "Used") return false;
+                if (statusFilter === "expired" && t.status !== "Expired") return false;
                 if (query) {
                   return (
                     t.ticketCode.toLowerCase().includes(query) ||
@@ -489,13 +493,20 @@ export function MyTicketsPanel() {
                           <span>Ngày mua: {formatDateTimeVi(group.purchaseDate)}</span>
                           <span>•</span>
                           <span>
-                            Hiệu lực:{" "}
+                            Ngày tham quan / Hiệu lực:{" "}
                             {group.validDate ? (
-                              formatDateTimeVi(group.validDate)
+                              <strong className={group.expiredCount === group.totalCount && group.paidCount === 0 ? "text-red-600" : "text-amber-900"}>
+                                {formatDateTimeVi(group.validDate)}
+                              </strong>
                             ) : (
-                              <strong className="text-emerald-700">Không thời hạn</strong>
+                              <strong className="text-emerald-700">Trong ngày mua</strong>
                             )}
                           </span>
+                          {group.expiredCount > 0 && (
+                            <span className="font-semibold text-red-600">
+                              • {group.expiredCount} vé đã hết hạn
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -666,6 +677,22 @@ export function MyTicketsPanel() {
                           >
                             ⚪ Đã vào ({group.usedCount})
                           </button>
+                          {group.expiredCount > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setStatusFilters((prev) => ({ ...prev, [group.orderCode]: "expired" }));
+                                setOrderPages((prev) => ({ ...prev, [group.orderCode]: 1 }));
+                              }}
+                              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                                statusFilter === "expired"
+                                  ? "bg-red-700 text-white shadow-xs"
+                                  : "bg-red-50 text-red-800 border border-red-300 hover:bg-red-100"
+                              }`}
+                            >
+                              🔴 Hết hạn ({group.expiredCount})
+                            </button>
+                          )}
                         </div>
                       </div>
 
@@ -722,6 +749,8 @@ export function MyTicketsPanel() {
                                         background:
                                           tItem.status === "Used"
                                             ? "rgba(125,90,60,0.10)"
+                                            : tItem.status === "Expired"
+                                            ? "rgba(220,38,38,0.12)"
                                             : tItem.status === "Refund_Pending"
                                             ? "rgba(234,179,8,0.15)"
                                             : tItem.status === "Refunded"
@@ -730,6 +759,8 @@ export function MyTicketsPanel() {
                                         color:
                                           tItem.status === "Used"
                                             ? C.muted
+                                            : tItem.status === "Expired"
+                                            ? "#DC2626"
                                             : tItem.status === "Refund_Pending"
                                             ? "#B45309"
                                             : tItem.status === "Refunded"
@@ -741,6 +772,8 @@ export function MyTicketsPanel() {
                                         ? "Chờ hoàn tiền"
                                         : tItem.status === "Refunded"
                                         ? "Đã hoàn tiền"
+                                        : tItem.status === "Expired"
+                                        ? "Hết hạn"
                                         : labelStatus(tItem.status)}
                                     </span>
                                   </td>
