@@ -342,6 +342,17 @@ export function normalizeTourRouteDto(
       roomId: pickNum(sr, "roomId", "RoomId") ?? null,
       roomCode: pickStr(sr, "roomCode", "RoomCode") ?? null,
       roomName: pickStr(sr, "roomName", "RoomName") ?? null,
+      exhibitTitleVi: pickStr(sr, "exhibitTitleVi", "ExhibitTitleVi") ?? null,
+      exhibitTitleEn: pickStr(sr, "exhibitTitleEn", "ExhibitTitleEn") ?? null,
+      exhibitDescriptionVi: pickStr(sr, "exhibitDescriptionVi", "ExhibitDescriptionVi") ?? null,
+      exhibitDescriptionEn: pickStr(sr, "exhibitDescriptionEn", "ExhibitDescriptionEn") ?? null,
+      roomNameVi: pickStr(sr, "roomNameVi", "RoomNameVi") ?? null,
+      roomNameEn: pickStr(sr, "roomNameEn", "RoomNameEn") ?? null,
+      audioUrlVi: pickStr(sr, "audioUrlVi", "AudioUrlVi") ?? null,
+      audioUrlEn: pickStr(sr, "audioUrlEn", "AudioUrlEn") ?? null,
+      thumbnailUrl: pickStr(sr, "thumbnailUrl", "ThumbnailUrl") ?? null,
+      locationX: pickNum(sr, "locationX", "LocationX") ?? null,
+      locationY: pickNum(sr, "locationY", "LocationY") ?? null,
     };
   });
 
@@ -443,6 +454,8 @@ export function normalizeTicketDto(
     purchaseDate: String(pickField(o, "purchaseDate", "PurchaseDate") ?? ""),
     validDate: pickStr(o, "validDate", "ValidDate") ?? null,
     status: String(pickField(o, "status", "Status") ?? ""),
+    isFoc: Boolean(pickField(o, "isFoc", "IsFoc") ?? (pickNum(o, "price", "Price") === 0)),
+    orderCode: pickStr(o, "orderCode", "OrderCode") ?? null,
   };
 }
 
@@ -514,6 +527,8 @@ export function normalizeTicketDetailDto(
     ticketCode: String(pickField(o, "ticketCode", "TicketCode") ?? ""),
     price: pickNum(o, "price", "Price") ?? undefined,
     status: String(pickField(o, "status", "Status") ?? ""),
+    isFoc: Boolean(pickField(o, "isFoc", "IsFoc") ?? (pickNum(o, "price", "Price") === 0)),
+    isGroupOrder: Boolean(pickField(o, "isGroupOrder", "IsGroupOrder")),
     purchaseDate: String(pickField(o, "purchaseDate", "PurchaseDate") ?? ""),
     validDate: pickStr(o, "validDate", "ValidDate") ?? null,
     ticketType: {

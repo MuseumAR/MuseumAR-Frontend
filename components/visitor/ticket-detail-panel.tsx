@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { CheckCircle2, ArrowLeft, Loader2, QrCode, ShieldCheck, RotateCcw, Clock, X, AlertCircle } from "lucide-react";
+import { CheckCircle2, ArrowLeft, Loader2, QrCode, ShieldCheck, RotateCcw, Clock, X, AlertCircle, Copy, Check, Users } from "lucide-react";
 import { Navbar } from "@/components/shared/navbar";
 import { useAuth } from "@/context/auth-context";
 import { formatDateTimeVi, formatVnd } from "@/lib/format";
@@ -50,6 +50,10 @@ export function TicketDetailPanel() {
   const [checkInLoading, setCheckInLoading] = useState(false);
   const [checkInSuccess, setCheckInSuccess] = useState(false);
   const [checkInError, setCheckInError] = useState<string | null>(null);
+
+  // QR Mode toggle (Individual Ticket vs Master Order QR)
+  const [qrMode, setQrMode] = useState<"ticket" | "master">("ticket");
+  const [copied, setCopied] = useState(false);
 
   // Refund request state
   const [isRefundModalOpen, setIsRefundModalOpen] = useState(false);
@@ -265,14 +269,26 @@ export function TicketDetailPanel() {
               >
                 Chi tiết vé
               </p>
-              <h1
-                className="mt-2 text-2xl font-semibold tracking-tight"
-                style={{ color: C.text }}
-              >
-                {detail.ticketType.name}
-              </h1>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <h1
+                  className="text-2xl font-semibold tracking-tight"
+                  style={{ color: C.text }}
+                >
+                  {detail.ticketType.name}
+                </h1>
+                {detail.isFoc && (
+                  <span className="rounded-full px-3 py-0.5 text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                    🎁 Vé FOC (Miễn phí dẫn đoàn)
+                  </span>
+                )}
+              </div>
               <p className="mt-1 font-mono text-sm" style={{ color: C.muted }}>
-                {detail.ticketCode}
+                Mã vé: {detail.ticketCode}
+                {detail.order.orderCode && (
+                  <span className="ml-3 text-stone-500 font-sans text-xs">
+                    (Mã đơn: <span className="font-mono font-semibold">{detail.order.orderCode}</span>)
+                  </span>
+                )}
               </p>
               <span
                 className="mt-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold"
@@ -645,9 +661,41 @@ export function TicketDetailPanel() {
               className="border-t pt-6"
               style={{ borderColor: C.border }}
             >
-              <h2 className="mb-3 text-sm font-semibold" style={{ color: C.text }}>
-                Mã QR Vé
-              </h2>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-sm font-semibold" style={{ color: C.text }}>
+                  Mã QR Soát vé
+                </h2>
+                {detail.isGroupOrder && (
+                  <div
+                    className="inline-flex rounded-full p-1 border text-xs"
+                    style={{ background: C.bg, borderColor: C.border }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setQrMode("ticket")}
+                      className={`px-3 py-1 rounded-full font-medium transition-all ${
+                        qrMode === "ticket"
+                          ? "bg-amber-600 text-white font-bold shadow-sm"
+                          : "text-stone-700 hover:text-stone-900"
+                      }`}
+                    >
+                      Mã Vé Con
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setQrMode("master")}
+                      className={`px-3 py-1 rounded-full font-medium transition-all ${
+                        qrMode === "master"
+                          ? "bg-amber-700 text-white font-bold shadow-sm"
+                          : "text-stone-700 hover:text-stone-900"
+                      }`}
+                    >
+                      Mã QR Tổng (Đoàn)
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <div
                 className="rounded-2xl p-5 text-center"
                 style={{
@@ -673,38 +721,59 @@ export function TicketDetailPanel() {
                       Vé này đã được hoàn tiền thành công, không thể sử dụng để quét check-in vào bảo tàng.
                     </p>
                   </div>
-                ) : detail.qrCodeData &&
-                (detail.qrCodeData.startsWith("http") ||
-                  detail.qrCodeData.startsWith("data:image")) ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={detail.qrCodeData}
-                    alt="Mã QR check-in"
-                    className="mx-auto h-44 w-44 rounded-xl object-contain"
-                    style={{ background: "#fff", border: `1px solid ${C.border}` }}
-                  />
                 ) : (
-                  <div
-                    className="mx-auto flex h-28 w-28 items-center justify-center rounded-xl"
-                    style={{
-                      background: C.surface,
-                      border: `1px dashed ${C.border}`,
-                    }}
-                  >
-                    <QrCode className="h-14 w-14" style={{ color: C.primary }} />
-                  </div>
-                )}
-                {!isRefunded && (
                   <>
-                    <p className="mt-4 text-sm font-medium" style={{ color: C.text }}>
-                      Đưa mã này cho cổng khi check-in
-                    </p>
-                    <p
-                      className="mt-2 break-all font-mono text-lg font-semibold tracking-wide"
-                      style={{ color: C.text }}
+                    <div
+                      className="mx-auto flex h-32 w-32 items-center justify-center rounded-2xl shadow-sm"
+                      style={{
+                        background: C.surface,
+                        border: `1px dashed ${C.border}`,
+                      }}
                     >
-                      {detail.qrCodeData || detail.ticketCode || "—"}
-                    </p>
+                      <QrCode className="h-16 w-16" style={{ color: C.primary }} />
+                    </div>
+
+                    <div className="mt-4">
+                      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: C.mutedLight }}>
+                        {qrMode === "master" ? "Mã QR Tổng của Đơn hàng (Check-in cả đoàn)" : "Mã Vé Cá nhân"}
+                      </p>
+                      <p
+                        className="mt-1 break-all font-mono text-xl font-bold tracking-wide"
+                        style={{ color: C.text }}
+                      >
+                        {qrMode === "master" ? detail.order.orderCode : (detail.ticketCode || "—")}
+                      </p>
+                      <p className="mt-1 text-xs" style={{ color: C.muted }}>
+                        {qrMode === "master"
+                          ? "Trưởng đoàn có thể xuất trình mã này tại cổng để nhân viên quét Check-in nhanh cho cả đoàn."
+                          : "Đưa mã này cho nhân viên tại cổng bảo tàng khi soát vé lẻ."}
+                      </p>
+
+                      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const textToCopy = qrMode === "master" ? detail.order.orderCode : detail.ticketCode;
+                            navigator.clipboard.writeText(textToCopy);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 2000);
+                          }}
+                          className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold bg-white border border-stone-300 text-stone-700 hover:bg-stone-50 transition-colors shadow-sm"
+                        >
+                          {copied ? (
+                            <>
+                              <Check className="h-3.5 w-3.5 text-emerald-600" />
+                              Đã sao chép!
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3.5 w-3.5" />
+                              Sao chép mã {qrMode === "master" ? "đơn hàng" : "vé"}
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
                   </>
                 )}
               </div>
