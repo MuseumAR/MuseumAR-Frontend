@@ -4,7 +4,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowRight, Eye, EyeOff, Lock } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Lock, ShieldCheck } from "lucide-react";
 import { AuthField } from "@/components/auth/auth-field";
 import { AuthPageShell } from "@/components/auth/auth-page-shell";
 import { useAuth } from "@/context/auth-context";
@@ -14,7 +14,7 @@ import {
   getFirstValidationError,
   validateChangePassword,
 } from "@/lib/validation";
-import { changePassword, checkHasPassword, getHomePathForRole } from "@/services/auth";
+import { changePassword, checkHasPassword, getHomePathForRole, sendPasswordOtp } from "@/services/auth";
 
 export default function ChangePasswordPage() {
   const router = useRouter();
@@ -24,10 +24,15 @@ export default function ChangePasswordPage() {
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [otp, setOtp] = useState("");
   const [showOld, setShowOld] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCooldown, setOtpCooldown] = useState(0);
+  const [otpMessage, setOtpMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
@@ -43,12 +48,41 @@ export default function ChangePasswordPage() {
     }
   }, [isAuthenticated, isLoading, router]);
 
+  useEffect(() => {
+    if (otpCooldown <= 0) return;
+    const timer = setTimeout(() => {
+      setOtpCooldown((c) => c - 1);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [otpCooldown]);
+
+  async function handleSendOtp() {
+    setIsSendingOtp(true);
+    setOtpMessage(null);
+    setError(null);
+    try {
+      const res = await sendPasswordOtp();
+      setOtpSent(true);
+      setOtpCooldown(60);
+      setOtpMessage(
+        res?.email
+          ? `Mã OTP đã được gửi đến email ${res.email}.`
+          : "Mã OTP đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư."
+      );
+    } catch (err) {
+      setError(getDisplayError(err, "Không thể gửi mã OTP. Vui lòng thử lại."));
+    } finally {
+      setIsSendingOtp(false);
+    }
+  }
+
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
 
     const isExistingPassword = hasPassword !== false;
     const validation = validateChangePassword({
+      otp,
       oldPassword,
       newPassword,
       confirmPassword,
@@ -62,6 +96,7 @@ export default function ChangePasswordPage() {
     setIsSubmitting(true);
     try {
       await changePassword({
+        otp: otp.trim(),
         oldPassword: isExistingPassword ? oldPassword : "",
         newPassword,
       });
@@ -100,11 +135,11 @@ export default function ChangePasswordPage() {
       subtitle={
         done
           ? isGoogleAccountWithoutPassword
-            ? "Mật khẩu đã được thiết lập. Bạn có thể đăng nhập bằng cả Google và Email + Mật khẩu."
+            ? "Mật khẩu đã được thiết lập thành công. Bạn có thể đăng nhập bằng cả Google và Email + Mật khẩu."
             : "Mật khẩu đã được cập nhật thành công."
           : isGoogleAccountWithoutPassword
-          ? "Tài khoản của bạn đăng nhập qua Google. Bạn có thể tạo mật khẩu để đăng nhập trực tiếp."
-          : "Cập nhật mật khẩu tài khoản."
+          ? "Tài khoản của bạn đăng nhập qua Google. Bạn cần xác thực OTP email để thiết lập mật khẩu."
+          : "Cập nhật mật khẩu tài khoản kèm xác thực OTP gửi về email."
       }
       footer={
         done ? (
@@ -174,6 +209,47 @@ export default function ChangePasswordPage() {
             }
           />
 
+          {/* Ô nhập mã OTP gửi về Email */}
+          <div className="space-y-1.5 pt-1">
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <AuthField
+                  type="text"
+                  name="otp"
+                  value={otp}
+                  onChange={(val) => setOtp(val.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="Mã OTP 6 số từ email"
+                  icon={ShieldCheck}
+                  disabled={isSubmitting}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleSendOtp}
+                disabled={isSendingOtp || otpCooldown > 0 || isSubmitting}
+                className="flex h-[46px] items-center justify-center rounded-2xl px-4 text-xs font-semibold whitespace-nowrap transition-all disabled:cursor-not-allowed disabled:opacity-60"
+                style={{
+                  background: otpCooldown > 0 ? "rgba(166,124,45,0.12)" : AUTH_C.primary,
+                  color: otpCooldown > 0 ? AUTH_C.primary : AUTH_C.card,
+                  border: `1px solid ${AUTH_C.border}`,
+                }}
+              >
+                {isSendingOtp
+                  ? "Đang gửi..."
+                  : otpCooldown > 0
+                  ? `Gửi lại (${otpCooldown}s)`
+                  : otpSent
+                  ? "Gửi lại OTP"
+                  : "Gửi mã OTP"}
+              </button>
+            </div>
+            {otpMessage && (
+              <p className="px-1 text-[11px]" style={{ color: "#2E7D32" }}>
+                {otpMessage}
+              </p>
+            )}
+          </div>
+
           {error && (
             <p
               className="rounded-xl px-3 py-2 text-xs"
@@ -199,8 +275,8 @@ export default function ChangePasswordPage() {
               {isSubmitting
                 ? "Đang lưu..."
                 : isGoogleAccountWithoutPassword
-                ? "Thiết lập mật khẩu"
-                : "Cập nhật mật khẩu"}
+                ? "Xác nhận & Thiết lập mật khẩu"
+                : "Xác nhận & Cập nhật mật khẩu"}
               <ArrowRight className="h-4 w-4" />
             </button>
           </motion.div>

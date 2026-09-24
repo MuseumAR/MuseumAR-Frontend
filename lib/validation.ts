@@ -33,6 +33,7 @@ export type ResetPasswordInput = {
 };
 
 export type ChangePasswordInput = {
+  otp: string;
   oldPassword?: string;
   newPassword: string;
   confirmPassword: string;
@@ -182,7 +183,13 @@ export function validateResetPassword(input: ResetPasswordInput): ValidationResu
 
 export function validateChangePassword(input: ChangePasswordInput): ValidationResult {
   const errors: Record<string, string> = {};
-  const { oldPassword, newPassword, confirmPassword, requireOldPassword = true } = input;
+  const { otp, oldPassword, newPassword, confirmPassword, requireOldPassword = true } = input;
+
+  if (!otp || !otp.trim()) {
+    errors.otp = "Vui lòng nhập mã OTP gửi về email.";
+  } else if (!/^\d{6}$/.test(otp.trim())) {
+    errors.otp = "Mã OTP phải gồm 6 chữ số.";
+  }
 
   if (requireOldPassword) {
     if (!oldPassword) {
