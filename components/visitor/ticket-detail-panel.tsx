@@ -495,6 +495,14 @@ export function TicketDetailPanel() {
               </div>
             )}
 
+            {detail.status === "Expired" && (
+              <div
+                className="rounded-2xl p-4 text-center text-xs font-semibold bg-red-50 border border-red-200 text-red-700"
+              >
+                ⚠️ Vé này đã hết hạn sử dụng ({detail.exhibition ? "khi triển lãm kết thúc" : "do quá ngày tham quan đã đặt"}). Không thể sử dụng để vào cổng hoặc yêu cầu hoàn tiền.
+              </div>
+            )}
+
             <section>
               <h2 className="mb-3 text-sm font-semibold" style={{ color: C.text }}>
                 Vé
@@ -507,11 +515,11 @@ export function TicketDetailPanel() {
                   value={formatDateTimeVi(detail.purchaseDate)}
                 />
                 <Field
-                  label="Hiệu lực"
+                  label={detail.exhibition ? "Hiệu lực triển lãm" : "Ngày tham quan"}
                   value={
                     detail.validDate
                       ? formatDateTimeVi(detail.validDate)
-                      : "Không thời hạn (Vô thời hạn)"
+                      : "Trong ngày mua"
                   }
                 />
               </dl>

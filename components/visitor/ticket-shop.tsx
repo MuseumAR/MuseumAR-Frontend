@@ -86,6 +86,14 @@ export function TicketShop() {
   const [checkoutTarget, setCheckoutTarget] = useState<TicketTypeDto | null>(null);
   const [selectedPromoId, setSelectedPromoId] = useState<number | null>(null);
   const [checkoutQty, setCheckoutQty] = useState<number>(1);
+  const getTodayIso = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+  const [visitDate, setVisitDate] = useState<string>(getTodayIso);
 
   // Active payment modal state (Shopee retention flow)
   const [pendingOrder, setPendingOrder] = useState<PendingOrder | null>(null);
@@ -271,7 +279,12 @@ export function TicketShop() {
     }));
   }
 
-  async function handleInitiateOrder(ticketType: TicketTypeDto, quantity: number, promoId: number | null) {
+  async function handleInitiateOrder(
+    ticketType: TicketTypeDto,
+    quantity: number,
+    promoId: number | null,
+    chosenVisitDate?: string | null
+  ) {
     setError(null);
     setSuccess(null);
     setModalError(null);
@@ -296,6 +309,7 @@ export function TicketShop() {
         ticketTypeId: ticketType.id,
         quantity,
         promotionId: actualPromoId,
+        visitDate: ticketType.exhibitionId ? null : (chosenVisitDate || visitDate),
       });
 
       let unitPrice = ticketType.price;
@@ -717,6 +731,7 @@ export function TicketShop() {
                           setCheckoutTarget(ticket);
                           setSelectedPromoId(null);
                           setCheckoutQty(quantities[ticket.id] ?? 1);
+                          setVisitDate(getTodayIso());
                           setIsCheckoutOpen(true);
                         }}
                         disabled={busy}
@@ -798,6 +813,72 @@ export function TicketShop() {
                 )}
                 {checkoutTarget.description && (
                   <p className="text-xs mt-1" style={{ color: C.muted }}>{checkoutTarget.description}</p>
+                )}
+              </div>
+
+              {/* Ngày tham quan (Visit Date) - Phân biệt vé triển lãm & vé thường */}
+              <div className="rounded-2xl p-4 bg-amber-50/70 border border-amber-300/80 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-950">
+                    <Calendar className="h-4 w-4 text-amber-700" />
+                    <span>{checkoutTarget.exhibitionId ? "Thời hạn vé triển lãm" : "Ngày tham quan (Đặt ngày đi coi)"}</span>
+                  </div>
+                  {!checkoutTarget.exhibitionId ? (
+                    <span className="text-[11px] font-semibold text-amber-800 bg-amber-200/60 px-2 py-0.5 rounded-full">
+                      🎬 Tương tự vé xem phim
+                    </span>
+                  ) : (
+                    <span className="text-[11px] font-semibold text-amber-800 bg-amber-200/60 px-2 py-0.5 rounded-full">
+                      🏛️ Vé chuyên đề
+                    </span>
+                  )}
+                </div>
+
+                {checkoutTarget.exhibitionId ? (
+                  <p className="text-xs text-stone-700 leading-relaxed">
+                    Vé chuyên đề triển lãm có giá trị sử dụng trong suốt thời gian triển lãm diễn ra (hết hạn vào lúc 23:59 ngày kết thúc triển lãm).
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-xs text-stone-700 leading-relaxed">
+                      Quý khách chọn ngày đi coi. Vé chỉ có giá trị sử dụng trong đúng ngày đã chọn (đến 23:59 cùng ngày). Nếu hết ngày mà không đi thì vé sẽ hết hạn (Expired).
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 pt-1">
+                      <input
+                        type="date"
+                        min={getTodayIso()}
+                        value={visitDate}
+                        onChange={(e) => {
+                          if (e.target.value) setVisitDate(e.target.value);
+                        }}
+                        className="px-3 py-1.5 text-xs font-bold rounded-xl border border-amber-300 bg-white text-stone-800 shadow-xs focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
+                      />
+                      {[
+                        { label: "Hôm nay", days: 0 },
+                        { label: "Ngày mai", days: 1 },
+                        { label: "Ngày kia", days: 2 },
+                      ].map((item) => {
+                        const targetD = new Date();
+                        targetD.setDate(targetD.getDate() + item.days);
+                        const isoStr = `${targetD.getFullYear()}-${String(targetD.getMonth() + 1).padStart(2, "0")}-${String(targetD.getDate()).padStart(2, "0")}`;
+                        const isSelected = visitDate === isoStr;
+                        return (
+                          <button
+                            key={item.label}
+                            type="button"
+                            onClick={() => setVisitDate(isoStr)}
+                            className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-all ${
+                              isSelected
+                                ? "bg-amber-700 text-white font-bold shadow-xs"
+                                : "bg-white text-amber-900 border border-amber-200 hover:bg-amber-100/50"
+                            }`}
+                          >
+                            {item.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -1026,7 +1107,7 @@ export function TicketShop() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => handleInitiateOrder(checkoutTarget, checkoutQty, selectedPromoId)}
+                      onClick={() => handleInitiateOrder(checkoutTarget, checkoutQty, selectedPromoId, visitDate)}
                       disabled={buyingId === checkoutTarget.id}
                       className="flex-1 rounded-full py-2.5 text-xs font-bold text-white transition-opacity hover:opacity-90 flex items-center justify-center gap-1.5 disabled:opacity-50"
                       style={{

@@ -612,6 +612,7 @@ export type CreateOrderRequestDto = {
   ticketTypeId: number;
   quantity: number;
   promotionId?: number | null;
+  visitDate?: string | null;
 };
 
 /** POST /api/ticketing/create-order — returns orderCode and optional PayOS link/QR */
