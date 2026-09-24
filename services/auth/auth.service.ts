@@ -1,4 +1,4 @@
-import { apiPost, apiPostAuth, getApiUrl } from "./auth.api";
+import { apiGetAuth, apiPost, apiPostAuth, getApiUrl } from "./auth.api";
 import { clearAuthSession, saveAuthSession } from "./auth.storage";
 import { refreshAccessToken } from "./refresh-token";
 import { AppError } from "@/lib/validation";
@@ -60,6 +60,15 @@ export async function changePassword(
   payload: ChangePasswordRequest,
 ): Promise<void> {
   await apiPostAuth<null>("/api/auth/change-password", payload);
+}
+
+export async function checkHasPassword(): Promise<boolean> {
+  try {
+    const res = await apiGetAuth<{ hasPassword: boolean }>("/api/auth/has-password");
+    return res?.hasPassword ?? true;
+  } catch {
+    return true;
+  }
 }
 
 export async function loginWithGoogle(

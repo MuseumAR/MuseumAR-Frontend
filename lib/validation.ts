@@ -33,9 +33,10 @@ export type ResetPasswordInput = {
 };
 
 export type ChangePasswordInput = {
-  oldPassword: string;
+  oldPassword?: string;
   newPassword: string;
   confirmPassword: string;
+  requireOldPassword?: boolean;
 };
 
 export type CreateArtifactInput = {
@@ -181,17 +182,19 @@ export function validateResetPassword(input: ResetPasswordInput): ValidationResu
 
 export function validateChangePassword(input: ChangePasswordInput): ValidationResult {
   const errors: Record<string, string> = {};
-  const { oldPassword, newPassword, confirmPassword } = input;
+  const { oldPassword, newPassword, confirmPassword, requireOldPassword = true } = input;
 
-  if (!oldPassword) {
-    errors.oldPassword = "Vui lòng nhập mật khẩu hiện tại.";
+  if (requireOldPassword) {
+    if (!oldPassword) {
+      errors.oldPassword = "Vui lòng nhập mật khẩu hiện tại.";
+    }
   }
 
   if (!newPassword) {
     errors.newPassword = "Vui lòng nhập mật khẩu mới.";
   } else if (newPassword.length < 6) {
     errors.newPassword = "Mật khẩu phải có ít nhất 6 ký tự.";
-  } else if (newPassword === oldPassword) {
+  } else if (requireOldPassword && oldPassword && newPassword === oldPassword) {
     errors.newPassword = "Mật khẩu mới phải khác mật khẩu hiện tại.";
   }
 
