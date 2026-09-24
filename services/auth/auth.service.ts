@@ -62,6 +62,10 @@ export async function changePassword(
   await apiPostAuth<null>("/api/auth/change-password", payload);
 }
 
+export async function sendPasswordOtp(): Promise<{ email?: string }> {
+  return apiPostAuth<{ email?: string }>("/api/auth/send-password-otp", {});
+}
+
 export async function checkHasPassword(): Promise<boolean> {
   try {
     const res = await apiGetAuth<{ hasPassword: boolean }>("/api/auth/has-password");

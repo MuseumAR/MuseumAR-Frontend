@@ -33,6 +33,7 @@ export type ResetPasswordRequest = {
 };
 
 export type ChangePasswordRequest = {
+  otp: string;
   oldPassword?: string;
   newPassword: string;
 };

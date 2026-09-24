@@ -9,6 +9,7 @@ export {
   register,
   resendVerification,
   resetPassword,
+  sendPasswordOtp,
   verifyEmail,
 } from "./auth.service";
 export {
