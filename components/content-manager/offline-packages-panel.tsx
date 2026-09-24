@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useMemo } from "react";
-import { Plus, Download, FileArchive, CheckCircle2, Clock, AlertTriangle, Layers, Landmark } from "lucide-react";
+import { Plus, Download, FileArchive, CheckCircle2, Clock, AlertTriangle, Layers, Landmark, Lock } from "lucide-react";
 import { dashboardTheme as T, cinzel, dashboardTitleClass } from "@/lib/dashboard-theme";
 import { getDisplayError } from "@/lib/validation";
 import { labelStatus } from "@/lib/status-labels";
@@ -85,6 +85,26 @@ export function OfflinePackagesPanel({
       return b.id - a.id;
     });
   }, [packages, filterScope]);
+
+  // Tìm gói mới nhất cho mỗi phạm vi (Toàn bảo tàng hoặc từng Chuyên đề) để khóa các gói cũ
+  const latestPackageByScope = useMemo(() => {
+    const map = new Map<string, OfflinePackageDto>();
+    for (const p of packages) {
+      if (p.status !== "Available") continue;
+      const key = p.exhibitionId ? `ex_${p.exhibitionId}` : "museum_all";
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, p);
+      } else {
+        const existingVer = existing.versionId ?? 0;
+        const pVer = p.versionId ?? 0;
+        if (pVer > existingVer || (pVer === existingVer && p.id > existing.id)) {
+          map.set(key, p);
+        }
+      }
+    }
+    return map;
+  }, [packages]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -437,6 +457,11 @@ export function OfflinePackagesPanel({
                     ? pkg.packageNameEn || exhibitionEn
                     : pkg.packageNameEn || "All Museum Exhibits";
 
+                  const scopeKey = pkg.exhibitionId ? `ex_${pkg.exhibitionId}` : "museum_all";
+                  const latestInScope = latestPackageByScope.get(scopeKey);
+                  const isSuperseded = Boolean(latestInScope && latestInScope.id !== pkg.id);
+                  const latestVersionNumber = latestInScope?.versionId;
+
                   return (
                     <tr key={pkg.id} className="transition-colors hover:bg-[rgba(200,155,69,0.05)]" style={{ borderBottom: `1px solid ${T.border}` }}>
                       <td className="px-5 py-4 font-mono font-bold" style={{ color: T.text }}>
@@ -505,30 +530,45 @@ export function OfflinePackagesPanel({
                       </td>
 
                       <td className="px-5 py-4">
-                        <span
-                          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                          style={{
-                            background: isAvailable
-                              ? "rgba(79,125,74,0.12)"
-                              : pkg.status === "Building"
-                              ? "rgba(200,155,69,0.15)"
-                              : "rgba(180,40,40,0.12)",
-                            color: isAvailable
-                              ? T.success
-                              : pkg.status === "Building"
-                              ? T.primaryDark
-                              : T.danger,
-                          }}
-                        >
-                          {isAvailable ? (
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                          ) : pkg.status === "Building" ? (
-                            <Clock className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <AlertTriangle className="h-3.5 w-3.5" />
-                          )}
-                          {labelStatus(pkg.status) || "—"}
-                        </span>
+                        {isAvailable && isSuperseded ? (
+                          <span
+                            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                            style={{
+                              background: "rgba(100,116,139,0.12)",
+                              color: "#64748b",
+                              border: "1px solid rgba(100,116,139,0.25)",
+                            }}
+                            title={`Gói này đã cũ và bị khóa vì đã có phiên bản v${latestVersionNumber} mới hơn.`}
+                          >
+                            <Lock className="h-3.5 w-3.5" />
+                            Đã thay thế (v{latestVersionNumber})
+                          </span>
+                        ) : (
+                          <span
+                            className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold"
+                            style={{
+                              background: isAvailable
+                                ? "rgba(79,125,74,0.12)"
+                                : pkg.status === "Building"
+                                ? "rgba(200,155,69,0.15)"
+                                : "rgba(180,40,40,0.12)",
+                              color: isAvailable
+                                ? T.success
+                                : pkg.status === "Building"
+                                ? T.primaryDark
+                                : T.danger,
+                            }}
+                          >
+                            {isAvailable ? (
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                            ) : pkg.status === "Building" ? (
+                              <Clock className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <AlertTriangle className="h-3.5 w-3.5" />
+                            )}
+                            {isAvailable ? "Sẵn sàng" : labelStatus(pkg.status) || "—"}
+                          </span>
+                        )}
                       </td>
 
                       <td className="px-5 py-4 font-mono text-xs font-medium" style={{ color: T.text }}>
@@ -547,7 +587,20 @@ export function OfflinePackagesPanel({
                       </td>
 
                       <td className="px-5 py-4">
-                        {isAvailable && pkg.packageUrl ? (
+                        {isAvailable && isSuperseded ? (
+                          <span
+                            title={`Gói phiên bản cũ (v${pkg.versionId}) đã bị khóa tải vì đã có gói v${latestVersionNumber} mới nhất.`}
+                            className="inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium cursor-not-allowed opacity-60"
+                            style={{
+                              background: "rgba(100,116,139,0.12)",
+                              color: "#64748b",
+                              border: "1px solid rgba(100,116,139,0.25)",
+                            }}
+                          >
+                            <Lock className="h-3.5 w-3.5" />
+                            Đã khóa tải
+                          </span>
+                        ) : isAvailable && pkg.packageUrl ? (
                           <a
                             href={downloadUrl}
                             target="_blank"
