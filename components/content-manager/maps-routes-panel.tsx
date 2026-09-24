@@ -139,6 +139,9 @@ export function MapsRoutesPanel({
   const [mapPreview, setMapPreview] = useState<string | null>(null);
   const [mapType, setMapType] = useState("floor");
   const [mapName, setMapName] = useState("");
+  const [mapNameEn, setMapNameEn] = useState("");
+  const [mapDesc, setMapDesc] = useState("");
+  const [mapDescEn, setMapDescEn] = useState("");
   const [floorNumber, setFloorNumber] = useState("1");
   const [selectedMap, setSelectedMap] = useState<MuseumMapDto | null>(null);
 
@@ -160,6 +163,9 @@ export function MapsRoutesPanel({
   // Map edit state
   const [editingMap, setEditingMap] = useState<MuseumMapDto | null>(null);
   const [editMapName, setEditMapName] = useState("");
+  const [editMapNameEn, setEditMapNameEn] = useState("");
+  const [editMapDesc, setEditMapDesc] = useState("");
+  const [editMapDescEn, setEditMapDescEn] = useState("");
   const [editMapFloor, setEditMapFloor] = useState("1");
   const [editMapFile, setEditMapFile] = useState<File | null>(null);
   const [editMapPreview, setEditMapPreview] = useState<string | null>(null);
@@ -168,7 +174,22 @@ export function MapsRoutesPanel({
 
   function openEditMapModal(map: MuseumMapDto) {
     setEditingMap(map);
-    setEditMapName(getMapDisplayName(map));
+    setEditMapName(map.mapName ?? getMapDisplayName(map));
+    setEditMapNameEn(
+      map.mapNameEn ??
+        map.translations?.find((t) => t.languageCode === "en")?.mapName ??
+        ""
+    );
+    setEditMapDesc(
+      map.description ??
+        map.translations?.find((t) => t.languageCode === "vi")?.description ??
+        ""
+    );
+    setEditMapDescEn(
+      map.descriptionEn ??
+        map.translations?.find((t) => t.languageCode === "en")?.description ??
+        ""
+    );
     setEditMapFloor(map.floorNumber != null ? String(map.floorNumber) : "1");
     setEditMapFile(null);
     setEditMapPreview(map.mapImageUrl || null);
@@ -188,8 +209,17 @@ export function MapsRoutesPanel({
       const formData = new FormData();
       // BE now stores MapName and MapType separately — do not put display name in MapType
       formData.append("MapName", editMapName.trim());
+      if (editMapNameEn.trim()) {
+        formData.append("MapNameEn", editMapNameEn.trim());
+      }
       formData.append("MapType", editingMap.mapType?.trim() || "floor");
       formData.append("FloorNumber", editMapFloor);
+      if (editMapDesc.trim()) {
+        formData.append("Description", editMapDesc.trim());
+      }
+      if (editMapDescEn.trim()) {
+        formData.append("DescriptionEn", editMapDescEn.trim());
+      }
       if (editMapFile) {
         formData.append("MapImage", editMapFile);
       }
@@ -329,10 +359,22 @@ export function MapsRoutesPanel({
     setSubmitting("map");
     setMapError(null);
     try {
-      await createMapWithImage(museumId, mapFile, mapType, mapName.trim(), Number(floorNumber));
+      await createMapWithImage(
+        museumId,
+        mapFile,
+        mapType,
+        mapName.trim(),
+        Number(floorNumber),
+        mapNameEn.trim() || undefined,
+        mapDesc.trim() || undefined,
+        mapDescEn.trim() || undefined,
+      );
       setMapFile(null);
       setMapPreview(null);
       setMapName("");
+      setMapNameEn("");
+      setMapDesc("");
+      setMapDescEn("");
       setFloorNumber("1");
       setMapType("floor");
       if (mapFileRef.current) mapFileRef.current.value = "";
@@ -494,9 +536,9 @@ export function MapsRoutesPanel({
                     </p>
                   )}
                 </div>
-                <div className="space-y-1.5 sm:col-span-2">
+                <div className="space-y-1.5">
                   <label className="block text-sm" style={{ color: T.muted }}>
-                    Tên bản đồ *
+                    Tên sơ đồ (VI) *
                   </label>
                   <input
                     type="text"
@@ -504,6 +546,19 @@ export function MapsRoutesPanel({
                     placeholder="vd. Bản đồ tầng trệt, Bản đồ tầng 1"
                     value={mapName}
                     onChange={(e) => setMapName(e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="block text-sm" style={{ color: T.muted }}>
+                    Tên sơ đồ (EN)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="vd. Ground Floor Map, 1st Floor Map"
+                    value={mapNameEn}
+                    onChange={(e) => setMapNameEn(e.target.value)}
                     className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
                     style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
                   />
@@ -537,6 +592,32 @@ export function MapsRoutesPanel({
                     />
                   </div>
                 )}
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="block text-sm" style={{ color: T.muted }}>
+                    Mô tả sơ đồ (VI)
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Mô tả sơ đồ tầng bằng tiếng Việt..."
+                    value={mapDesc}
+                    onChange={(e) => setMapDesc(e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                  />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="block text-sm" style={{ color: T.muted }}>
+                    Mô tả sơ đồ (EN)
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="Floor map description in English..."
+                    value={mapDescEn}
+                    onChange={(e) => setMapDescEn(e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                    style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+                  />
+                </div>
               </div>
               {mapError && (
                 <p className="mt-4 text-sm" style={{ color: "#8B2E2E" }}>
@@ -585,6 +666,11 @@ export function MapsRoutesPanel({
                       <p onClick={() => setSelectedMap(item)} className="font-medium cursor-pointer hover:underline" style={{ color: T.text }}>
                         {name}
                       </p>
+                      {item.mapNameEn && (
+                        <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
+                          EN: {item.mapNameEn}
+                        </p>
+                      )}
                       <p className="text-xs" style={{ color: T.mutedLight }}>
                         Bản đồ #{item.id}
                       </p>
@@ -642,7 +728,7 @@ export function MapsRoutesPanel({
         >
           <form
             onSubmit={handleUpdateMap}
-            className="relative w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-4"
+            className="relative w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto"
             style={{ background: T.surface, border: `1px solid ${T.border}` }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -661,14 +747,28 @@ export function MapsRoutesPanel({
 
             <div className="space-y-1.5">
               <label className="block text-xs font-medium" style={{ color: T.muted }}>
-                Tên / loại sơ đồ *
+                Tên sơ đồ (VI) *
               </label>
               <input
                 type="text"
                 required
                 value={editMapName}
                 onChange={(e) => setEditMapName(e.target.value)}
-                placeholder="vd. Sơ đồ tầng 1"
+                placeholder="vd. Bản đồ tầng 1"
+                className="w-full rounded-xl px-4 py-2 text-sm outline-none"
+                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium" style={{ color: T.muted }}>
+                Tên sơ đồ (EN)
+              </label>
+              <input
+                type="text"
+                value={editMapNameEn}
+                onChange={(e) => setEditMapNameEn(e.target.value)}
+                placeholder="vd. 1st Floor Map"
                 className="w-full rounded-xl px-4 py-2 text-sm outline-none"
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
               />
@@ -683,6 +783,34 @@ export function MapsRoutesPanel({
                 required
                 value={editMapFloor}
                 onChange={(e) => setEditMapFloor(e.target.value)}
+                className="w-full rounded-xl px-4 py-2 text-sm outline-none"
+                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium" style={{ color: T.muted }}>
+                Mô tả sơ đồ (VI)
+              </label>
+              <textarea
+                rows={2}
+                value={editMapDesc}
+                onChange={(e) => setEditMapDesc(e.target.value)}
+                placeholder="Mô tả sơ đồ tầng (VI)..."
+                className="w-full rounded-xl px-4 py-2 text-sm outline-none"
+                style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-xs font-medium" style={{ color: T.muted }}>
+                Mô tả sơ đồ (EN)
+              </label>
+              <textarea
+                rows={2}
+                value={editMapDescEn}
+                onChange={(e) => setEditMapDescEn(e.target.value)}
+                placeholder="Floor map description (EN)..."
                 className="w-full rounded-xl px-4 py-2 text-sm outline-none"
                 style={{ border: `1px solid ${T.border}`, background: T.bg, color: T.text }}
               />

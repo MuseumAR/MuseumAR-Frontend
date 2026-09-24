@@ -29,6 +29,12 @@ function asRecord(value: unknown): Record<string, unknown> {
 
 function normalizeMap(raw: unknown): MuseumMapDto {
   const o = asRecord(raw);
+  const translations = Array.isArray(o.translations ?? o.Translations)
+    ? ((o.translations ?? o.Translations) as any[])
+    : [];
+  const viTrans = translations.find((t: any) => (t.languageCode ?? t.LanguageCode) === "vi");
+  const enTrans = translations.find((t: any) => (t.languageCode ?? t.LanguageCode) === "en");
+
   return {
     id: Number(o.id ?? o.Id ?? 0),
     museumId: Number(o.museumId ?? o.MuseumId ?? 0),
@@ -39,7 +45,11 @@ function normalizeMap(raw: unknown): MuseumMapDto {
       o.floorNumber != null || o.FloorNumber != null
         ? Number(o.floorNumber ?? o.FloorNumber)
         : undefined,
-    mapName: (o.mapName ?? o.MapName) as string | null | undefined,
+    mapName: (o.mapName ?? o.MapName ?? viTrans?.mapName ?? viTrans?.MapName) as string | null | undefined,
+    mapNameEn: (o.mapNameEn ?? o.MapNameEn ?? enTrans?.mapName ?? enTrans?.MapName) as string | null | undefined,
+    description: (o.description ?? o.Description ?? viTrans?.description ?? viTrans?.Description) as string | null | undefined,
+    descriptionEn: (o.descriptionEn ?? o.DescriptionEn ?? enTrans?.description ?? enTrans?.Description) as string | null | undefined,
+    translations,
   };
 }
 
@@ -64,8 +74,20 @@ export async function createMapWithImage(
   mapType: string,
   mapName: string,
   floorNumber: number,
+  mapNameEn?: string,
+  description?: string,
+  descriptionEn?: string,
 ) {
-  return uploadMuseumMap(museumId, file, mapType, mapName, floorNumber);
+  return uploadMuseumMap(
+    museumId,
+    file,
+    mapType,
+    mapName,
+    floorNumber,
+    mapNameEn,
+    description,
+    descriptionEn,
+  );
 }
 
 function hostedImageUrl(raw: unknown): string | null {

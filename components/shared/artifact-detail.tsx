@@ -116,7 +116,7 @@ export function ArtifactDetail({
                   color: activeTab === "vi" ? T.primaryDark : T.muted,
                 }}
               >
-                Tiếng Việt 🇻🇳
+                Tiếng Việt (VI)
               </button>
               <button
                 type="button"
@@ -127,7 +127,7 @@ export function ArtifactDetail({
                   color: activeTab === "en" ? T.primaryDark : T.muted,
                 }}
               >
-                Tiếng Anh 🇬🇧
+                Tiếng Anh (EN)
               </button>
             </div>
 

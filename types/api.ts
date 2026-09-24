@@ -356,6 +356,17 @@ export type CreateOfflinePackageDto = {
   museumId: number;
   exhibitionId?: number | null;
   packageName?: string | null;
+  packageNameEn?: string | null;
+  description?: string | null;
+  descriptionEn?: string | null;
+};
+
+export type OfflinePackageTranslationDto = {
+  id?: number;
+  packageId?: number;
+  languageCode: string;
+  packageName?: string | null;
+  description?: string | null;
 };
 
 export type OfflinePackageDto = {
@@ -365,6 +376,9 @@ export type OfflinePackageDto = {
   exhibitionId?: number | null;
   exhibitionTitle?: string | null;
   packageName?: string | null;
+  packageNameEn?: string | null;
+  description?: string | null;
+  descriptionEn?: string | null;
   packageUrl?: string | null;
   packageSizeBytes?: number | null;
   checksum?: string | null;
@@ -374,9 +388,18 @@ export type OfflinePackageDto = {
   imageCount?: number | null;
   audioCount?: number | null;
   createdAt: string;
+  translations?: OfflinePackageTranslationDto[];
 };
 
 // ─── Museum map ───────────────────────────────────────────────────────────────
+
+export type MuseumMapTranslationDto = {
+  id?: number;
+  mapId?: number;
+  languageCode: string;
+  mapName?: string | null;
+  description?: string | null;
+};
 
 export type MuseumMapDto = {
   id: number;
@@ -386,13 +409,20 @@ export type MuseumMapDto = {
   mapType: string;
   floorNumber?: number;
   mapName?: string | null;
+  mapNameEn?: string | null;
+  description?: string | null;
+  descriptionEn?: string | null;
+  translations?: MuseumMapTranslationDto[];
 };
 
 export type CreateMuseumMapDto = {
   museumId: number;
   mapType: string;
   mapName?: string;
+  mapNameEn?: string;
   floorNumber?: number;
+  description?: string;
+  descriptionEn?: string;
 };
 
 export type MapPoiDto = {
