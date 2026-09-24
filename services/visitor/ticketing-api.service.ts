@@ -62,8 +62,8 @@ export function validateTicket(ticketCode: string): Promise<ValidateTicketRespon
   return apiGet<ValidateTicketResponseDto>(`/api/ticketing/validate/${encodeURIComponent(ticketCode)}`);
 }
 
-export function checkInTicket(ticketCode: string): Promise<ValidateTicketResponseDto> {
-  return apiPostAuth<ValidateTicketResponseDto>("/api/ticketing/check-in", { ticketCode });
+export function checkInTicket(ticketCode: string, quantity?: number): Promise<ValidateTicketResponseDto> {
+  return apiPostAuth<ValidateTicketResponseDto>("/api/ticketing/check-in", { ticketCode, quantity });
 }
 
 export function requestTicketRefund(ticketId: number, payload: CreateTicketRefundRequestDto): Promise<unknown> {

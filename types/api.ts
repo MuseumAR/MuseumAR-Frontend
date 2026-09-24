@@ -432,6 +432,17 @@ export type TourRouteStopDto = {
   roomId?: number | null;
   roomCode?: string | null;
   roomName?: string | null;
+  exhibitTitleVi?: string | null;
+  exhibitTitleEn?: string | null;
+  exhibitDescriptionVi?: string | null;
+  exhibitDescriptionEn?: string | null;
+  roomNameVi?: string | null;
+  roomNameEn?: string | null;
+  audioUrlVi?: string | null;
+  audioUrlEn?: string | null;
+  thumbnailUrl?: string | null;
+  locationX?: number | null;
+  locationY?: number | null;
 };
 
 export type TourRouteTranslationDto = {
@@ -602,6 +613,8 @@ export type TicketDto = {
   purchaseDate: string;
   validDate?: string | null;
   status: string;
+  isFoc?: boolean;
+  orderCode?: string | null;
 };
 
 /** GET /api/ticketing/my-tickets/{id} */
@@ -610,6 +623,8 @@ export type TicketDetailDto = {
   ticketCode: string;
   price?: number;
   status: string;
+  isFoc?: boolean;
+  isGroupOrder?: boolean;
   purchaseDate: string;
   validDate?: string | null;
   ticketType: {
@@ -666,6 +681,14 @@ export type ValidateTicketResponseDto = {
   purchaseDate: string;
   validDate?: string | null;
   usedAt?: string | null;
+  // Group booking & Hybrid check-in
+  isGroupOrder?: boolean;
+  isFoc?: boolean;
+  orderCode?: string | null;
+  totalTickets?: number;
+  usedTickets?: number;
+  remainingTickets?: number;
+  focTickets?: number;
 };
 
 /**

@@ -43,7 +43,7 @@ const C = {
   border: "rgba(200,155,60,0.30)",
 };
 
-const MAX_QTY = 10;
+const MAX_QTY = 500;
 
 type PendingOrder = {
   ticketType?: TicketTypeDto;
@@ -184,7 +184,7 @@ export function TicketShop() {
     }
   }
 
-  // Auto-polling payment status every 3 seconds while pendingOrder exists (even if modal is closed)
+  // Auto-polling payment status every 3 seconds while pendingOrder exists
   useEffect(() => {
     if (!pendingOrder) return;
 
@@ -216,7 +216,7 @@ export function TicketShop() {
     return () => clearInterval(intervalId);
   }, [pendingOrder, router]);
 
-  // Immediate check when user switches back to the tab from PayOS or banking app
+  // Immediate check when user switches back to the tab
   useEffect(() => {
     if (!pendingOrder) return;
 
@@ -287,20 +287,29 @@ export function TicketShop() {
     setBuyingId(ticketType.id);
 
     try {
+      const isGroup = quantity >= 30;
+      // If group, do not pass promoId to avoid double-discount
+      const actualPromoId = isGroup ? null : promoId;
+
       // Send request to backend API POST /api/ticketing/create-order
       const res: CreateOrderResponseDto = await placeTicketOrder({
         ticketTypeId: ticketType.id,
         quantity,
-        promotionId: promoId,
+        promotionId: actualPromoId,
       });
 
-      const promo = ticketType.activePromotions?.find(p => p.id === promoId);
       let unitPrice = ticketType.price;
-      if (promo) {
-        const discount = promo.discountType === "Percentage"
-          ? ticketType.price * promo.discountValue / 100
-          : promo.discountValue;
-        unitPrice = Math.max(0, ticketType.price - discount);
+      if (isGroup) {
+        const discountRate = quantity >= 50 ? 0.10 : 0.08;
+        unitPrice = Math.round(ticketType.price * (1 - discountRate));
+      } else if (promoId) {
+        const promo = ticketType.activePromotions?.find(p => p.id === promoId);
+        if (promo) {
+          const discount = promo.discountType === "Percentage"
+            ? ticketType.price * promo.discountValue / 100
+            : promo.discountValue;
+          unitPrice = Math.max(0, ticketType.price - discount);
+        }
       }
       const totalAmount = res.amount ?? unitPrice * quantity;
 
@@ -330,8 +339,7 @@ export function TicketShop() {
     }
   }
 
-
-  // EXPLICIT CANCEL ORDER FUNCTION (Only when user explicitly clicks "Hủy đơn hàng này")
+  // EXPLICIT CANCEL ORDER FUNCTION
   async function handleCancelOrder() {
     if (!pendingOrder) return;
 
@@ -357,7 +365,7 @@ export function TicketShop() {
       <Navbar />
 
       <main className="mx-auto max-w-5xl px-4 pb-20 pt-28 sm:px-8">
-        <header className="mb-10">
+        <header className="mb-8">
           <p
             className="mb-2 text-xs font-medium uppercase tracking-[0.2em]"
             style={{ color: C.primary }}
@@ -370,9 +378,35 @@ export function TicketShop() {
           >
             {t("tickets.title")}
           </h1>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed" style={{ color: C.muted }}>
+          <p className="mt-3 max-w-2xl text-sm leading-relaxed" style={{ color: C.muted }}>
             {t("tickets.subtitle")}
           </p>
+
+          {/* Group Booking Policy Banner */}
+          <div
+            className="mt-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl p-4 border"
+            style={{
+              background: "linear-gradient(135deg, rgba(200,155,60,0.12) 0%, rgba(200,155,60,0.04) 100%)",
+              borderColor: C.border,
+            }}
+          >
+            <div className="flex items-center gap-3">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/20 text-amber-800 shrink-0 font-bold text-base">
+                👥
+              </span>
+              <div className="text-xs">
+                <p className="font-bold" style={{ color: C.text }}>
+                  Chính sách Vé đoàn & Tour trường học / doanh nghiệp
+                </p>
+                <p className="mt-0.5" style={{ color: C.muted }}>
+                  Từ <strong>30 - 49 vé</strong>: Giảm <strong>8%</strong> • Từ <strong>50 vé</strong> trở lên: Giảm <strong>10%</strong> • Cứ mỗi 30 vé tặng <strong>1 vé FOC</strong> cho Trưởng đoàn/Giáo viên!
+                </p>
+              </div>
+            </div>
+            <span className="rounded-full px-3 py-1 text-[11px] font-bold text-amber-800 bg-amber-200/70 border border-amber-300/80 shrink-0">
+              ⚡ Tự động chiết khấu
+            </span>
+          </div>
         </header>
 
         {/* SHOPEE-STYLE PENDING ORDER BANNER */}
@@ -484,6 +518,9 @@ export function TicketShop() {
               const qty = quantities[ticket.id] ?? 1;
               const busy = buyingId === ticket.id;
               const hasPromos = ticket.activePromotions && ticket.activePromotions.length > 0;
+              const isGroup = qty >= 30;
+              const discountRate = qty >= 50 ? 0.10 : isGroup ? 0.08 : 0;
+              const focCount = isGroup ? Math.floor(qty / 30) : 0;
 
               const isExhibitionTicket = Boolean(ticket.exhibitionName || ticket.exhibitionId);
               let isPresale = false;
@@ -504,11 +541,11 @@ export function TicketShop() {
               return (
                 <li
                   key={ticket.id}
-                  className="flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
+                  className="flex flex-col gap-4 rounded-3xl p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6 transition-all"
                   style={{
                     background: C.surface,
-                    border: `1px solid ${C.border}`,
-                    boxShadow: "0 8px 28px rgba(43,29,14,0.06)",
+                    border: `1px solid ${isGroup ? "#F59E0B" : C.border}`,
+                    boxShadow: isGroup ? "0 8px 30px rgba(245,158,11,0.12)" : "0 8px 28px rgba(43,29,14,0.06)",
                   }}
                 >
                   <div className="min-w-0 flex-1">
@@ -559,7 +596,13 @@ export function TicketShop() {
                       <h2 className="text-lg font-semibold" style={{ color: C.text }}>
                         {ticket.name}
                       </h2>
-                      {hasPromos && (
+                      {isGroup ? (
+                        <span
+                          className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold bg-amber-500 text-white shadow-sm"
+                        >
+                          👥 Vé đoàn (-{discountRate * 100}%) + {focCount} FOC
+                        </span>
+                      ) : hasPromos ? (
                         <span
                           className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold animate-bounce"
                           style={{
@@ -570,7 +613,7 @@ export function TicketShop() {
                         >
                           🔥 Khuyến mãi
                         </span>
-                      )}
+                      ) : null}
                     </div>
                     {ticket.description ? (
                       <p className="mt-1 text-sm leading-relaxed" style={{ color: C.muted }}>
@@ -593,75 +636,111 @@ export function TicketShop() {
                       </p>
                     )}
 
-                    <p className="mt-4 text-xl font-semibold tabular-nums" style={{ color: C.secondary }}>
-                      {formatVnd(ticket.price)}
-                    </p>
+                    <div className="mt-4 flex items-baseline gap-2">
+                      <p className="text-xl font-semibold tabular-nums" style={{ color: isGroup ? "#B45309" : C.secondary }}>
+                        {formatVnd(isGroup ? Math.round(ticket.price * (1 - discountRate)) : ticket.price)}
+                      </p>
+                      {isGroup && (
+                        <p className="text-xs line-through text-stone-400 font-mono">
+                          {formatVnd(ticket.price)}
+                        </p>
+                      )}
+                      <span className="text-xs text-stone-500">/ vé</span>
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div
-                      className="inline-flex items-center rounded-full"
-                      style={{ border: `1px solid ${C.border}`, background: C.bg }}
-                    >
-                      <button
-                        type="button"
-                        aria-label={t("tickets.decrease")}
-                        className="flex h-10 w-10 items-center justify-center rounded-full transition-opacity hover:opacity-70"
-                        style={{ color: C.text }}
-                        onClick={() => setQty(ticket.id, qty - 1)}
-                        disabled={busy || qty <= 1}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </button>
-                      <span
-                        className="min-w-[2rem] text-center text-sm font-medium tabular-nums"
-                        style={{ color: C.text }}
-                      >
-                        {qty}
-                      </span>
-                      <button
-                        type="button"
-                        aria-label={t("tickets.increase")}
-                        className="flex h-10 w-10 items-center justify-center rounded-full transition-opacity hover:opacity-70"
-                        style={{ color: C.text }}
-                        onClick={() => setQty(ticket.id, qty + 1)}
-                        disabled={busy || qty >= MAX_QTY}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </button>
+                  <div className="flex flex-col sm:items-end gap-3">
+                    {/* Quick quantity pills */}
+                    <div className="flex flex-wrap items-center gap-1">
+                      {[1, 5, 10, 30, 50, 100, 500].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => setQty(ticket.id, preset)}
+                          className={`px-2 py-0.5 text-xs rounded-lg font-medium transition-all ${
+                            qty === preset
+                              ? "bg-amber-600 text-white font-bold shadow-sm"
+                              : "bg-amber-100/60 text-amber-900 hover:bg-amber-200/70"
+                          }`}
+                        >
+                          {preset >= 30 ? `Đoàn ${preset}` : preset}
+                        </button>
+                      ))}
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!isAuthenticated) {
-                          router.push(`/login?next=${encodeURIComponent("/tickets")}`);
-                          return;
-                        }
-                        setCheckoutTarget(ticket);
-                        setSelectedPromoId(null);
-                        setCheckoutQty(quantities[ticket.id] ?? 1);
-                        setIsCheckoutOpen(true);
-                      }}
-                      disabled={busy}
-                      className="inline-flex min-w-[8.5rem] items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
-                      style={{
-                        background: `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
-                        color: C.surface,
-                        boxShadow: "0 2px 10px rgba(166,124,45,0.30)",
-                      }}
-                    >
-                      {busy ? (
-                        <>
-                          <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
-                          <StableLabel k="tickets.creating_order" />
-                        </>
-                      ) : isAuthenticated ? (
-                        <StableLabel k="tickets.buy" />
-                      ) : (
-                        <StableLabel k="tickets.login_to_buy" />
-                      )}
-                    </button>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div
+                        className="inline-flex items-center rounded-full"
+                        style={{ border: `1px solid ${C.border}`, background: C.bg }}
+                      >
+                        <button
+                          type="button"
+                          aria-label={t("tickets.decrease")}
+                          className="flex h-10 w-10 items-center justify-center rounded-full transition-opacity hover:opacity-70"
+                          style={{ color: C.text }}
+                          onClick={() => setQty(ticket.id, qty - 1)}
+                          disabled={busy || qty <= 1}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </button>
+                        <input
+                          type="number"
+                          min={1}
+                          max={MAX_QTY}
+                          value={qty}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            if (!isNaN(val)) setQty(ticket.id, val);
+                          }}
+                          className="w-14 text-center text-sm font-bold tabular-nums bg-transparent border-none focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          style={{ color: C.text }}
+                        />
+                        <button
+                          type="button"
+                          aria-label={t("tickets.increase")}
+                          className="flex h-10 w-10 items-center justify-center rounded-full transition-opacity hover:opacity-70"
+                          style={{ color: C.text }}
+                          onClick={() => setQty(ticket.id, qty + 1)}
+                          disabled={busy || qty >= MAX_QTY}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!isAuthenticated) {
+                            router.push(`/login?next=${encodeURIComponent("/tickets")}`);
+                            return;
+                          }
+                          setCheckoutTarget(ticket);
+                          setSelectedPromoId(null);
+                          setCheckoutQty(quantities[ticket.id] ?? 1);
+                          setIsCheckoutOpen(true);
+                        }}
+                        disabled={busy}
+                        className="inline-flex min-w-[8.5rem] items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-60"
+                        style={{
+                          background: isGroup
+                            ? "linear-gradient(135deg, #D97706 0%, #B45309 100%)"
+                            : `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
+                          color: C.surface,
+                          boxShadow: "0 2px 10px rgba(166,124,45,0.30)",
+                        }}
+                      >
+                        {busy ? (
+                          <>
+                            <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                            <StableLabel k="tickets.creating_order" />
+                          </>
+                        ) : isAuthenticated ? (
+                          isGroup ? `Đặt vé đoàn (${qty})` : <StableLabel k="tickets.buy" />
+                        ) : (
+                          <StableLabel k="tickets.login_to_buy" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </li>
               );
@@ -670,7 +749,7 @@ export function TicketShop() {
         )}
       </main>
 
-      {/* ═══ PRE-CHECKOUT PROMOTION SELECTION MODAL ═══ */}
+      {/* ═══ PRE-CHECKOUT PROMOTION & GROUP SELECTION MODAL ═══ */}
       {isCheckoutOpen && checkoutTarget && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
@@ -687,10 +766,10 @@ export function TicketShop() {
             <div className="flex items-center justify-between border-b pb-4" style={{ borderColor: C.border }}>
               <div>
                 <h3 className="text-lg font-bold" style={{ color: C.text }}>
-                  Chọn khuyến mãi & Thanh toán
+                  Xác nhận đặt vé & Thanh toán
                 </h3>
                 <p className="text-xs" style={{ color: C.mutedLight }}>
-                  Xác nhận thông tin mua vé và áp dụng mã ưu đãi
+                  Kiểm tra số lượng, chiết khấu và ưu đãi áp dụng
                 </p>
               </div>
               <button
@@ -723,128 +802,177 @@ export function TicketShop() {
               </div>
 
               {/* Adjust Qty directly in Checkout Modal */}
-              <div className="flex items-center justify-between border-y py-3" style={{ borderColor: C.border }}>
-                <span className="text-sm font-semibold" style={{ color: C.text }}>Số lượng vé mua</span>
-                <div
-                  className="inline-flex items-center rounded-full"
-                  style={{ border: `1px solid ${C.border}`, background: C.bg }}
-                >
-                  <button
-                    type="button"
-                    className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity hover:opacity-70"
-                    style={{ color: C.text }}
-                    onClick={() => setCheckoutQty(prev => Math.max(1, prev - 1))}
-                    disabled={checkoutQty <= 1}
+              <div className="flex flex-col gap-2 border-y py-3" style={{ borderColor: C.border }}>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold" style={{ color: C.text }}>Số lượng vé mua</span>
+                  <div
+                    className="inline-flex items-center rounded-full"
+                    style={{ border: `1px solid ${C.border}`, background: C.bg }}
                   >
-                    <Minus className="h-3 w-3" />
-                  </button>
-                  <span
-                    className="min-w-[1.5rem] text-center text-xs font-medium tabular-nums"
-                    style={{ color: C.text }}
-                  >
-                    {checkoutQty}
-                  </span>
-                  <button
-                    type="button"
-                    className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity hover:opacity-70"
-                    style={{ color: C.text }}
-                    onClick={() => setCheckoutQty(prev => Math.min(MAX_QTY, prev + 1))}
-                    disabled={checkoutQty >= MAX_QTY}
-                  >
-                    <Plus className="h-3 w-3" />
-                  </button>
+                    <button
+                      type="button"
+                      className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity hover:opacity-70"
+                      style={{ color: C.text }}
+                      onClick={() => setCheckoutQty(prev => Math.max(1, prev - 1))}
+                      disabled={checkoutQty <= 1}
+                    >
+                      <Minus className="h-3 w-3" />
+                    </button>
+                    <input
+                      type="number"
+                      min={1}
+                      max={MAX_QTY}
+                      value={checkoutQty}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value, 10);
+                        if (!isNaN(val)) setCheckoutQty(Math.min(MAX_QTY, Math.max(1, val)));
+                      }}
+                      className="w-14 text-center text-xs font-bold tabular-nums bg-transparent border-none focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      style={{ color: C.text }}
+                    />
+                    <button
+                      type="button"
+                      className="flex h-8 w-8 items-center justify-center rounded-full transition-opacity hover:opacity-70"
+                      style={{ color: C.text }}
+                      onClick={() => setCheckoutQty(prev => Math.min(MAX_QTY, prev + 1))}
+                      disabled={checkoutQty >= MAX_QTY}
+                    >
+                      <Plus className="h-3 w-3" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick preset buttons in modal */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  {[1, 5, 10, 30, 50, 100, 500].map((num) => (
+                    <button
+                      key={num}
+                      type="button"
+                      onClick={() => setCheckoutQty(num)}
+                      className={`px-2 py-0.5 text-[11px] rounded-md font-medium transition-all ${
+                        checkoutQty === num
+                          ? "bg-amber-700 text-white font-bold"
+                          : "bg-amber-100/60 text-amber-900 hover:bg-amber-200"
+                      }`}
+                    >
+                      {num >= 30 ? `Đoàn ${num}` : num}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Available Promotions Section */}
-              {checkoutTarget.activePromotions && checkoutTarget.activePromotions.length > 0 ? (
-                <div className="space-y-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider block" style={{ color: C.mutedLight }}>
-                    Khuyến mãi khả dụng
-                  </span>
-                  <div className="flex flex-col gap-2">
-                    {/* Option: Original price (No promotion) */}
-                    <label
-                      className="flex items-center justify-between rounded-2xl p-3 text-xs border cursor-pointer transition-all"
-                      style={{
-                        borderColor: selectedPromoId === null ? C.primary : C.border,
-                        background: selectedPromoId === null ? "rgba(200,155,60,0.06)" : "transparent",
-                      }}
-                      onClick={() => setSelectedPromoId(null)}
-                    >
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="radio"
-                          name="checkout-promo"
-                          checked={selectedPromoId === null}
-                          onChange={() => setSelectedPromoId(null)}
-                          className="accent-[#C89B3C]"
-                        />
-                        <span className="font-semibold" style={{ color: C.text }}>🏷️ Không áp dụng khuyến mãi</span>
-                      </div>
-                      <span style={{ color: C.muted }}>Giá gốc</span>
-                    </label>
-
-                    {/* Promotion options */}
-                    {checkoutTarget.activePromotions.map((promo) => {
-                      const isSelected = selectedPromoId === promo.id;
-                      const discountText = promo.discountType === "Percentage"
-                        ? `-${promo.discountValue}%`
-                        : `-${formatVnd(promo.discountValue)}`;
-
-                      return (
-                        <label
-                          key={promo.id}
-                          className="flex items-center justify-between rounded-2xl p-3 text-xs border cursor-pointer transition-all"
-                          style={{
-                            borderColor: isSelected ? "#B91C1C" : C.border,
-                            background: isSelected ? "rgba(220,38,38,0.04)" : "transparent",
-                          }}
-                          onClick={() => setSelectedPromoId(promo.id)}
-                        >
-                          <div className="flex items-center gap-2 min-w-0">
-                            <input
-                              type="radio"
-                              name="checkout-promo"
-                              checked={isSelected}
-                              onChange={() => setSelectedPromoId(promo.id)}
-                              className="accent-[#B91C1C]"
-                            />
-                            <div className="min-w-0">
-                              <span className="font-bold block truncate" style={{ color: C.text }}>🔥 {promo.name}</span>
-                              {promo.description && (
-                                <p className="text-[10px] text-stone-500 mt-0.5 truncate">{promo.description}</p>
-                              )}
-                            </div>
-                          </div>
-                          <span className="font-bold shrink-0 text-red-600" style={{ fontSize: "13px" }}>{discountText}</span>
-                        </label>
-                      );
-                    })}
+              {/* Group booking or Regular Promotion logic */}
+              {checkoutQty >= 30 ? (
+                /* GROUP BOOKING DISCOUNT APPLIED */
+                <div className="rounded-2xl p-4 bg-amber-50 border border-amber-300 space-y-2">
+                  <div className="flex items-center gap-2 text-amber-900 font-bold text-sm">
+                    <span>🎉</span>
+                    <span>Đã áp dụng Chiết khấu vé đoàn {checkoutQty >= 50 ? "10%" : "8%"}</span>
                   </div>
+                  <p className="text-xs text-amber-800 leading-relaxed">
+                    • Mua {checkoutQty} vé: Giảm <strong>{checkoutQty >= 50 ? "10%" : "8%"}</strong> trên tổng tiền.<br />
+                    • Tặng kèm <strong>{Math.floor(checkoutQty / 30)} vé FOC</strong> miễn phí cho Trưởng đoàn/Giáo viên (Tổng nhận: {checkoutQty + Math.floor(checkoutQty / 30)} vé).<br />
+                    • <span className="text-amber-700/80 italic">Lưu ý: Vé đoàn không áp dụng cộng dồn với mã voucher cá nhân.</span>
+                  </p>
                 </div>
               ) : (
-                <div className="rounded-xl p-3 text-xs text-center border border-dashed" style={{ borderColor: C.border, color: C.mutedLight }}>
-                  Không có chương trình khuyến mãi khả dụng cho loại vé này.
-                </div>
+                /* REGULAR PROMOTIONS LIST */
+                checkoutTarget.activePromotions && checkoutTarget.activePromotions.length > 0 ? (
+                  <div className="space-y-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider block" style={{ color: C.mutedLight }}>
+                      Khuyến mãi khả dụng
+                    </span>
+                    <div className="flex flex-col gap-2">
+                      <label
+                        className="flex items-center justify-between rounded-2xl p-3 text-xs border cursor-pointer transition-all"
+                        style={{
+                          borderColor: selectedPromoId === null ? C.primary : C.border,
+                          background: selectedPromoId === null ? "rgba(200,155,60,0.06)" : "transparent",
+                        }}
+                        onClick={() => setSelectedPromoId(null)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="checkout-promo"
+                            checked={selectedPromoId === null}
+                            onChange={() => setSelectedPromoId(null)}
+                            className="accent-[#C89B3C]"
+                          />
+                          <span className="font-semibold" style={{ color: C.text }}>🏷️ Không áp dụng khuyến mãi</span>
+                        </div>
+                        <span style={{ color: C.muted }}>Giá gốc</span>
+                      </label>
+
+                      {checkoutTarget.activePromotions.map((promo) => {
+                        const isSelected = selectedPromoId === promo.id;
+                        const discountText = promo.discountType === "Percentage"
+                          ? `-${promo.discountValue}%`
+                          : `-${formatVnd(promo.discountValue)}`;
+
+                        return (
+                          <label
+                            key={promo.id}
+                            className="flex items-center justify-between rounded-2xl p-3 text-xs border cursor-pointer transition-all"
+                            style={{
+                              borderColor: isSelected ? "#B91C1C" : C.border,
+                              background: isSelected ? "rgba(220,38,38,0.04)" : "transparent",
+                            }}
+                            onClick={() => setSelectedPromoId(promo.id)}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <input
+                                type="radio"
+                                name="checkout-promo"
+                                checked={isSelected}
+                                onChange={() => setSelectedPromoId(promo.id)}
+                                className="accent-[#B91C1C]"
+                              />
+                              <div className="min-w-0">
+                                <span className="font-bold block truncate" style={{ color: C.text }}>🔥 {promo.name}</span>
+                                {promo.description && (
+                                  <p className="text-[10px] text-stone-500 mt-0.5 truncate">{promo.description}</p>
+                                )}
+                              </div>
+                            </div>
+                            <span className="font-bold shrink-0 text-red-600" style={{ fontSize: "13px" }}>{discountText}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-xl p-3 text-xs text-center border border-dashed" style={{ borderColor: C.border, color: C.mutedLight }}>
+                    Không có chương trình khuyến mãi khả dụng cho loại vé này.
+                  </div>
+                )
               )}
             </div>
 
             {/* Calculations & Total Payment */}
             {(() => {
-              const promo = checkoutTarget.activePromotions?.find(p => p.id === selectedPromoId);
-              let unitPrice = checkoutTarget.price;
-              let discountVal = 0;
+              const isGroup = checkoutQty >= 30;
+              const groupDiscountRate = checkoutQty >= 50 ? 0.10 : isGroup ? 0.08 : 0;
+              const focCount = isGroup ? Math.floor(checkoutQty / 30) : 0;
 
-              if (promo) {
-                discountVal = promo.discountType === "Percentage"
-                  ? checkoutTarget.price * promo.discountValue / 100
-                  : promo.discountValue;
-                unitPrice = Math.max(0, checkoutTarget.price - discountVal);
+              let unitPrice = checkoutTarget.price;
+              let discountValPerUnit = 0;
+
+              if (isGroup) {
+                unitPrice = Math.round(checkoutTarget.price * (1 - groupDiscountRate));
+                discountValPerUnit = checkoutTarget.price - unitPrice;
+              } else if (selectedPromoId) {
+                const promo = checkoutTarget.activePromotions?.find(p => p.id === selectedPromoId);
+                if (promo) {
+                  discountValPerUnit = promo.discountType === "Percentage"
+                    ? checkoutTarget.price * promo.discountValue / 100
+                    : promo.discountValue;
+                  unitPrice = Math.max(0, checkoutTarget.price - discountValPerUnit);
+                }
               }
 
               const totalOriginal = checkoutTarget.price * checkoutQty;
-              const totalDiscount = discountVal * checkoutQty;
+              const totalDiscount = discountValPerUnit * checkoutQty;
               const totalPayment = unitPrice * checkoutQty;
 
               return (
@@ -854,12 +982,28 @@ export function TicketShop() {
                       <span>Tổng tiền vé ({checkoutQty} vé)</span>
                       <span className="font-mono">{formatVnd(totalOriginal)}</span>
                     </div>
+
+                    {isGroup && (
+                      <div className="flex justify-between text-emerald-700 font-medium">
+                        <span>🎁 Vé FOC tặng kèm (Dẫn đoàn)</span>
+                        <span>+{focCount} vé (0đ)</span>
+                      </div>
+                    )}
+
                     {totalDiscount > 0 && (
-                      <div className="flex justify-between text-red-600">
-                        <span>Giảm giá khuyến mãi</span>
+                      <div className="flex justify-between text-red-600 font-medium">
+                        <span>{isGroup ? `Chiết khấu vé đoàn (${groupDiscountRate * 100}%)` : "Giảm giá khuyến mãi"}</span>
                         <span className="font-mono">-{formatVnd(totalDiscount)}</span>
                       </div>
                     )}
+
+                    {isGroup && (
+                      <div className="flex justify-between text-amber-900 font-semibold">
+                        <span>Tổng số vé nhận được</span>
+                        <span>{checkoutQty + focCount} vé</span>
+                      </div>
+                    )}
+
                     <div className="flex justify-between border-t pt-2.5 mt-1.5" style={{ borderColor: C.border }}>
                       <span className="text-sm font-semibold" style={{ color: C.text }}>Tổng thanh toán</span>
                       <span className="text-lg font-bold" style={{ color: totalDiscount > 0 ? "#B91C1C" : C.secondary }}>
@@ -886,8 +1030,12 @@ export function TicketShop() {
                       disabled={buyingId === checkoutTarget.id}
                       className="flex-1 rounded-full py-2.5 text-xs font-bold text-white transition-opacity hover:opacity-90 flex items-center justify-center gap-1.5 disabled:opacity-50"
                       style={{
-                        background: selectedPromoId ? "linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)" : `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
-                        boxShadow: selectedPromoId ? "0 2px 10px rgba(220,38,38,0.25)" : "0 2px 10px rgba(166,124,45,0.25)",
+                        background: isGroup
+                          ? "linear-gradient(135deg, #D97706 0%, #B45309 100%)"
+                          : selectedPromoId
+                          ? "linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)"
+                          : `linear-gradient(135deg, ${C.primary} 0%, ${C.secondary} 100%)`,
+                        boxShadow: "0 2px 10px rgba(166,124,45,0.25)",
                       }}
                     >
                       {buyingId === checkoutTarget.id ? (
