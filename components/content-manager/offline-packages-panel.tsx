@@ -430,6 +430,13 @@ export function OfflinePackagesPanel({
                       (matchedExhibition.endDate && new Date(matchedExhibition.endDate) < new Date(new Date().setHours(0, 0, 0, 0)))
                     : false;
 
+                  const exhibitionEn =
+                    matchedExhibition?.nameEn ||
+                    matchedExhibition?.translations?.find((t) => t.languageCode === "en")?.name;
+                  const displayEn = isExhibitionScoped
+                    ? pkg.packageNameEn || exhibitionEn
+                    : pkg.packageNameEn || "All Museum Exhibits";
+
                   return (
                     <tr key={pkg.id} className="transition-colors hover:bg-[rgba(200,155,69,0.05)]" style={{ borderBottom: `1px solid ${T.border}` }}>
                       <td className="px-5 py-4 font-mono font-bold" style={{ color: T.text }}>
@@ -439,7 +446,7 @@ export function OfflinePackagesPanel({
                       {/* Scope column */}
                       <td className="px-5 py-4">
                         {isExhibitionScoped ? (
-                          <div className="flex flex-col gap-1 items-start">
+                          <div className="flex flex-col gap-1.5 items-start">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span
                                 className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold"
@@ -453,17 +460,20 @@ export function OfflinePackagesPanel({
                                 {isExhibitionEnded ? "Chuyên đề (Đã kết thúc)" : "Chuyên đề"}
                               </span>
                             </div>
-                            <span className="text-xs font-medium" style={{ color: isExhibitionEnded ? T.muted : T.text }}>
+                            <span className="text-xs font-semibold" style={{ color: isExhibitionEnded ? T.muted : T.text }}>
                               {pkg.exhibitionTitle || pkg.packageName || `Triển lãm #${pkg.exhibitionId}`}
                             </span>
-                            {pkg.packageNameEn && (
-                              <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
-                                EN: {pkg.packageNameEn}
+                            {displayEn && (
+                              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-800 dark:text-amber-300">
+                                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300/80 dark:border-amber-700/80">
+                                  EN
+                                </span>
+                                {displayEn}
                               </span>
                             )}
                           </div>
                         ) : (
-                          <div className="flex flex-col gap-1 items-start">
+                          <div className="flex flex-col gap-1.5 items-start">
                             <span
                               className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold"
                               style={{
@@ -475,14 +485,15 @@ export function OfflinePackagesPanel({
                               <Landmark className="h-3 w-3" />
                               Toàn bảo tàng
                             </span>
-                            {pkg.packageName && (
-                              <span className="text-xs font-medium" style={{ color: T.muted }}>
-                                {pkg.packageName}
-                              </span>
-                            )}
-                            {pkg.packageNameEn && (
-                              <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
-                                EN: {pkg.packageNameEn}
+                            <span className="text-xs font-semibold" style={{ color: T.text }}>
+                              {pkg.packageName || "Tất cả hiện vật của bảo tàng"}
+                            </span>
+                            {displayEn && (
+                              <span className="inline-flex items-center gap-1.5 text-[11px] font-medium text-amber-800 dark:text-amber-300">
+                                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300/80 dark:border-amber-700/80">
+                                  EN
+                                </span>
+                                {displayEn}
                               </span>
                             )}
                           </div>
