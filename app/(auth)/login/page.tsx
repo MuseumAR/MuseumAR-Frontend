@@ -180,7 +180,9 @@ export default function LoginPage() {
       const result = await login({ email: email.trim(), password });
       router.replace(getPostLoginPath(result.roleName, readNextParam()));
     } catch (err) {
-      setError(getDisplayError(err, "Đăng nhập thất bại. Vui lòng thử lại."));
+      setError(
+        getDisplayError(err, "Email hoặc mật khẩu không đúng."),
+      );
     } finally {
       setIsSubmitting(false);
     }

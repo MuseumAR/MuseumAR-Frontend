@@ -348,6 +348,8 @@ const TECHNICAL_PATTERNS = [
   /Unexpected token/i,
   /<!DOCTYPE/i,
   /Internal Server Error/i,
+  /Server returned \d+/i,
+  /^HTTP Error \d+/i,
 ];
 
 function isTechnicalMessage(message: string): boolean {
@@ -377,15 +379,22 @@ export function getDisplayError(error: unknown, fallback: string): string {
   if (!error) return fallback;
 
   if (typeof error === "string") {
-    return mapApiMessage(error);
+    const mapped = mapApiMessage(error);
+    return isTechnicalMessage(mapped) || isTechnicalMessage(error) ? fallback : mapped;
   }
 
   if (error instanceof Error) {
     const apiResponse = parseApiResponse(error.message);
     if (apiResponse?.message) {
-      return mapApiMessage(apiResponse.message);
+      const mapped = mapApiMessage(apiResponse.message);
+      return isTechnicalMessage(mapped) || isTechnicalMessage(apiResponse.message)
+        ? fallback
+        : mapped;
     }
-    return mapApiMessage(error.message);
+    const mapped = mapApiMessage(error.message);
+    return isTechnicalMessage(mapped) || isTechnicalMessage(error.message)
+      ? fallback
+      : mapped;
   }
 
   return fallback;
