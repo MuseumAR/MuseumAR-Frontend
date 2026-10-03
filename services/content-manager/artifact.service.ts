@@ -7,12 +7,29 @@ import {
   deleteExhibit,
   getExhibitByCode,
   getExhibitById as fetchExhibitById,
+  getCategories,
   getExhibits,
   getExhibitsPaged,
   publishExhibit,
   unpublishExhibit,
   updateExhibit,
 } from "./content-api.service";
+import { categoryDisplayName } from "./taxonomy.service";
+
+type CategoryNameMap = Map<number, string>;
+
+async function loadCategoryNames(): Promise<CategoryNameMap> {
+  const categories = await safeFetch(async () => getCategories(), []);
+  return new Map(categories.map((c) => [c.id, categoryDisplayName(c, "vi")]));
+}
+
+function resolveCategoryLabel(
+  categoryId: number | null | undefined,
+  names?: CategoryNameMap,
+): string {
+  if (!categoryId) return "—";
+  return names?.get(categoryId) ?? `Category ${categoryId}`;
+}
 
 function getPrimaryTranslation(exhibit: ExhibitDto) {
   return exhibit.translations[0];
@@ -40,7 +57,7 @@ function formatLocation(exhibit: ExhibitDto): string {
   return "Not assigned";
 }
 
-function mapExhibitToArtifact(exhibit: ExhibitDto): Artifact {
+function mapExhibitToArtifact(exhibit: ExhibitDto, categoryNames?: CategoryNameMap): Artifact {
   const translation = getPrimaryTranslation(exhibit);
   const defaultQrData = exhibit.qrCodeData ?? `MUSEUM_EX_${exhibit.id}_${exhibit.exhibitCode || `EX${exhibit.id}`}`;
   const defaultQrImage = exhibit.qrCodeImageUrl ?? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(defaultQrData)}`;
@@ -53,7 +70,7 @@ function mapExhibitToArtifact(exhibit: ExhibitDto): Artifact {
     arOverlayUrl: exhibit.arOverlayUrl ?? null,
     arMarkerUrl: exhibit.arMarkerUrl ?? null,
     status: mapExhibitStatus(exhibit.status),
-    category: exhibit.categoryId ? `Category ${exhibit.categoryId}` : "—",
+    category: resolveCategoryLabel(exhibit.categoryId, categoryNames),
     era: exhibit.exhibitMetadata?.era ?? "—",
     eraEn: exhibit.exhibitMetadata?.eraEn ?? "",
     historicalEvent: exhibit.exhibitMetadata?.historicalEvent ?? "",
@@ -121,10 +138,12 @@ export async function getArtifactById(id: string): Promise<Artifact | null> {
   const slug = decodeURIComponent(id).trim();
   if (!slug) return null;
 
+  const categoryNames = await loadCategoryNames();
+
   async function loadByKey(key: number | string): Promise<Artifact | null> {
     try {
       const exhibit = await fetchExhibitById(key);
-      return exhibit?.id ? mapExhibitToArtifact(exhibit) : null;
+      return exhibit?.id ? mapExhibitToArtifact(exhibit, categoryNames) : null;
     } catch {
       return null;
     }
@@ -141,7 +160,7 @@ export async function getArtifactById(id: string): Promise<Artifact | null> {
 
   try {
     const byCode = await getExhibitByCode(slug);
-    if (byCode?.id) return mapExhibitToArtifact(byCode);
+    if (byCode?.id) return mapExhibitToArtifact(byCode, categoryNames);
   } catch {
     // fall through to paged search
   }
@@ -167,8 +186,8 @@ export async function getArtifactById(id: string): Promise<Artifact | null> {
 
 export async function getArtifacts(): Promise<Artifact[]> {
   return safeFetch(async () => {
-    const exhibits = await getExhibits();
-    return exhibits.map(mapExhibitToArtifact);
+    const [exhibits, categoryNames] = await Promise.all([getExhibits(), loadCategoryNames()]);
+    return exhibits.map((exhibit) => mapExhibitToArtifact(exhibit, categoryNames));
   }, []);
 }
 
